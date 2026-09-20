@@ -29,21 +29,25 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -134,6 +138,7 @@ fun CameraScreen() {
     var overlayOffset by remember { mutableStateOf(Offset.Zero) }
     var overlayScale by remember { mutableStateOf(1f) }
     var overlayRotation by remember { mutableStateOf(0f) }
+    var isEditingOverlay by remember { mutableStateOf(false) }
 
     val pickReferenceLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -261,11 +266,18 @@ fun CameraScreen() {
                                     scaleY = overlayScale
                                     rotationZ = overlayRotation
                                 }
-                                .pointerInput(Unit) {
-                                    detectTransformGestures { _, pan, zoom, rotation ->
-                                        overlayOffset += pan
-                                        overlayScale = (overlayScale * zoom).coerceIn(0.1f, 10f)
-                                        overlayRotation += rotation
+                                .pointerInput(isEditingOverlay) {
+                                    if (isEditingOverlay) {
+                                        detectTransformGestures(panZoomLock = true) { _, pan, zoom, rotation ->
+                                            overlayOffset += pan
+                                            overlayScale = (overlayScale * zoom).coerceIn(0.1f, 10f)
+                                            overlayRotation += rotation
+                                        }
+                                    } else {
+                                        detectDragGestures { change, dragAmount ->
+                                            change.consume()
+                                            overlayOffset += dragAmount
+                                        }
                                     }
                                 }
                         )
@@ -283,24 +295,49 @@ fun CameraScreen() {
                                 tint = Color.White
                             )
                         }
-                        IconButton(
-                            onClick = {
-                                overlayOffset = Offset.Zero
-                                overlayScale = 1f
-                                overlayRotation = 0f
-                                overlayAlpha = 0.5f
-                            },
+                        Row(
                             modifier = Modifier
                                 .align(Alignment.TopStart)
-                                .padding(16.dp)
-                                .size(32.dp)
-                                .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.Refresh,
-                                contentDescription = "Сбросить ориентир",
-                                tint = Color.White
-                            )
+                            IconButton(
+                                onClick = { isEditingOverlay = !isEditingOverlay },
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(
+                                        if (isEditingOverlay) Color.White
+                                        else Color.Black.copy(alpha = 0.6f),
+                                        CircleShape
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = if (isEditingOverlay) {
+                                        "Выключить редактирование"
+                                    } else {
+                                        "Редактировать"
+                                    },
+                                    tint = if (isEditingOverlay) Color.Black else Color.White
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    overlayOffset = Offset.Zero
+                                    overlayScale = 1f
+                                    overlayRotation = 0f
+                                    overlayAlpha = 0.5f
+                                },
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Refresh,
+                                    contentDescription = "Сбросить ориентир",
+                                    tint = Color.White
+                                )
+                            }
                         }
                     }
                 }
