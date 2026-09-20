@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -36,11 +37,13 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -59,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import coil.compose.AsyncImage
 import com.example.myagent.ui.theme.MyAgentTheme
 import java.io.File
 
@@ -108,6 +113,8 @@ fun CameraScreen() {
 
     var isFrontCamera by remember { mutableStateOf(false) }
     var hasFrontCamera by remember { mutableStateOf(true) }
+    var lastPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    var viewerUri by remember { mutableStateOf<Uri?>(null) }
 
     LaunchedEffect(Unit) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -131,8 +138,15 @@ fun CameraScreen() {
                 ContextCompat.getMainExecutor(context),
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        Toast.makeText(context, "Фото сохранено в галерею", Toast.LENGTH_SHORT)
-                            .show()
+                        val savedUri = outputFileResults.savedUri
+                        if (savedUri != null) {
+                            lastPhotoUri = savedUri
+                            Toast.makeText(context, "Фото сохранено в галерею", Toast.LENGTH_SHORT)
+                                .show()
+                        } else {
+                            Toast.makeText(context, "Ошибка при сохранении фото", Toast.LENGTH_SHORT)
+                                .show()
+                        }
                     }
 
                     override fun onError(exception: ImageCaptureException) {
@@ -149,7 +163,10 @@ fun CameraScreen() {
                 ContextCompat.getMainExecutor(context),
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        saveFileToGallery(context, tempFile)
+                        val savedUri = saveFileToGallery(context, tempFile)
+                        if (savedUri != null) {
+                            lastPhotoUri = savedUri
+                        }
                     }
 
                     override fun onError(exception: ImageCaptureException) {
@@ -167,7 +184,28 @@ fun CameraScreen() {
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        if (allPermissionsGranted) {
+        val viewerPhotoUri = viewerUri
+        if (viewerPhotoUri != null) {
+            PhotoViewerScreen(
+                uri = viewerPhotoUri,
+                onBack = { viewerUri = null },
+                onDelete = {
+                    try {
+                        val deleted =
+                            context.contentResolver.delete(viewerPhotoUri, null, null)
+                        if (deleted > 0) {
+                            Toast.makeText(context, "Фото удалено", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Фото не найдено", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: SecurityException) {
+                        Toast.makeText(context, "Не удалось удалить фото", Toast.LENGTH_SHORT).show()
+                    }
+                    lastPhotoUri = null
+                    viewerUri = null
+                }
+            )
+        } else if (allPermissionsGranted) {
             val cameraSelector = if (isFrontCamera) {
                 CameraSelector.DEFAULT_FRONT_CAMERA
             } else {
@@ -178,6 +216,15 @@ fun CameraScreen() {
                     cameraSelector = cameraSelector,
                     onCameraReady = { imageCapture = it }
                 )
+                lastPhotoUri?.let { uri ->
+                    ThumbnailButton(
+                        uri = uri,
+                        onClick = { viewerUri = uri },
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 24.dp, bottom = 24.dp)
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -219,32 +266,35 @@ private fun createMediaStoreOutputOptions(context: Context): ImageCapture.Output
     ).build()
 }
 
-private fun saveFileToGallery(context: Context, file: File) {
+private fun saveFileToGallery(context: Context, file: File): Uri? {
+    var savedUri: Uri? = null
     try {
         val contentValues = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
         }
-        val uri = context.contentResolver.insert(
+        savedUri = context.contentResolver.insert(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             contentValues
         )
-        if (uri == null) {
+        if (savedUri == null) {
             Toast.makeText(context, "Ошибка при сохранении фото", Toast.LENGTH_SHORT).show()
         } else {
-            context.contentResolver.openOutputStream(uri)?.use { output ->
+            context.contentResolver.openOutputStream(savedUri)?.use { output ->
                 file.inputStream().use { input ->
                     input.copyTo(output)
                 }
             }
             Toast.makeText(context, "Фото сохранено в галерею", Toast.LENGTH_SHORT).show()
         }
-        file.delete()
     } catch (e: Exception) {
         Log.e("CameraPreview", "Ошибка при сохранении фото", e)
         Toast.makeText(context, "Ошибка при сохранении фото", Toast.LENGTH_SHORT).show()
+        savedUri = null
+    } finally {
         file.delete()
     }
+    return savedUri
 }
 
 @Composable
@@ -290,6 +340,65 @@ fun CameraPreview(
         factory = { previewView },
         modifier = Modifier.fillMaxSize()
     )
+}
+
+@Composable
+private fun ThumbnailButton(
+    uri: Uri,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(56.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .border(2.dp, Color.White, RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.5f))
+            .clickable(onClick = onClick)
+    ) {
+        AsyncImage(
+            model = uri,
+            contentDescription = "Последнее фото",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
+@Composable
+private fun PhotoViewerScreen(
+    uri: Uri,
+    onBack: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        AsyncImage(
+            model = uri,
+            contentDescription = "Снимок",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize()
+        )
+        TextButton(
+            onClick = onBack,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+        ) {
+            Text("Назад", color = Color.White)
+        }
+        TextButton(
+            onClick = onDelete,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        ) {
+            Text("Удалить", color = Color.White)
+        }
+    }
 }
 
 @Composable
