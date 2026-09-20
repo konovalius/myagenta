@@ -232,22 +232,21 @@ fun CameraScreen() {
                 )
                 referencePhotoUri?.let { uri ->
                     Box(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .fillMaxWidth(0.8f),
-                        contentAlignment = Alignment.TopEnd
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         AsyncImage(
                             model = uri,
                             contentDescription = "Ориентир",
-                            contentScale = ContentScale.Fit,
+                            contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .fillMaxSize()
                                 .alpha(0.5f)
                         )
                         IconButton(
                             onClick = { referencePhotoUri = null },
                             modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(16.dp)
                                 .size(32.dp)
                                 .background(Color.Black.copy(alpha = 0.6f), CircleShape)
                         ) {
