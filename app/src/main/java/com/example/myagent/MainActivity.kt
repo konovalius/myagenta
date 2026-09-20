@@ -34,6 +34,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FlipCameraAndroid
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -100,6 +104,20 @@ fun CameraScreen() {
         }
     }
 
+    var isFrontCamera by remember { mutableStateOf(false) }
+    var hasFrontCamera by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        cameraProviderFuture.addListener(
+            {
+                hasFrontCamera =
+                    cameraProviderFuture.get().hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)
+            },
+            ContextCompat.getMainExecutor(context)
+        )
+    }
+
     val capturePhoto = {
         val capture = imageCapture
         if (capture == null) {
@@ -148,8 +166,36 @@ fun CameraScreen() {
             .background(Color.Black)
     ) {
         if (allPermissionsGranted) {
+            val cameraSelector = if (isFrontCamera) {
+                CameraSelector.DEFAULT_FRONT_CAMERA
+            } else {
+                CameraSelector.DEFAULT_BACK_CAMERA
+            }
             Box(modifier = Modifier.fillMaxSize()) {
-                CameraPreview(onCameraReady = { imageCapture = it })
+                CameraPreview(
+                    cameraSelector = cameraSelector,
+                    onCameraReady = { imageCapture = it }
+                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.4f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    IconButton(
+                        onClick = { isFrontCamera = !isFrontCamera },
+                        enabled = hasFrontCamera
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.FlipCameraAndroid,
+                            contentDescription = "Переключить камеру",
+                            tint = if (hasFrontCamera) Color.White else Color.Gray
+                        )
+                    }
+                }
                 ShutterButton(
                     onClick = capturePhoto,
                     modifier = Modifier
@@ -213,6 +259,7 @@ private fun saveFileToGallery(context: Context, file: File) {
 
 @Composable
 fun CameraPreview(
+    cameraSelector: CameraSelector,
     onCameraReady: (ImageCapture) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -224,7 +271,7 @@ fun CameraPreview(
     }
     val imageCapture = remember { ImageCapture.Builder().build() }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(cameraSelector) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener(
             {
@@ -236,7 +283,7 @@ fun CameraPreview(
                     cameraProvider.unbindAll()
                     cameraProvider.bindToLifecycle(
                         lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
+                        cameraSelector,
                         preview,
                         imageCapture
                     )
