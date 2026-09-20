@@ -87,9 +87,6 @@ fun CameraScreen(initialReferenceUri: Uri? = null) {
     val requiredPermissions = remember {
         buildList {
             add(Manifest.permission.CAMERA)
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
         }
     }
     var allPermissionsGranted by remember {
@@ -145,7 +142,7 @@ fun CameraScreen(initialReferenceUri: Uri? = null) {
         val capture = imageCapture
         if (capture == null) {
             Toast.makeText(context, "Камера ещё не готова", Toast.LENGTH_SHORT).show()
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        } else {
             val outputOptions = createMediaStoreOutputOptions(context)
             capture.takePicture(
                 outputOptions,
@@ -166,27 +163,6 @@ fun CameraScreen(initialReferenceUri: Uri? = null) {
                     override fun onError(exception: ImageCaptureException) {
                         Toast.makeText(context, "Ошибка при сохранении фото", Toast.LENGTH_SHORT)
                             .show()
-                    }
-                }
-            )
-        } else {
-            val tempFile = File(context.cacheDir, "IMG_${System.currentTimeMillis()}.jpg")
-            val outputOptions = ImageCapture.OutputFileOptions.Builder(tempFile).build()
-            capture.takePicture(
-                outputOptions,
-                ContextCompat.getMainExecutor(context),
-                object : ImageCapture.OnImageSavedCallback {
-                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        val savedUri = saveFileToGallery(context, tempFile)
-                        if (savedUri != null) {
-                            lastPhotoUri = savedUri
-                        }
-                    }
-
-                    override fun onError(exception: ImageCaptureException) {
-                        Toast.makeText(context, "Ошибка при сохранении фото", Toast.LENGTH_SHORT)
-                            .show()
-                        tempFile.delete()
                     }
                 }
             )
@@ -419,37 +395,6 @@ private fun createMediaStoreOutputOptions(context: Context): ImageCapture.Output
         MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
         contentValues
     ).build()
-}
-
-private fun saveFileToGallery(context: Context, file: File): Uri? {
-    var savedUri: Uri? = null
-    try {
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-        }
-        savedUri = context.contentResolver.insert(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            contentValues
-        )
-        if (savedUri == null) {
-            Toast.makeText(context, "Ошибка при сохранении фото", Toast.LENGTH_SHORT).show()
-        } else {
-            context.contentResolver.openOutputStream(savedUri)?.use { output ->
-                file.inputStream().use { input ->
-                    input.copyTo(output)
-                }
-            }
-            Toast.makeText(context, "Фото сохранено в галерею", Toast.LENGTH_SHORT).show()
-        }
-    } catch (e: Exception) {
-        Log.e("CameraPreview", "Ошибка при сохранении фото", e)
-        Toast.makeText(context, "Ошибка при сохранении фото", Toast.LENGTH_SHORT).show()
-        savedUri = null
-    } finally {
-        file.delete()
-    }
-    return savedUri
 }
 
 @Composable
