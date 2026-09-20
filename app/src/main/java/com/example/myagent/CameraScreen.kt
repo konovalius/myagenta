@@ -25,7 +25,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -249,20 +248,24 @@ fun CameraScreen(initialReferenceUri: Uri? = null) {
                                     scaleY = overlayScale
                                     rotationZ = overlayRotation
                                 }
-                                .pointerInput(isEditingOverlay) {
+                                .then(
                                     if (isEditingOverlay) {
-                                        detectTransformGestures(panZoomLock = true) { _, pan, zoom, rotation ->
-                                            overlayOffset += pan
-                                            overlayScale = (overlayScale * zoom).coerceIn(0.1f, 10f)
-                                            overlayRotation += rotation
+                                        Modifier.pointerInput(isEditingOverlay) {
+                                            detectTransformGestures(panZoomLock = true) {
+                                                    _,
+                                                    pan,
+                                                    zoom,
+                                                    rotation ->
+                                                overlayOffset += pan
+                                                overlayScale =
+                                                    (overlayScale * zoom).coerceIn(0.1f, 10f)
+                                                overlayRotation += rotation
+                                            }
                                         }
                                     } else {
-                                        detectDragGestures { change, dragAmount ->
-                                            change.consume()
-                                            overlayOffset += dragAmount
-                                        }
+                                        Modifier
                                     }
-                                }
+                                )
                         )
                         IconButton(
                             onClick = { referencePhotoUri = null },
