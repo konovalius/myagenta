@@ -29,6 +29,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -46,6 +47,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
@@ -62,9 +64,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
@@ -127,6 +131,9 @@ fun CameraScreen() {
     var viewerUri by remember { mutableStateOf<Uri?>(null) }
     var referencePhotoUri by remember { mutableStateOf<Uri?>(null) }
     var overlayAlpha by remember { mutableStateOf(0.5f) }
+    var overlayOffset by remember { mutableStateOf(Offset.Zero) }
+    var overlayScale by remember { mutableStateOf(1f) }
+    var overlayRotation by remember { mutableStateOf(0f) }
 
     val pickReferenceLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -247,6 +254,20 @@ fun CameraScreen() {
                             modifier = Modifier
                                 .fillMaxSize()
                                 .alpha(overlayAlpha)
+                                .graphicsLayer {
+                                    translationX = overlayOffset.x
+                                    translationY = overlayOffset.y
+                                    scaleX = overlayScale
+                                    scaleY = overlayScale
+                                    rotationZ = overlayRotation
+                                }
+                                .pointerInput(Unit) {
+                                    detectTransformGestures { _, pan, zoom, rotation ->
+                                        overlayOffset += pan
+                                        overlayScale = (overlayScale * zoom).coerceIn(0.1f, 10f)
+                                        overlayRotation += rotation
+                                    }
+                                }
                         )
                         IconButton(
                             onClick = { referencePhotoUri = null },
@@ -259,6 +280,25 @@ fun CameraScreen() {
                             Icon(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = "Убрать ориентир",
+                                tint = Color.White
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                overlayOffset = Offset.Zero
+                                overlayScale = 1f
+                                overlayRotation = 0f
+                                overlayAlpha = 0.5f
+                            },
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(16.dp)
+                                .size(32.dp)
+                                .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Refresh,
+                                contentDescription = "Сбросить ориентир",
                                 tint = Color.White
                             )
                         }
