@@ -31,6 +31,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -178,30 +180,18 @@ fun CameraScreen() {
                 )
                 Box(
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.4f)),
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    IconButton(
+                    ShutterButton(onClick = capturePhoto)
+                    CameraSwitchButton(
                         onClick = { isFrontCamera = !isFrontCamera },
-                        enabled = hasFrontCamera
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.FlipCameraAndroid,
-                            contentDescription = "Переключить камеру",
-                            tint = if (hasFrontCamera) Color.White else Color.Gray
-                        )
-                    }
+                        enabled = hasFrontCamera,
+                        modifier = Modifier.offset(x = 68.dp)
+                    )
                 }
-                ShutterButton(
-                    onClick = capturePhoto,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 24.dp)
-                )
             }
         } else {
             Text(
@@ -300,6 +290,33 @@ fun CameraPreview(
         factory = { previewView },
         modifier = Modifier.fillMaxSize()
     )
+}
+
+@Composable
+private fun CameraSwitchButton(
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.4f)),
+        contentAlignment = Alignment.Center
+    ) {
+        IconButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier.size(48.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.FlipCameraAndroid,
+                contentDescription = "Переключить камеру",
+                tint = if (enabled) Color.White else Color.Gray
+            )
+        }
+    }
 }
 
 @Composable
