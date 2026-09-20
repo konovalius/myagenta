@@ -17,6 +17,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -74,7 +77,15 @@ fun CameraScreen() {
             .background(Color.Black)
     ) {
         if (hasCameraPermission) {
-            CameraPreview()
+            Box(modifier = Modifier.fillMaxSize()) {
+                CameraPreview()
+                ShutterButton(
+                    onClick = {},
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 48.dp)
+                )
+            }
         } else {
             Text(
                 text = "Доступ к камере не разрешён. Пожалуйста, разрешите доступ к камере в настройках приложения.",
@@ -94,7 +105,7 @@ fun CameraPreview() {
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember {
         PreviewView(context).apply {
-            scaleType = PreviewView.ScaleType.FIT_CENTER
+            scaleType = PreviewView.ScaleType.FILL_CENTER
         }
     }
 
@@ -125,4 +136,24 @@ fun CameraPreview() {
         factory = { previewView },
         modifier = Modifier.fillMaxSize()
     )
+}
+
+@Composable
+private fun ShutterButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = modifier.size(72.dp),
+        shape = CircleShape,
+        containerColor = Color.White,
+        contentColor = Color.White
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .background(Color.Black, CircleShape)
+        )
+    }
 }
