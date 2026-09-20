@@ -15,6 +15,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -39,7 +40,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlipCameraAndroid
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -52,9 +55,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
@@ -115,6 +120,15 @@ fun CameraScreen() {
     var hasFrontCamera by remember { mutableStateOf(true) }
     var lastPhotoUri by remember { mutableStateOf<Uri?>(null) }
     var viewerUri by remember { mutableStateOf<Uri?>(null) }
+    var referencePhotoUri by remember { mutableStateOf<Uri?>(null) }
+
+    val pickReferenceLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            referencePhotoUri = uri
+        }
+    }
 
     LaunchedEffect(Unit) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -216,6 +230,35 @@ fun CameraScreen() {
                     cameraSelector = cameraSelector,
                     onCameraReady = { imageCapture = it }
                 )
+                referencePhotoUri?.let { uri ->
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxWidth(0.8f),
+                        contentAlignment = Alignment.TopEnd
+                    ) {
+                        AsyncImage(
+                            model = uri,
+                            contentDescription = "Ориентир",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .alpha(0.5f)
+                        )
+                        IconButton(
+                            onClick = { referencePhotoUri = null },
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = "Убрать ориентир",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                }
                 lastPhotoUri?.let { uri ->
                     ThumbnailButton(
                         uri = uri,
@@ -232,10 +275,25 @@ fun CameraScreen() {
                         .padding(bottom = 24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    ShutterButton(onClick = capturePhoto)
-                    CameraSwitchButton(
-                        onClick = { isFrontCamera = !isFrontCamera },
+                    CircularIconButton(
+                        icon = Icons.Filled.FlipCameraAndroid,
+                        contentDescription = "Переключить камеру",
                         enabled = hasFrontCamera,
+                        onClick = { isFrontCamera = !isFrontCamera },
+                        modifier = Modifier.offset(x = (-68).dp)
+                    )
+                    ShutterButton(onClick = capturePhoto)
+                    CircularIconButton(
+                        icon = Icons.Filled.PhotoLibrary,
+                        contentDescription = "Выбрать ориентир",
+                        enabled = true,
+                        onClick = {
+                            pickReferenceLauncher.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        },
                         modifier = Modifier.offset(x = 68.dp)
                     )
                 }
@@ -402,7 +460,9 @@ private fun PhotoViewerScreen(
 }
 
 @Composable
-private fun CameraSwitchButton(
+private fun CircularIconButton(
+    icon: ImageVector,
+    contentDescription: String,
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -420,8 +480,8 @@ private fun CameraSwitchButton(
             modifier = Modifier.size(48.dp)
         ) {
             Icon(
-                imageVector = Icons.Filled.FlipCameraAndroid,
-                contentDescription = "Переключить камеру",
+                imageVector = icon,
+                contentDescription = contentDescription,
                 tint = if (enabled) Color.White else Color.Gray
             )
         }
