@@ -34,17 +34,21 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlipCameraAndroid
+import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -57,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -121,6 +126,7 @@ fun CameraScreen() {
     var lastPhotoUri by remember { mutableStateOf<Uri?>(null) }
     var viewerUri by remember { mutableStateOf<Uri?>(null) }
     var referencePhotoUri by remember { mutableStateOf<Uri?>(null) }
+    var overlayAlpha by remember { mutableStateOf(0.5f) }
 
     val pickReferenceLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -240,7 +246,7 @@ fun CameraScreen() {
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxSize()
-                                .alpha(0.5f)
+                                .alpha(overlayAlpha)
                         )
                         IconButton(
                             onClick = { referencePhotoUri = null },
@@ -256,6 +262,35 @@ fun CameraScreen() {
                                 tint = Color.White
                             )
                         }
+                    }
+                }
+                if (referencePhotoUri != null) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 12.dp)
+                            .width(56.dp)
+                            .height(220.dp)
+                            .clip(RoundedCornerShape(28.dp))
+                            .background(Color.Black.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Slider(
+                            value = overlayAlpha,
+                            onValueChange = { overlayAlpha = it },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .rotate(-90f)
+                        )
+                        Icon(
+                            imageVector = Icons.Filled.Opacity,
+                            contentDescription = "Прозрачность ориентира",
+                            tint = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(4.dp)
+                                .size(20.dp)
+                        )
                     }
                 }
                 lastPhotoUri?.let { uri ->
