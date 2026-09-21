@@ -70,7 +70,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "MyAgent",
+                text = "Timelapse",
                 color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.displayMedium
             )
@@ -187,7 +187,7 @@ private fun HomeEntryCard(
                 }
                 Spacer(Modifier.width(16.dp))
                 Column {
-                    Text(title, color = MaterialTheme.colorScheme.onSurface, fontSize = 17.sp)
+                    Text(title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(2.dp))
                     Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 }
