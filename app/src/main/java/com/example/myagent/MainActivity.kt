@@ -28,8 +28,8 @@ class MainActivity : ComponentActivity() {
             }
             MyAgentTheme(darkTheme = darkTheme) {
                 AppNavHost(
-                    themeMode = themeMode,
-                    onThemeModeChange = themeViewModel::setThemeMode
+                    isDark = darkTheme,
+                    onThemeToggle = { themeViewModel.toggleTheme(darkTheme) }
                 )
             }
         }

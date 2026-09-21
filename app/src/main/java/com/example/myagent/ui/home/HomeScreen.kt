@@ -25,9 +25,6 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,12 +35,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myagent.ui.theme.ThemeMode
+import com.example.myagent.ui.theme.ThemeToggleSwitch
 
 @Composable
 fun HomeScreen(
-    themeMode: ThemeMode,
-    onThemeModeChange: (ThemeMode) -> Unit,
+    isDark: Boolean,
+    onThemeToggle: () -> Unit,
     onOpenMap: () -> Unit,
     onOpenImage: (Uri) -> Unit,
     onOpenOnboarding: () -> Unit,
@@ -115,46 +112,22 @@ fun HomeScreen(
             )
         }
 
-        ThemeSelector(
-            current = themeMode,
-            onSelect = onThemeModeChange,
+        Row(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-        )
-    }
-}
-
-@Composable
-private fun ThemeSelector(
-    current: ThemeMode,
-    onSelect: (ThemeMode) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = "Тема",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 12.sp,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 4.dp, top = 4.dp)
-        )
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier.align(Alignment.TopEnd)
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            ThemeMode.entries.forEachIndexed { index, mode ->
-                SegmentedButton(
-                    selected = current == mode,
-                    onClick = { onSelect(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(
-                        index = index,
-                        count = ThemeMode.entries.size
-                    )
-                ) {
-                    Text(mode.label)
-                }
-            }
+            Text(
+                text = "Тема",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp
+            )
+            Spacer(Modifier.width(12.dp))
+            ThemeToggleSwitch(
+                isDark = isDark,
+                onToggle = onThemeToggle
+            )
         }
     }
 }
