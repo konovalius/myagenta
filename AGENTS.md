@@ -8,14 +8,18 @@
 
 ## Стек — использовать только это
 
-- Kotlin + Jetpack Compose
-- CameraX (androidx.camera:camera-camera2, camera-lifecycle, camera-video, camera-view)
-- Room (androidx.room:room-runtime, room-ktx, room-compiler)
-- osmdroid (org.osmdroid:osmdroid-android)
-- Coil (io.coil-kt:coil-compose)
-- Hilt (com.google.dagger:hilt-android)
-- FusedLocationProviderClient (com.google.android.gms:play-services-location)
-- minSdk = 29, targetSdk = 36, compileSdk = 37
+- Уже используется:
+  - Kotlin + Jetpack Compose
+  - CameraX 1.6.2 (androidx.camera:camera-camera2, camera-lifecycle, camera-video, camera-view)
+  - Coil 2.x (io.coil-kt:coil-compose, 2.7.0). Не обновлять до Coil 3 без явного указания
+  - Hilt 2.60.1 (com.google.dagger:hilt-android)
+  - KSP
+  - Navigation Compose 2.8.9
+- Запланировано:
+  - Room 2.8.5 (androidx.room:room-runtime, room-ktx, room-compiler)
+  - osmdroid (org.osmdroid:osmdroid-android)
+  - FusedLocationProviderClient (com.google.android.gms:play-services-location)
+- minSdk = 29, targetSdk = 36, compileSdk = 37 (значения не обязаны совпадать)
 
 ## Запрещено
 
@@ -23,6 +27,7 @@
 - Не использовать абсолютные пути как первичные идентификаторы в БД
 - Не добавлять новые библиотеки без явного указания
 - Не менять minSdk, targetSdk, compileSdk без явного указания
+- Не менять координаты библиотек (io.coil-kt → io.coil-kt.coil3) без явного указания
 - Не трогать файлы, не относящиеся к текущей задаче
 - Не генерировать несуществующие API и классы
 
