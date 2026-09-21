@@ -13,6 +13,7 @@ coil = "2.7.0"
 navigationCompose = "2.8.9"
 room = "2.8.5"
 hilt = "2.60.1"
+hiltNavigationCompose = "1.2.0"
 osmdroid = "6.1.20"
 playServicesLocation = "21.4.0"
 ksp = "2.2.10-2.0.2"
@@ -44,6 +45,7 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 osmdroid-android = { group = "org.osmdroid", name = "osmdroid-android", version.ref = "osmdroid" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }

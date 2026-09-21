@@ -7,6 +7,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.myagent.ui.camera.CameraScreen
+import com.example.myagent.ui.home.HomeScreen
+import com.example.myagent.ui.map.MapEntryScreen
+import com.example.myagent.ui.onboarding.OnboardingScreen
 
 object AppRoutes {
     const val HOME = "home"

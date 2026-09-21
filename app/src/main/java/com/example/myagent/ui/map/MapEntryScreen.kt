@@ -1,4 +1,4 @@
-package com.example.myagent
+package com.example.myagent.ui.map
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

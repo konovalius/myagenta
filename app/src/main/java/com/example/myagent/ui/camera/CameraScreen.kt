@@ -1,13 +1,8 @@
-package com.example.myagent
+package com.example.myagent.ui.camera
 
 import android.Manifest
-import android.content.ContentValues
-import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
-import android.os.Environment
-import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,7 +10,6 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -54,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,12 +70,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
-import java.io.File
 
 @Composable
 fun CameraScreen(initialReferenceUri: Uri? = null) {
+    val viewModel: CameraViewModel = hiltViewModel()
     val context = LocalContext.current
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
 
@@ -110,7 +106,7 @@ fun CameraScreen(initialReferenceUri: Uri? = null) {
 
     var isFrontCamera by remember { mutableStateOf(false) }
     var hasFrontCamera by remember { mutableStateOf(true) }
-    var lastPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
     var viewerUri by remember { mutableStateOf<Uri?>(null) }
     var referencePhotoUri by remember(initialReferenceUri) { mutableStateOf(initialReferenceUri) }
     var overlayAlpha by remember { mutableStateOf(0.5f) }
@@ -143,29 +139,7 @@ fun CameraScreen(initialReferenceUri: Uri? = null) {
         if (capture == null) {
             Toast.makeText(context, "Камера ещё не готова", Toast.LENGTH_SHORT).show()
         } else {
-            val outputOptions = createMediaStoreOutputOptions(context)
-            capture.takePicture(
-                outputOptions,
-                ContextCompat.getMainExecutor(context),
-                object : ImageCapture.OnImageSavedCallback {
-                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        val savedUri = outputFileResults.savedUri
-                        if (savedUri != null) {
-                            lastPhotoUri = savedUri
-                            Toast.makeText(context, "Фото сохранено в галерею", Toast.LENGTH_SHORT)
-                                .show()
-                        } else {
-                            Toast.makeText(context, "Ошибка при сохранении фото", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                    }
-
-                    override fun onError(exception: ImageCaptureException) {
-                        Toast.makeText(context, "Ошибка при сохранении фото", Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                }
-            )
+            viewModel.capturePhoto(capture, context)
         }
     }
 
@@ -180,18 +154,12 @@ fun CameraScreen(initialReferenceUri: Uri? = null) {
                 uri = viewerPhotoUri,
                 onBack = { viewerUri = null },
                 onDelete = {
-                    try {
-                        val deleted =
-                            context.contentResolver.delete(viewerPhotoUri, null, null)
-                        if (deleted > 0) {
-                            Toast.makeText(context, "Фото удалено", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(context, "Фото не найдено", Toast.LENGTH_SHORT).show()
-                        }
-                    } catch (e: SecurityException) {
-                        Toast.makeText(context, "Не удалось удалить фото", Toast.LENGTH_SHORT).show()
+                    val deleted = viewModel.deleteLastPhoto()
+                    if (deleted) {
+                        Toast.makeText(context, "Фото удалено", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Фото не найдено", Toast.LENGTH_SHORT).show()
                     }
-                    lastPhotoUri = null
                     viewerUri = null
                 }
             )
@@ -384,19 +352,6 @@ fun CameraScreen(initialReferenceUri: Uri? = null) {
     }
 }
 
-private fun createMediaStoreOutputOptions(context: Context): ImageCapture.OutputFileOptions {
-    val contentValues = ContentValues().apply {
-        put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_${System.currentTimeMillis()}.jpg")
-        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-        put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
-    }
-    return ImageCapture.OutputFileOptions.Builder(
-        context.contentResolver,
-        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        contentValues
-    ).build()
-}
-
 @Composable
 fun CameraPreview(
     cameraSelector: CameraSelector,
@@ -462,42 +417,6 @@ private fun ThumbnailButton(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-    }
-}
-
-@Composable
-private fun PhotoViewerScreen(
-    uri: Uri,
-    onBack: () -> Unit,
-    onDelete: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        AsyncImage(
-            model = uri,
-            contentDescription = "Снимок",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize()
-        )
-        TextButton(
-            onClick = onBack,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-        ) {
-            Text("Назад", color = Color.White)
-        }
-        TextButton(
-            onClick = onDelete,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        ) {
-            Text("Удалить", color = Color.White)
-        }
     }
 }
 

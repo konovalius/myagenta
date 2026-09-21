@@ -15,7 +15,7 @@
 - Coil (io.coil-kt:coil-compose)
 - Hilt (com.google.dagger:hilt-android)
 - FusedLocationProviderClient (com.google.android.gms:play-services-location)
-- minSdk = 29, targetSdk = 36, compileSdk = 36
+- minSdk = 29, targetSdk = 36, compileSdk = 37
 
 ## Запрещено
 
@@ -36,10 +36,12 @@
 
 ## Хранение файлов
 
-- Рабочие файлы: app-specific storage (getExternalFilesDir или filesDir)
-- Имя файла на диске: uuid.jpg / uuid.mp4 / uuid.txt
-- При экспорте: копировать файлы в MediaStore (Pictures/AppName/...) или в место, выбранное пользователем через SAF
-- В EXIF каждого фото записывать GPS-координаты и дату
+- Фото: системная галерея, MediaStore, альбом Pictures/MyAgent
+- Структура объектов существует только в БД Room, на диске структуры нет
+- Имя файла: yyyy-MM-dd_HH-mm-ss; при наличии геометки — <геометка>_yyyy-MM-dd_HH-mm-ss
+- Слэши и двоеточия в имени файла запрещены
+- Удаление фото — через ContentResolver.delete(uri), а не File.delete()
+- TODO: EXIF — следующий шаг (GPS-координаты и дату в каждый снимок пока НЕ пишем, не блокирует текущий коммит)
 
 ## После каждого шага
 

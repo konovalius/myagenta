@@ -52,6 +52,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.osmdroid.android)
     implementation(libs.play.services.location)
     implementation(libs.coil.compose)

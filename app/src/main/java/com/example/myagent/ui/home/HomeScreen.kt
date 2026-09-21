@@ -1,4 +1,4 @@
-package com.example.myagent
+package com.example.myagent.ui.home
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
