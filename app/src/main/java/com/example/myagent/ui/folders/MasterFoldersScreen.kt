@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -110,7 +111,8 @@ fun MasterFoldersScreen(
             TrailText(
                 text = "Мастер-папки",
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
+                isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
             )
         }
     }

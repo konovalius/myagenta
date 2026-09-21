@@ -26,6 +26,7 @@ fun TrailText(
     color: Color? = null,
     trailLength: Int = 150,
     trailColor: Color? = null,
+    isDarkTheme: Boolean? = null,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
@@ -40,11 +41,13 @@ fun TrailText(
             overflow = TextOverflow.Clip
         )
     }
+    val dark = isDarkTheme
+        ?: (MaterialTheme.colorScheme.background.luminance() < 0.5f)
     val resolvedTrailColor = trailColor
-        ?: if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
-            Color.White.copy(alpha = 0.15f)
+        ?: if (dark) {
+            Color.White.copy(alpha = 0.05f)
         } else {
-            Color.Black.copy(alpha = 0.15f)
+            Color.Black.copy(alpha = 0.05f)
         }
     val mainColor = color ?: style.color ?: MaterialTheme.colorScheme.onBackground
     val drawSize = Size(layout.size.width.toFloat(), layout.size.height.toFloat())
