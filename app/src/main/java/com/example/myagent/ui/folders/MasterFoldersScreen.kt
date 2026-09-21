@@ -24,6 +24,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -58,12 +58,12 @@ fun MasterFoldersScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF101418))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         if (folders.isEmpty()) {
             Text(
                 text = "Мастер-папок пока нет",
-                color = Color(0xFF9AA3AF),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.align(Alignment.Center)
@@ -102,14 +102,14 @@ fun MasterFoldersScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Назад",
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
             Spacer(Modifier.width(8.dp))
             Text(
                 text = "Мастер-папки",
-                color = Color.White,
-                fontSize = 22.sp
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.headlineMedium
             )
         }
     }
@@ -197,7 +197,7 @@ private fun MasterFolderCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF1C2128), RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
             .combinedClickable(
                 onClick = {},
                 onLongClick = onLongClick
@@ -208,18 +208,18 @@ private fun MasterFolderCard(
         Box(
             modifier = Modifier
                 .size(44.dp)
-                .background(Color(0xFF2B313B), RoundedCornerShape(12.dp)),
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = typeLabel, tint = Color.White)
+            Icon(icon, contentDescription = typeLabel, tint = MaterialTheme.colorScheme.onSurface)
         }
         Spacer(Modifier.width(16.dp))
         Column {
-            Text(folder.name, color = Color.White, fontSize = 16.sp)
+            Text(folder.name, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
             Spacer(Modifier.size(4.dp))
             Text(
                 text = "$typeLabel • $dateText",
-                color = Color(0xFF9AA3AF),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp
             )
         }

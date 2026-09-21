@@ -24,6 +24,10 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -34,9 +38,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myagent.ui.theme.ThemeMode
 
 @Composable
 fun HomeScreen(
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
     onOpenMap: () -> Unit,
     onOpenImage: (Uri) -> Unit,
     onOpenOnboarding: () -> Unit,
@@ -53,7 +60,7 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF101418))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -64,13 +71,13 @@ fun HomeScreen(
         ) {
             Text(
                 text = "MyAgent",
-                color = Color.White,
-                fontSize = 40.sp
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.displayMedium
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = "Выберите способ входа",
-                color = Color(0xFF9AA3AF),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center
             )
@@ -107,6 +114,48 @@ fun HomeScreen(
                 onClick = onOpenOnboarding
             )
         }
+
+        ThemeSelector(
+            current = themeMode,
+            onSelect = onThemeModeChange,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+        )
+    }
+}
+
+@Composable
+private fun ThemeSelector(
+    current: ThemeMode,
+    onSelect: (ThemeMode) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = "Тема",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 4.dp, top = 4.dp)
+        )
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier.align(Alignment.TopEnd)
+        ) {
+            ThemeMode.entries.forEachIndexed { index, mode ->
+                SegmentedButton(
+                    selected = current == mode,
+                    onClick = { onSelect(mode) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = ThemeMode.entries.size
+                    )
+                ) {
+                    Text(mode.label)
+                }
+            }
+        }
     }
 }
 
@@ -122,7 +171,7 @@ private fun HomeEntryCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFF1C2128))
+            .background(MaterialTheme.colorScheme.surface)
             .clickable(onClick = onClick)
             .padding(20.dp)
     ) {
@@ -131,26 +180,26 @@ private fun HomeEntryCard(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .background(Color(0xFF2B313B), RoundedCornerShape(12.dp)),
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icon, contentDescription = title, tint = Color.White)
+                    Icon(icon, contentDescription = title, tint = MaterialTheme.colorScheme.onSurface)
                 }
                 Spacer(Modifier.width(16.dp))
                 Column {
-                    Text(title, color = Color.White, fontSize = 17.sp)
+                    Text(title, color = MaterialTheme.colorScheme.onSurface, fontSize = 17.sp)
                     Spacer(Modifier.height(2.dp))
-                    Text(subtitle, color = Color(0xFF9AA3AF), fontSize = 13.sp)
+                    Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 }
             }
             badge?.let {
                 Text(
                     text = it,
-                    color = Color(0xFF9AA3AF),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .background(Color(0xFF2B313B), RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 )
             }

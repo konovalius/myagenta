@@ -12,6 +12,7 @@ import com.example.myagent.ui.folders.MasterFoldersScreen
 import com.example.myagent.ui.home.HomeScreen
 import com.example.myagent.ui.map.MapScreen
 import com.example.myagent.ui.onboarding.OnboardingScreen
+import com.example.myagent.ui.theme.ThemeMode
 
 object AppRoutes {
     const val HOME = "home"
@@ -27,7 +28,10 @@ object AppRoutes {
 }
 
 @Composable
-fun AppNavHost() {
+fun AppNavHost(
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit
+) {
     val navController = rememberNavController()
     NavHost(
         navController = navController,
@@ -35,6 +39,8 @@ fun AppNavHost() {
     ) {
         composable(AppRoutes.HOME) {
             HomeScreen(
+                themeMode = themeMode,
+                onThemeModeChange = onThemeModeChange,
                 onOpenMap = { navController.navigate(AppRoutes.MAP) },
                 onOpenImage = { uri -> navController.navigate(AppRoutes.camera(uri)) },
                 onOpenOnboarding = { navController.navigate(AppRoutes.ONBOARDING) },
