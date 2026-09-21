@@ -19,16 +19,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import android.util.Log
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.MapView
 
 @Composable
 fun MapScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val myTiles = remember {
+        XYTileSource(
+            "MyAgentTiles",
+            0,
+            19,
+            256,
+            ".png",
+            arrayOf(
+                "https://hefty-mule-2745.konovalius.deno.net/"
+            ),
+            "© OpenStreetMap"
+        )
+    }
     val mapView = remember {
+        Log.i("OSM", "source=${myTiles.name()} url=${myTiles.getTileURLString(MapTileIndex.getTileIndex(15, 19807, 10238))}")
         MapView(context).apply {
-            setTileSource(TileSourceFactory.MAPNIK)
+            setTileSource(myTiles)
             setMultiTouchControls(true)
             controller.setZoom(15.0)
             controller.setCenter(GeoPoint(55.7558, 37.6173))

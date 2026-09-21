@@ -12,7 +12,7 @@ class MyAgentApp : Application() {
         super.onCreate()
         Configuration.getInstance().apply {
             load(this@MyAgentApp, getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
-            userAgentValue = BuildConfig.APPLICATION_ID.ifBlank { this@MyAgentApp.packageName }
+            userAgentValue = "MyAgent/1.0 (Android; ${BuildConfig.APPLICATION_ID})"
             Log.d("OSM", "UserAgent = $userAgentValue")
         }
     }
