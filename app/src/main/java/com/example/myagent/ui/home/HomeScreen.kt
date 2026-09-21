@@ -76,7 +76,7 @@ fun HomeScreen(
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(32.dp))
             HomeEntryCard(
                 icon = Icons.Filled.Map,
                 title = "Войти через карту",
