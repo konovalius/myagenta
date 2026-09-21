@@ -2,6 +2,7 @@ package com.example.myagent
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import dagger.hilt.android.HiltAndroidApp
 import org.osmdroid.config.Configuration
 
@@ -11,7 +12,8 @@ class MyAgentApp : Application() {
         super.onCreate()
         Configuration.getInstance().apply {
             load(this@MyAgentApp, getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
-            userAgentValue = BuildConfig.APPLICATION_ID
+            userAgentValue = BuildConfig.APPLICATION_ID.ifBlank { this@MyAgentApp.packageName }
+            Log.d("OSM", "UserAgent = $userAgentValue")
         }
     }
 }

@@ -77,7 +77,6 @@ fun HomeScreen(
                 icon = Icons.Filled.Map,
                 title = "Войти через карту",
                 subtitle = "По геолокации",
-                badge = "скоро",
                 onClick = onOpenMap
             )
             Spacer(Modifier.height(16.dp))
