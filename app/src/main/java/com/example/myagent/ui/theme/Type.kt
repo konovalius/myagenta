@@ -16,9 +16,9 @@ val SmoochSans = FontFamily(
 )
 
 private val headerShadow = Shadow(
-    color = Color.Black.copy(alpha = 0.25f),
-    offset = Offset(-3f, 3f),
-    blurRadius = 2f
+    color = Color.Black.copy(alpha = 0.15f),
+    offset = Offset(-8f, 8f),
+    blurRadius = 6f
 )
 
 val Typography = Typography(

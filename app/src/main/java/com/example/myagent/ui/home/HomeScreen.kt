@@ -35,12 +35,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myagent.ui.theme.ThemeToggleSwitch
 
 @Composable
 fun HomeScreen(
-    isDark: Boolean,
-    onThemeToggle: () -> Unit,
     onOpenMap: () -> Unit,
     onOpenImage: (Uri) -> Unit,
     onOpenOnboarding: () -> Unit,
@@ -109,24 +106,6 @@ fun HomeScreen(
                 title = "Войти в первый раз",
                 subtitle = "Обучение и настройка",
                 onClick = onOpenOnboarding
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Тема",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp
-            )
-            Spacer(Modifier.width(12.dp))
-            ThemeToggleSwitch(
-                isDark = isDark,
-                onToggle = onThemeToggle
             )
         }
     }
