@@ -9,14 +9,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.myagent.ui.camera.CameraScreen
 import com.example.myagent.ui.home.HomeScreen
-import com.example.myagent.ui.map.MapEntryScreen
+import com.example.myagent.ui.map.MapScreen
 import com.example.myagent.ui.onboarding.OnboardingScreen
 
 object AppRoutes {
     const val HOME = "home"
     const val CAMERA = "camera?uri={uri}"
     const val ONBOARDING = "onboarding"
-    const val MAP_ENTRY = "map-entry"
+    const val MAP = "map"
 
     fun camera(uri: Uri?): String {
         val encoded = uri?.let { Uri.encode(it.toString()) }
@@ -33,7 +33,7 @@ fun AppNavHost() {
     ) {
         composable(AppRoutes.HOME) {
             HomeScreen(
-                onOpenMap = { navController.navigate(AppRoutes.MAP_ENTRY) },
+                onOpenMap = { navController.navigate(AppRoutes.MAP) },
                 onOpenImage = { uri -> navController.navigate(AppRoutes.camera(uri)) },
                 onOpenOnboarding = { navController.navigate(AppRoutes.ONBOARDING) }
             )
@@ -63,8 +63,8 @@ fun AppNavHost() {
                 }
             )
         }
-        composable(AppRoutes.MAP_ENTRY) {
-            MapEntryScreen(onBack = { navController.popBackStack() })
+        composable(AppRoutes.MAP) {
+            MapScreen(onBack = { navController.popBackStack() })
         }
     }
 }

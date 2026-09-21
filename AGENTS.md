@@ -15,9 +15,9 @@
   - Hilt 2.60.1 (com.google.dagger:hilt-android)
   - KSP
   - Navigation Compose 2.8.9
+  - osmdroid (org.osmdroid:osmdroid-android, 6.1.20)
 - Запланировано:
   - Room 2.8.5 (androidx.room:room-runtime, room-ktx, room-compiler)
-  - osmdroid (org.osmdroid:osmdroid-android)
   - FusedLocationProviderClient (com.google.android.gms:play-services-location)
 - minSdk = 29, targetSdk = 36, compileSdk = 37 (значения не обязаны совпадать)
 
