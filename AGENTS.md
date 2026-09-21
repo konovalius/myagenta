@@ -18,8 +18,8 @@
   - osmdroid (org.osmdroid:osmdroid-android, 6.1.20)
   - Собственный прокси для тайлов OSM: https://hefty-mule-2745.konovalius.deno.net/ (Deno Deploy). Заменяет прямой доступ к tile.openstreetmap.org, который блокируется в России
   - FusedLocationProviderClient (com.google.android.gms:play-services-location)
-- Запланировано:
   - Room 2.8.5 (androidx.room:room-runtime, room-ktx, room-compiler)
+- Запланировано:
 - minSdk = 29, targetSdk = 36, compileSdk = 37 (значения не обязаны совпадать)
 
 ## Запрещено

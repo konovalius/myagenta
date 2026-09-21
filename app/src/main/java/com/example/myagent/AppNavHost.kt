@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.myagent.ui.camera.CameraScreen
+import com.example.myagent.ui.folders.MasterFoldersScreen
 import com.example.myagent.ui.home.HomeScreen
 import com.example.myagent.ui.map.MapScreen
 import com.example.myagent.ui.onboarding.OnboardingScreen
@@ -17,6 +18,7 @@ object AppRoutes {
     const val CAMERA = "camera?uri={uri}"
     const val ONBOARDING = "onboarding"
     const val MAP = "map"
+    const val MASTER_FOLDERS = "master-folders"
 
     fun camera(uri: Uri?): String {
         val encoded = uri?.let { Uri.encode(it.toString()) }
@@ -35,7 +37,8 @@ fun AppNavHost() {
             HomeScreen(
                 onOpenMap = { navController.navigate(AppRoutes.MAP) },
                 onOpenImage = { uri -> navController.navigate(AppRoutes.camera(uri)) },
-                onOpenOnboarding = { navController.navigate(AppRoutes.ONBOARDING) }
+                onOpenOnboarding = { navController.navigate(AppRoutes.ONBOARDING) },
+                onOpenMasterFolders = { navController.navigate(AppRoutes.MASTER_FOLDERS) }
             )
         }
         composable(
@@ -65,6 +68,9 @@ fun AppNavHost() {
         }
         composable(AppRoutes.MAP) {
             MapScreen(onBack = { navController.popBackStack() })
+        }
+        composable(AppRoutes.MASTER_FOLDERS) {
+            MasterFoldersScreen(onBack = { navController.popBackStack() })
         }
     }
 }

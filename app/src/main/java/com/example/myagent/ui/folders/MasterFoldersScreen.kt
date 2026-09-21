@@ -1,0 +1,131 @@
+package com.example.myagent.ui.folders
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.myagent.data.db.entity.MasterFolder
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+@Composable
+fun MasterFoldersScreen(
+    onBack: () -> Unit,
+    viewModel: MasterFolderViewModel = hiltViewModel()
+) {
+    val folders by viewModel.folders.collectAsStateWithLifecycle()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF101418))
+    ) {
+        if (folders.isEmpty()) {
+            Text(
+                text = "Мастер-папок пока нет",
+                color = Color(0xFF9AA3AF),
+                fontSize = 15.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 88.dp)
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
+            ) {
+                items(folders, key = { it.uuid }) { folder ->
+                    MasterFolderCard(folder)
+                }
+            }
+        }
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onBack) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Назад",
+                tint = Color.White
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = "Мастер-папки",
+            color = Color.White,
+            fontSize = 22.sp
+        )
+    }
+}
+
+@Composable
+private fun MasterFolderCard(folder: MasterFolder) {
+    val (icon, typeLabel) = if (folder.type == "geo") {
+        Icons.Filled.Map to "Гео"
+    } else {
+        Icons.Filled.Folder to "Объект"
+    }
+    val dateText = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+        .format(Date(folder.createdAt))
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1C2128), RoundedCornerShape(16.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .background(Color(0xFF2B313B), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = typeLabel, tint = Color.White)
+        }
+        Spacer(Modifier.width(16.dp))
+        Column {
+            Text(folder.name, color = Color.White, fontSize = 16.sp)
+            Spacer(Modifier.size(4.dp))
+            Text(
+                text = "$typeLabel • $dateText",
+                color = Color(0xFF9AA3AF),
+                fontSize = 13.sp
+            )
+        }
+    }
+}

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Icon
@@ -38,7 +39,8 @@ import androidx.compose.ui.unit.sp
 fun HomeScreen(
     onOpenMap: () -> Unit,
     onOpenImage: (Uri) -> Unit,
-    onOpenOnboarding: () -> Unit
+    onOpenOnboarding: () -> Unit,
+    onOpenMasterFolders: () -> Unit
 ) {
     val pickImageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -89,6 +91,13 @@ fun HomeScreen(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
                 }
+            )
+            Spacer(Modifier.height(16.dp))
+            HomeEntryCard(
+                icon = Icons.Filled.Folder,
+                title = "Мастер-папки",
+                subtitle = "Гео и объекты",
+                onClick = onOpenMasterFolders
             )
             Spacer(Modifier.height(16.dp))
             HomeEntryCard(
