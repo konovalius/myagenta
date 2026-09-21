@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import com.example.myagent.data.repository.FileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +25,8 @@ class CameraViewModel @Inject constructor(
     val lastPhotoUri: StateFlow<Uri?> = _lastPhotoUri.asStateFlow()
 
     fun capturePhoto(imageCapture: ImageCapture, context: Context) {
-        val contentValues = fileRepository.newPhotoContentValues()
+        val captureTime = LocalDateTime.now()
+        val contentValues = fileRepository.newPhotoContentValues(captureTime)
         val pendingName = contentValues.getAsString(MediaStore.MediaColumns.DISPLAY_NAME)
         val outputOptions = ImageCapture.OutputFileOptions.Builder(
             context.contentResolver,
@@ -38,6 +40,7 @@ class CameraViewModel @Inject constructor(
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     val savedUri = outputFileResults.savedUri
                     if (savedUri != null) {
+                        fileRepository.writeDateExif(savedUri, captureTime)
                         fileRepository.setPending(savedUri, false)
                         _lastPhotoUri.value = savedUri
                         Toast.makeText(context, "Фото сохранено в галерею", Toast.LENGTH_SHORT)

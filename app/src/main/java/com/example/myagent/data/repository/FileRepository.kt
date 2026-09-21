@@ -6,6 +6,8 @@ import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
+import androidx.exifinterface.media.ExifInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.time.LocalDateTime
@@ -35,14 +37,14 @@ class FileRepository @Inject constructor(
             ?: emptyList()
     }
 
-    fun newPhotoName(): String {
-        val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))
+    fun newPhotoName(capturedAt: LocalDateTime = LocalDateTime.now()): String {
+        val timestamp = capturedAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))
         return "$timestamp.jpg"
     }
 
-    fun newPhotoContentValues(): ContentValues {
+    fun newPhotoContentValues(capturedAt: LocalDateTime): ContentValues {
         return ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, newPhotoName())
+            put(MediaStore.MediaColumns.DISPLAY_NAME, newPhotoName(capturedAt))
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
             put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/MyAgent")
             put(MediaStore.MediaColumns.IS_PENDING, 1)
@@ -64,6 +66,34 @@ class FileRepository @Inject constructor(
         return try {
             context.contentResolver.delete(uri, null, null) > 0
         } catch (e: SecurityException) {
+            false
+        }
+    }
+
+    fun writeDateExif(uri: Uri, capturedAt: LocalDateTime): Boolean {
+        return try {
+            val tempFile = File.createTempFile("exif_", ".jpg", context.cacheDir)
+            try {
+                val readBytes = context.contentResolver.openInputStream(uri)?.use { input ->
+                    tempFile.outputStream().use { output -> input.copyTo(output) }
+                }
+                if (readBytes == null) return false
+                val exif = ExifInterface(tempFile)
+                val value = capturedAt.format(DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, value)
+                exif.setAttribute(ExifInterface.TAG_DATETIME, value)
+                exif.saveAttributes()
+                val writtenBytes = tempFile.inputStream().use { input ->
+                    context.contentResolver.openOutputStream(uri)?.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                writtenBytes != null
+            } finally {
+                tempFile.delete()
+            }
+        } catch (e: Exception) {
+            Log.w("FileRepository", "Не удалось записать дату съёмки в EXIF для $uri", e)
             false
         }
     }
