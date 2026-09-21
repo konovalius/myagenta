@@ -42,19 +42,25 @@ fun TrailText(
     val textW = layout.size.width.toFloat()
     val textH = layout.size.height.toFloat()
     val trail = step * trailLength
-    val shiftBack = with(density) { (trail / 2f).toDp() }
+    val trailDp = with(density) { trail.toDp() }
 
     val mainColor = color ?: style.color ?: MaterialTheme.colorScheme.onBackground
 
     Box(
         modifier = modifier
-            .offset(x = -shiftBack)
             .requiredSize(
-                width = with(density) { (textW + trail).toDp() },
-                height = with(density) { (textH + trail).toDp() }
+                width = with(density) { textW.toDp() },
+                height = with(density) { textH.toDp() }
             )
     ) {
-        Canvas(Modifier.fillMaxSize()) {
+        Canvas(
+            modifier = Modifier
+                .offset(x = -trailDp)
+                .requiredSize(
+                    width = with(density) { (textW + trail).toDp() },
+                    height = with(density) { (textH + trail).toDp() }
+                )
+        ) {
             for (i in 1..trailLength) {
                 val alpha = trailColor.alpha * (1f - i / trailLength.toFloat())
                 drawText(
