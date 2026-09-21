@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.myagent.data.db.entity.MasterFolder
+import com.example.myagent.ui.theme.TrailText
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -106,7 +107,7 @@ fun MasterFoldersScreen(
                 )
             }
             Spacer(Modifier.width(8.dp))
-            Text(
+            TrailText(
                 text = "Мастер-папки",
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.headlineMedium
