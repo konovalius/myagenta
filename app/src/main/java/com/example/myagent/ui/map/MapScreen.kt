@@ -1,5 +1,11 @@
 package com.example.myagent.ui.map
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,11 +26,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import android.util.Log
+import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+
+private val LOCATION_PERMISSIONS = arrayOf(
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.ACCESS_COARSE_LOCATION
+)
+
+private const val DEFAULT_LAT = 55.7558
+private const val DEFAULT_LON = 37.6173
+private const val DEFAULT_ZOOM = 15.0
+private const val LOCATION_ZOOM = 17.0
 
 @Composable
 fun MapScreen(onBack: () -> Unit) {
@@ -46,12 +68,69 @@ fun MapScreen(onBack: () -> Unit) {
         MapView(context).apply {
             setTileSource(myTiles)
             setMultiTouchControls(true)
-            controller.setZoom(15.0)
-            controller.setCenter(GeoPoint(55.7558, 37.6173))
+            controller.setZoom(DEFAULT_ZOOM)
+            controller.setCenter(GeoPoint(DEFAULT_LAT, DEFAULT_LON))
         }
     }
+    val fusedLocationClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+    val cancellationToken = remember { CancellationTokenSource() }
+
+    fun centerMap(lat: Double, lon: Double) {
+        mapView.overlays.removeAll { it is Marker }
+        mapView.controller.setZoom(LOCATION_ZOOM)
+        mapView.controller.setCenter(GeoPoint(lat, lon))
+        val marker = Marker(mapView).apply {
+            position = GeoPoint(lat, lon)
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            icon = ResourcesCompat.getDrawable(context.resources, android.R.drawable.ic_menu_mylocation, null)
+            title = "Я здесь"
+        }
+        mapView.overlays.add(marker)
+        mapView.invalidate()
+    }
+
+    fun locate() {
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationToken.token)
+            .addOnSuccessListener { location ->
+                if (location != null) {
+                    centerMap(location.latitude, location.longitude)
+                } else {
+                    Toast.makeText(context, "Не удалось определить местоположение", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(context, "Не удалось определить местоположение", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        if (LOCATION_PERMISSIONS.all { result[it] == true }) {
+            locate()
+        } else {
+            Toast.makeText(context, "Разрешение на геолокацию не выдано", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (LOCATION_PERMISSIONS.all {
+                ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+            }
+        ) {
+            locate()
+        } else {
+            permissionLauncher.launch(LOCATION_PERMISSIONS)
+        }
+    }
+
     DisposableEffect(Unit) {
-        onDispose { mapView.onDetach() }
+        onDispose {
+            cancellationToken.cancel()
+            mapView.onDetach()
+        }
     }
     Box(
         modifier = Modifier
