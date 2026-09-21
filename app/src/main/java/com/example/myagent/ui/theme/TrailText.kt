@@ -45,9 +45,9 @@ fun TrailText(
         ?: (MaterialTheme.colorScheme.background.luminance() < 0.5f)
     val resolvedTrailColor = trailColor
         ?: if (dark) {
-            Color.White.copy(alpha = 0.05f)
+            Color(0xFF444444).copy(alpha = 0.2f)
         } else {
-            Color.Black.copy(alpha = 0.05f)
+            Color(0xFF888888).copy(alpha = 0.15f)
         }
     val mainColor = color ?: style.color ?: MaterialTheme.colorScheme.onBackground
     val drawSize = Size(layout.size.width.toFloat(), layout.size.height.toFloat())
