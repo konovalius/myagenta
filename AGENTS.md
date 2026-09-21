@@ -16,6 +16,7 @@
   - KSP
   - Navigation Compose 2.8.9
   - osmdroid (org.osmdroid:osmdroid-android, 6.1.20)
+  - Собственный прокси для тайлов OSM: https://hefty-mule-2745.konovalius.deno.net/ (Deno Deploy). Заменяет прямой доступ к tile.openstreetmap.org, который блокируется в России
 - Запланировано:
   - Room 2.8.5 (androidx.room:room-runtime, room-ktx, room-compiler)
   - FusedLocationProviderClient (com.google.android.gms:play-services-location)
@@ -30,6 +31,7 @@
 - Не менять координаты библиотек (io.coil-kt → io.coil-kt.coil3) без явного указания
 - Не трогать файлы, не относящиеся к текущей задаче
 - Не генерировать несуществующие API и классы
+- Не возвращать TileSourceFactory.MAPNIK и не обращаться к tile.openstreetmap.org напрямую — только через прокси hefty-mule-2745.konovalius.deno.net. В XYTileSource не использовать плейсхолдеры {z}/{x}/{y} в базовом URL — osmdroid подставляет их сам
 
 ## Архитектура
 
