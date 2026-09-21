@@ -1,6 +1,8 @@
 package com.example.myagent.ui.folders
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,13 +17,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,6 +52,8 @@ fun MasterFoldersScreen(
     viewModel: MasterFolderViewModel = hiltViewModel()
 ) {
     val folders by viewModel.folders.collectAsStateWithLifecycle()
+    var showCreateDialog by remember { mutableStateOf(false) }
+    var folderToDelete by remember { mutableStateOf<MasterFolder?>(null) }
 
     Box(
         modifier = Modifier
@@ -65,35 +77,115 @@ fun MasterFoldersScreen(
                 verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
             ) {
                 items(folders, key = { it.uuid }) { folder ->
-                    MasterFolderCard(folder)
+                    MasterFolderCard(
+                        folder = folder,
+                        onLongClick = { folderToDelete = folder }
+                    )
                 }
             }
         }
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = onBack) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Назад",
-                tint = Color.White
+        FloatingActionButton(
+            onClick = { showCreateDialog = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp)
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = "Создать папку")
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Назад",
+                    tint = Color.White
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "Мастер-папки",
+                color = Color.White,
+                fontSize = 22.sp
             )
         }
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = "Мастер-папки",
-            color = Color.White,
-            fontSize = 22.sp
+    }
+
+    if (showCreateDialog) {
+        CreateFolderDialog(
+            onConfirm = { name ->
+                viewModel.createFolder(name)
+                showCreateDialog = false
+            },
+            onDismiss = { showCreateDialog = false }
+        )
+    }
+
+    folderToDelete?.let { folder ->
+        AlertDialog(
+            onDismissRequest = { folderToDelete = null },
+            title = { Text("Удалить папку?") },
+            text = { Text("Папка «${folder.name}» будет удалена.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteFolder(folder)
+                    folderToDelete = null
+                }) {
+                    Text("Да")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { folderToDelete = null }) {
+                    Text("Нет")
+                }
+            }
         )
     }
 }
 
 @Composable
-private fun MasterFolderCard(folder: MasterFolder) {
+private fun CreateFolderDialog(
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Создать папку") },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Название папки") },
+                singleLine = true
+            )
+        },
+        confirmButton = {
+            TextButton(
+                enabled = name.isNotBlank(),
+                onClick = { onConfirm(name) }
+            ) {
+                Text("Создать")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Отмена")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MasterFolderCard(
+    folder: MasterFolder,
+    onLongClick: () -> Unit
+) {
     val (icon, typeLabel) = if (folder.type == "geo") {
         Icons.Filled.Map to "Гео"
     } else {
@@ -106,6 +198,10 @@ private fun MasterFolderCard(folder: MasterFolder) {
         modifier = Modifier
             .fillMaxWidth()
             .background(Color(0xFF1C2128), RoundedCornerShape(16.dp))
+            .combinedClickable(
+                onClick = {},
+                onLongClick = onLongClick
+            )
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
