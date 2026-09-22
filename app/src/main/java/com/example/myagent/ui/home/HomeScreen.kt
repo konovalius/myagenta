@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myagent.ui.theme.BelozerovSP
 import com.example.myagent.ui.theme.ThemeToggleSwitch
 import com.example.myagent.ui.theme.TrailText
 
@@ -154,7 +155,7 @@ private fun HomeEntryCard(
                 Column {
                     Text(title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(2.dp))
-                    Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = BelozerovSP, fontSize = 13.sp)
                 }
             }
             badge?.let {

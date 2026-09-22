@@ -12,6 +12,10 @@ val SmoochSans = FontFamily(
     Font(R.font.smooch_sans_black, weight = FontWeight.Black)
 )
 
+val BelozerovSP = FontFamily(
+    Font(R.font.belozerov_sp, weight = FontWeight.Normal)
+)
+
 val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = SmoochSans,
@@ -49,10 +53,24 @@ val Typography = Typography(
         letterSpacing = 0.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = SmoochSans,
-        fontWeight = FontWeight.Black,
+        fontFamily = BelozerovSP,
+        fontWeight = FontWeight.Normal,
         fontSize = 17.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.2.sp
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = BelozerovSP,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = BelozerovSP,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.25.sp
     )
 )
