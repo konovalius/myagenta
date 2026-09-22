@@ -5,7 +5,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,14 +17,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
@@ -129,22 +132,36 @@ private fun HomeEntryCard(
     onClick: () -> Unit
 ) {
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val cardSurface = if (isDarkTheme) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
-    Box(
+    val cardColor = if (isDarkTheme) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = cardColor.copy(alpha = 0.8f)),
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(6.dp, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp))
-            .background(cardSurface.copy(alpha = 0.8f))
-            .clickable(onClick = onClick)
+            .padding(top = 10.dp)
+            .drawBehind {
+                val dx = 6.dp.toPx()
+                val dy = -6.dp.toPx()
+                val radius = 18.dp.toPx()
+                val blurSpread = 2.dp.toPx()
+                val alphaScale = if (isDarkTheme) 0.05f else 0.02f
+                for (i in 0 until 4) {
+                    val inset = i * blurSpread
+                    drawRoundRect(
+                        color = Color.Black.copy(alpha = alphaScale * (4 - i)),
+                        topLeft = Offset(dx - inset, dy - inset),
+                        size = Size(size.width + inset * 2, size.height + inset * 2),
+                        cornerRadius = CornerRadius(radius, radius)
+                    )
+                }
+            }
             .padding(20.dp)
     ) {
         Box {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
+                    modifier = Modifier.size(48.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(icon, contentDescription = title, tint = MaterialTheme.colorScheme.secondary)
