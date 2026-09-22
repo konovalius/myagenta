@@ -153,7 +153,7 @@ fun MapScreen(onBack: () -> Unit, onOpenCamera: (lat: Double, lon: Double) -> Un
             onClick = onBack,
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(16.dp)
+                .padding(start = 16.dp, top = 48.dp)
                 .size(40.dp)
                 .background(Color.Black.copy(alpha = 0.6f), CircleShape)
         ) {
