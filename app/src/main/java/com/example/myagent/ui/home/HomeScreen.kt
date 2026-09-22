@@ -6,7 +6,6 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -139,7 +138,7 @@ private fun HomeEntryCard(
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (isPressed) 0.97f else 1f, label = "pressScale")
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val cardColor = if (isDark) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f)
+    val cardColor = if (isDark) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.06f)
     Card(
         onClick = onClick,
         interactionSource = interactionSource,
@@ -165,7 +164,12 @@ private fun HomeEntryCard(
             }
             Spacer(Modifier.width(16.dp))
             Column {
-                Text(title, fontFamily = GoshaSans, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    title,
+                    fontFamily = GoshaSans,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.titleMedium
+                )
                 Spacer(Modifier.height(2.dp))
                 Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
