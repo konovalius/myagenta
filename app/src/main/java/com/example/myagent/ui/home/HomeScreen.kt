@@ -135,10 +135,12 @@ private fun HomeEntryCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp)
-            .padding(20.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
                 modifier = Modifier.size(48.dp),
                 contentAlignment = Alignment.Center
