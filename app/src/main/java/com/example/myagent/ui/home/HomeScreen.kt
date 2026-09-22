@@ -135,7 +135,7 @@ private fun HomeEntryCard(
             .fillMaxWidth()
             .shadow(6.dp, RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
-            .background(cardSurface)
+            .background(cardSurface.copy(alpha = 0.8f))
             .clickable(onClick = onClick)
             .padding(20.dp)
     ) {
