@@ -24,13 +24,13 @@ fun TrailText(
     text: String,
     style: TextStyle,
     color: Color? = null,
-    trailLength: Int = 150,
+    trailLength: Int = 90,
     trailColor: Color? = null,
     isDarkTheme: Boolean? = null,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
-    val step = with(density) { 1.5.dp.toPx() }
+    val step = with(density) { 2.5.dp.toPx() }
     val textMeasurer = rememberTextMeasurer()
     val layout = remember(text, style, textMeasurer) {
         textMeasurer.measure(
@@ -45,9 +45,9 @@ fun TrailText(
         ?: (MaterialTheme.colorScheme.background.luminance() < 0.5f)
     val resolvedTrailColor = trailColor
         ?: if (dark) {
-            Color(0xFF444444).copy(alpha = 0.2f)
+            Color(0xFF33302C).copy(alpha = 0.1f)
         } else {
-            Color(0xFF888888).copy(alpha = 0.15f)
+            Color(0xFFB7AE9D).copy(alpha = 0.08f)
         }
     val mainColor = color ?: style.color ?: MaterialTheme.colorScheme.onBackground
     val drawSize = Size(layout.size.width.toFloat(), layout.size.height.toFloat())
@@ -60,7 +60,8 @@ fun TrailText(
             )
             .drawBehind {
                 for (i in 1..trailLength) {
-                    val alpha = resolvedTrailColor.alpha * (1f - i / trailLength.toFloat())
+                    val t = i / trailLength.toFloat()
+                    val alpha = resolvedTrailColor.alpha * (1f - t) * (1f - t)
                     drawText(
                         textMeasurer = textMeasurer,
                         text = text,

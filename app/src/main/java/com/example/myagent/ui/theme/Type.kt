@@ -19,28 +19,28 @@ val Typography = Typography(
         fontWeight = FontWeight.Black,
         fontSize = 57.sp,
         lineHeight = 64.sp,
-        letterSpacing = (-0.25).sp
+        letterSpacing = 0.5.sp
     ),
     displayMedium = TextStyle(
         fontFamily = SmoochSans,
         fontWeight = FontWeight.Black,
-        fontSize = 45.sp,
-        lineHeight = 52.sp,
-        letterSpacing = 0.sp
+        fontSize = 48.sp,
+        lineHeight = 56.sp,
+        letterSpacing = 0.5.sp
     ),
     headlineLarge = TextStyle(
         fontFamily = SmoochSans,
         fontWeight = FontWeight.Black,
         fontSize = 32.sp,
         lineHeight = 40.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.5.sp
     ),
     headlineMedium = TextStyle(
         fontFamily = SmoochSans,
         fontWeight = FontWeight.Black,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
-        letterSpacing = 0.sp
+        fontSize = 30.sp,
+        lineHeight = 38.sp,
+        letterSpacing = 0.5.sp
     ),
     headlineSmall = TextStyle(
         fontFamily = FontFamily.Default,
@@ -52,8 +52,8 @@ val Typography = Typography(
     titleMedium = TextStyle(
         fontFamily = SmoochSans,
         fontWeight = FontWeight.Black,
-        fontSize = 16.sp,
+        fontSize = 17.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.15.sp
+        letterSpacing = 0.2.sp
     )
 )
