@@ -80,7 +80,7 @@ fun HomeScreen(
             )
             Spacer(Modifier.height(32.dp))
             HomeEntryCard(
-                icon = painterResource(R.drawable.ic_map_river),
+                icon = painterResource(R.drawable.ic_globe),
                 title = "Войти через карту",
                 subtitle = "По геолокации",
                 onClick = onOpenMap
