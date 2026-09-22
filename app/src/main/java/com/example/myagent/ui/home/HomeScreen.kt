@@ -24,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -34,7 +33,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myagent.R
-import com.example.myagent.ui.theme.BelozerovSP
 import com.example.myagent.ui.theme.ThemeToggleSwitch
 import com.example.myagent.ui.theme.TrailText
 
@@ -109,7 +107,7 @@ fun HomeScreen(
             HomeEntryCard(
                 icon = painterResource(R.drawable.ic_question),
                 title = "Войти в первый раз",
-                subtitle = "Обучение и настройка",
+                subtitle = "Обучение",
                 onClick = onOpenOnboarding
             )
             Spacer(Modifier.height(28.dp))
@@ -132,9 +130,8 @@ private fun HomeEntryCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(0.95f)
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.05f))
             .clickable(onClick = onClick)
             .padding(20.dp)
     ) {
@@ -152,7 +149,7 @@ private fun HomeEntryCard(
                 Column {
                     Text(title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(2.dp))
-                    Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = BelozerovSP, fontSize = 13.sp)
+                    Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 }
             }
             badge?.let {
