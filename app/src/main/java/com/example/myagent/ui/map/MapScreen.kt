@@ -14,12 +14,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,7 +54,7 @@ private const val DEFAULT_ZOOM = 15.0
 private const val LOCATION_ZOOM = 17.0
 
 @Composable
-fun MapScreen(onBack: () -> Unit) {
+fun MapScreen(onBack: () -> Unit, onOpenCamera: (lat: Double, lon: Double) -> Unit) {
     val context = LocalContext.current
     val myTiles = remember {
         XYTileSource(
@@ -76,8 +82,10 @@ fun MapScreen(onBack: () -> Unit) {
         LocationServices.getFusedLocationProviderClient(context)
     }
     val cancellationToken = remember { CancellationTokenSource() }
+    var currentLocation by remember { mutableStateOf<GeoPoint?>(null) }
 
     fun centerMap(lat: Double, lon: Double) {
+        currentLocation = GeoPoint(lat, lon)
         mapView.overlays.removeAll { it is Marker }
         mapView.controller.setZoom(LOCATION_ZOOM)
         mapView.controller.setCenter(GeoPoint(lat, lon))
@@ -153,6 +161,23 @@ fun MapScreen(onBack: () -> Unit) {
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Назад",
                 tint = Color.White
+            )
+        }
+        currentLocation?.let { location ->
+            ExtendedFloatingActionButton(
+                onClick = {
+                    onOpenCamera(location.latitude, location.longitude)
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 24.dp),
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.PhotoCamera,
+                        contentDescription = null
+                    )
+                },
+                text = { Text("Снять фото") }
             )
         }
     }

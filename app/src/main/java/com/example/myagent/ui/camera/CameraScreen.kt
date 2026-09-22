@@ -75,7 +75,11 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
 
 @Composable
-fun CameraScreen(initialReferenceUri: Uri? = null) {
+fun CameraScreen(
+    initialReferenceUri: Uri? = null,
+    initialLat: Double? = null,
+    initialLon: Double? = null
+) {
     val viewModel: CameraViewModel = hiltViewModel()
     val context = LocalContext.current
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }

@@ -15,14 +15,18 @@ import com.example.myagent.ui.onboarding.OnboardingScreen
 
 object AppRoutes {
     const val HOME = "home"
-    const val CAMERA = "camera?uri={uri}"
+    const val CAMERA = "camera?uri={uri}&lat={lat}&lon={lon}"
     const val ONBOARDING = "onboarding"
     const val MAP = "map"
     const val MASTER_FOLDERS = "master-folders"
 
-    fun camera(uri: Uri?): String {
-        val encoded = uri?.let { Uri.encode(it.toString()) }
-        return if (encoded != null) "camera?uri=$encoded" else "camera"
+    fun camera(uri: Uri? = null, lat: Double? = null, lon: Double? = null): String {
+        val params = buildList {
+            uri?.let { add("uri=" + Uri.encode(it.toString())) }
+            lat?.let { add("lat=$it") }
+            lon?.let { add("lon=$it") }
+        }
+        return if (params.isNotEmpty()) "camera?${params.joinToString("&")}" else "camera"
     }
 }
 
@@ -53,13 +57,29 @@ fun AppNavHost(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                navArgument("lat") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("lon") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
             val uri = backStackEntry.arguments?.getString("uri")
                 ?.let { Uri.decode(it) }
                 ?.let { Uri.parse(it) }
-            CameraScreen(initialReferenceUri = uri)
+            val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull()
+            val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull()
+            CameraScreen(
+                initialReferenceUri = uri,
+                initialLat = lat,
+                initialLon = lon
+            )
         }
         composable(AppRoutes.ONBOARDING) {
             OnboardingScreen(
@@ -72,7 +92,12 @@ fun AppNavHost(
             )
         }
         composable(AppRoutes.MAP) {
-            MapScreen(onBack = { navController.popBackStack() })
+            MapScreen(
+                onBack = { navController.popBackStack() },
+                onOpenCamera = { lat, lon ->
+                    navController.navigate(AppRoutes.camera(lat = lat, lon = lon))
+                }
+            )
         }
         composable(AppRoutes.MASTER_FOLDERS) {
             MasterFoldersScreen(onBack = { navController.popBackStack() })
