@@ -58,19 +58,5 @@ val Typography = Typography(
         fontSize = 17.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.2.sp
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = BelozerovSP,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    ),
-    bodyMedium = TextStyle(
-        fontFamily = BelozerovSP,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.25.sp
     )
 )
