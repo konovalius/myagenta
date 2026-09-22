@@ -18,11 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,10 +28,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myagent.R
 import com.example.myagent.ui.theme.BelozerovSP
 import com.example.myagent.ui.theme.ThemeToggleSwitch
 import com.example.myagent.ui.theme.TrailText
@@ -85,14 +82,14 @@ fun HomeScreen(
             )
             Spacer(Modifier.height(32.dp))
             HomeEntryCard(
-                icon = Icons.Filled.Map,
+                icon = painterResource(R.drawable.ic_map_river),
                 title = "Войти через карту",
                 subtitle = "По геолокации",
                 onClick = onOpenMap
             )
             Spacer(Modifier.height(16.dp))
             HomeEntryCard(
-                icon = Icons.Filled.PhotoLibrary,
+                icon = painterResource(R.drawable.ic_old_building),
                 title = "Войти через изображение",
                 subtitle = "Выбрать фото-ориентир",
                 onClick = {
@@ -103,14 +100,14 @@ fun HomeScreen(
             )
             Spacer(Modifier.height(16.dp))
             HomeEntryCard(
-                icon = Icons.Filled.Folder,
+                icon = painterResource(R.drawable.ic_book),
                 title = "Мастер-папки",
                 subtitle = "Гео и объекты",
                 onClick = onOpenMasterFolders
             )
             Spacer(Modifier.height(16.dp))
             HomeEntryCard(
-                icon = Icons.Filled.AutoAwesome,
+                icon = painterResource(R.drawable.ic_question),
                 title = "Войти в первый раз",
                 subtitle = "Обучение и настройка",
                 onClick = onOpenOnboarding
@@ -126,7 +123,7 @@ fun HomeScreen(
 
 @Composable
 private fun HomeEntryCard(
-    icon: ImageVector,
+    icon: Painter,
     title: String,
     subtitle: String,
     badge: String? = null,
@@ -135,7 +132,7 @@ private fun HomeEntryCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(0.85f)
+            .alpha(0.95f)
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surface)
             .clickable(onClick = onClick)
