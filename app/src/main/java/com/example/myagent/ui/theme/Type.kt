@@ -16,8 +16,8 @@ val BelozerovSP = FontFamily(
     Font(R.font.belozerov_sp, weight = FontWeight.Normal)
 )
 
-val Notable = FontFamily(
-    Font(R.font.notable_regular, weight = FontWeight.Normal)
+val GoshaSans = FontFamily(
+    Font(R.font.ppgosha_sans_regular, FontWeight.Normal)
 )
 
 val Typography = Typography(

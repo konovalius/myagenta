@@ -41,7 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myagent.R
-import com.example.myagent.ui.theme.Notable
+import com.example.myagent.ui.theme.GoshaSans
 import com.example.myagent.ui.theme.ThemeToggleSwitch
 import com.example.myagent.ui.theme.TrailText
 
@@ -165,7 +165,7 @@ private fun HomeEntryCard(
             Column {
                 Text(title, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(2.dp))
-                Text(subtitle, fontFamily = Notable, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Text(subtitle, fontFamily = GoshaSans, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
         }
     }
