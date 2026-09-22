@@ -25,10 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
@@ -128,7 +124,6 @@ private fun HomeEntryCard(
     icon: Painter,
     title: String,
     subtitle: String,
-    badge: String? = null,
     onClick: () -> Unit
 ) {
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -136,53 +131,25 @@ private fun HomeEntryCard(
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColor.copy(alpha = 0.8f)),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 10.dp)
-            .drawBehind {
-                val dx = 6.dp.toPx()
-                val dy = -6.dp.toPx()
-                val radius = 18.dp.toPx()
-                val blurSpread = 2.dp.toPx()
-                val alphaScale = if (isDarkTheme) 0.05f else 0.02f
-                for (i in 0 until 4) {
-                    val inset = i * blurSpread
-                    drawRoundRect(
-                        color = Color.Black.copy(alpha = alphaScale * (4 - i)),
-                        topLeft = Offset(dx - inset, dy - inset),
-                        size = Size(size.width + inset * 2, size.height + inset * 2),
-                        cornerRadius = CornerRadius(radius, radius)
-                    )
-                }
-            }
             .padding(20.dp)
     ) {
-        Box {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(48.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(icon, contentDescription = title, tint = MaterialTheme.colorScheme.secondary)
-                }
-                Spacer(Modifier.width(16.dp))
-                Column {
-                    Text(title, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(2.dp))
-                    Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = title, tint = MaterialTheme.colorScheme.secondary)
             }
-            badge?.let {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                )
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Text(title, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(2.dp))
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
             }
         }
     }
