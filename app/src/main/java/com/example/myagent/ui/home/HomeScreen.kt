@@ -163,9 +163,9 @@ private fun HomeEntryCard(
             }
             Spacer(Modifier.width(16.dp))
             Column {
-                Text(title, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
+                Text(title, fontFamily = GoshaSans, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(2.dp))
-                Text(subtitle, fontFamily = GoshaSans, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
         }
     }
