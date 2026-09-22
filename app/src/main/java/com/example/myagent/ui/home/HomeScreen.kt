@@ -131,7 +131,7 @@ private fun HomeEntryCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.05f))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.15f))
             .clickable(onClick = onClick)
             .padding(20.dp)
     ) {
