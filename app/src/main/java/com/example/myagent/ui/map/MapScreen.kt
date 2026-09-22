@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -31,12 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import com.example.myagent.ui.theme.GoshaSans
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.util.MapTileIndex
@@ -171,13 +174,23 @@ fun MapScreen(onBack: () -> Unit, onOpenCamera: (lat: Double, lon: Double) -> Un
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 24.dp),
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 8.dp,
+                    pressedElevation = 10.dp
+                ),
                 icon = {
                     Icon(
                         imageVector = Icons.Filled.PhotoCamera,
                         contentDescription = null
                     )
                 },
-                text = { Text("Снять фото") }
+                text = {
+                    Text(
+                        text = "Снять фото",
+                        fontFamily = GoshaSans,
+                        fontSize = 18.sp
+                    )
+                }
             )
         }
     }
