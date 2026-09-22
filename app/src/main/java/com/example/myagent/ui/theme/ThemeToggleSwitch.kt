@@ -50,10 +50,7 @@ fun ThemeToggleSwitch(
             .width(trackWidth)
             .height(trackHeight)
             .clip(RoundedCornerShape(percent = 50))
-            .background(
-                if (isDark) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surfaceVariant
-            )
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable(onClick = onToggle)
     ) {
         Box(

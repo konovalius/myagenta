@@ -37,10 +37,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myagent.ui.theme.ThemeToggleSwitch
 import com.example.myagent.ui.theme.TrailText
 
 @Composable
 fun HomeScreen(
+    isDark: Boolean,
+    onThemeToggle: () -> Unit,
     onOpenMap: () -> Unit,
     onOpenImage: (Uri) -> Unit,
     onOpenOnboarding: () -> Unit,
@@ -110,6 +113,11 @@ fun HomeScreen(
                 title = "Войти в первый раз",
                 subtitle = "Обучение и настройка",
                 onClick = onOpenOnboarding
+            )
+            Spacer(Modifier.height(28.dp))
+            ThemeToggleSwitch(
+                isDark = isDark,
+                onToggle = onThemeToggle
             )
         }
     }

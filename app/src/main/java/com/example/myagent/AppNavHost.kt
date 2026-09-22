@@ -1,13 +1,7 @@
 package com.example.myagent
 
 import android.net.Uri
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,7 +12,6 @@ import com.example.myagent.ui.folders.MasterFoldersScreen
 import com.example.myagent.ui.home.HomeScreen
 import com.example.myagent.ui.map.MapScreen
 import com.example.myagent.ui.onboarding.OnboardingScreen
-import com.example.myagent.ui.theme.ThemeToggleSwitch
 
 object AppRoutes {
     const val HOME = "home"
@@ -39,19 +32,20 @@ fun AppNavHost(
     onThemeToggle: () -> Unit
 ) {
     val navController = rememberNavController()
-    Box(modifier = Modifier.fillMaxSize()) {
-        NavHost(
-            navController = navController,
-            startDestination = AppRoutes.HOME
-        ) {
-            composable(AppRoutes.HOME) {
-                HomeScreen(
-                    onOpenMap = { navController.navigate(AppRoutes.MAP) },
-                    onOpenImage = { uri -> navController.navigate(AppRoutes.camera(uri)) },
-                    onOpenOnboarding = { navController.navigate(AppRoutes.ONBOARDING) },
-                    onOpenMasterFolders = { navController.navigate(AppRoutes.MASTER_FOLDERS) }
-                )
-            }
+    NavHost(
+        navController = navController,
+        startDestination = AppRoutes.HOME
+    ) {
+        composable(AppRoutes.HOME) {
+            HomeScreen(
+                isDark = isDark,
+                onThemeToggle = onThemeToggle,
+                onOpenMap = { navController.navigate(AppRoutes.MAP) },
+                onOpenImage = { uri -> navController.navigate(AppRoutes.camera(uri)) },
+                onOpenOnboarding = { navController.navigate(AppRoutes.ONBOARDING) },
+                onOpenMasterFolders = { navController.navigate(AppRoutes.MASTER_FOLDERS) }
+            )
+        }
         composable(
             route = AppRoutes.CAMERA,
             arguments = listOf(
@@ -83,14 +77,5 @@ fun AppNavHost(
         composable(AppRoutes.MASTER_FOLDERS) {
             MasterFoldersScreen(onBack = { navController.popBackStack() })
         }
-        }
-
-        ThemeToggleSwitch(
-            isDark = isDark,
-            onToggle = onThemeToggle,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 24.dp)
-        )
     }
 }
