@@ -12,8 +12,10 @@ import com.example.myagent.ui.folders.MasterFoldersScreen
 import com.example.myagent.ui.home.HomeScreen
 import com.example.myagent.ui.map.MapScreen
 import com.example.myagent.ui.onboarding.OnboardingScreen
+import com.example.myagent.ui.splash.SplashScreen
 
 object AppRoutes {
+    const val SPLASH = "splash"
     const val HOME = "home"
     const val CAMERA = "camera?uri={uri}&lat={lat}&lon={lon}"
     const val ONBOARDING = "onboarding"
@@ -38,8 +40,17 @@ fun AppNavHost(
     val navController = rememberNavController()
     NavHost(
         navController = navController,
-        startDestination = AppRoutes.HOME
+        startDestination = AppRoutes.SPLASH
     ) {
+        composable(AppRoutes.SPLASH) {
+            SplashScreen(
+                onAnimationComplete = {
+                    navController.navigate(AppRoutes.camera()) {
+                        popUpTo(AppRoutes.SPLASH) { inclusive = true }
+                    }
+                }
+            )
+        }
         composable(AppRoutes.HOME) {
             HomeScreen(
                 isDark = isDark,
