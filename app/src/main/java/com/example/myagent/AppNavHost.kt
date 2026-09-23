@@ -2,6 +2,7 @@ package com.example.myagent
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -35,9 +36,21 @@ object AppRoutes {
 @Composable
 fun AppNavHost(
     isDark: Boolean,
-    onThemeToggle: () -> Unit
+    onThemeToggle: () -> Unit,
+    shouldNavigateToSplash: Boolean = false,
+    onSplashNavigated: () -> Unit = {}
 ) {
     val navController = rememberNavController()
+    
+    LaunchedEffect(shouldNavigateToSplash) {
+        if (shouldNavigateToSplash) {
+            navController.navigate(AppRoutes.SPLASH) {
+                popUpTo(0) { inclusive = true }
+            }
+            onSplashNavigated()
+        }
+    }
+    
     NavHost(
         navController = navController,
         startDestination = AppRoutes.SPLASH
