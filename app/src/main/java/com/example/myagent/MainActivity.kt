@@ -27,10 +27,7 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
             }
             MyAgentTheme(darkTheme = darkTheme) {
-                AppNavHost(
-                    isDark = darkTheme,
-                    onThemeToggle = { themeViewModel.toggleTheme(darkTheme) }
-                )
+                AppNavHost(themeViewModel = themeViewModel, darkTheme = darkTheme)
             }
         }
     }
