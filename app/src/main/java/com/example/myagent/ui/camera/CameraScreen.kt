@@ -78,10 +78,7 @@ import coil.compose.AsyncImage
 fun CameraScreen(
     initialReferenceUri: Uri? = null,
     initialLat: Double? = null,
-    initialLon: Double? = null,
-    onNavigateToMasterFolders: () -> Unit,
-    onNavigateToMap: () -> Unit,
-    onNavigateToOnboarding: () -> Unit
+    initialLon: Double? = null
 ) {
     val viewModel: CameraViewModel = hiltViewModel()
     val context = LocalContext.current
@@ -326,34 +323,11 @@ fun CameraScreen(
                             .padding(start = 24.dp, bottom = 24.dp)
                     )
                 }
-                
-                // Тулбар с кнопками навигации
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .padding(bottom = 120.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CameraToolbar(
-                        onNavigateToMasterFolders = onNavigateToMasterFolders,
-                        onNavigateToMap = onNavigateToMap,
-                        onOpenGallery = {
-                            pickReferenceLauncher.launch(
-                                PickVisualMediaRequest(
-                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                )
-                            )
-                        },
-                        onNavigateToOnboarding = onNavigateToOnboarding
-                    )
-                }
-                
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(bottom = 100.dp),
+                        .padding(bottom = 24.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularIconButton(
@@ -364,6 +338,19 @@ fun CameraScreen(
                         modifier = Modifier.offset(x = (-68).dp)
                     )
                     ShutterButton(onClick = capturePhoto)
+                    CircularIconButton(
+                        icon = Icons.Filled.PhotoLibrary,
+                        contentDescription = "Выбрать ориентир",
+                        enabled = true,
+                        onClick = {
+                            pickReferenceLauncher.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        },
+                        modifier = Modifier.offset(x = 68.dp)
+                    )
                 }
             }
         } else {

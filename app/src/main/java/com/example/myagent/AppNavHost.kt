@@ -77,10 +77,7 @@ fun AppNavHost() {
             CameraScreen(
                 initialReferenceUri = uri,
                 initialLat = lat,
-                initialLon = lon,
-                onNavigateToMasterFolders = { navController.navigate(AppRoutes.MASTER_FOLDERS) },
-                onNavigateToMap = { navController.navigate(AppRoutes.MAP) },
-                onNavigateToOnboarding = { navController.navigate(AppRoutes.ONBOARDING) }
+                initialLon = lon
             )
         }
         composable(AppRoutes.ONBOARDING) {
