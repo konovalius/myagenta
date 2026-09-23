@@ -1,23 +1,18 @@
 package com.example.myagent
 
 import android.net.Uri
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.myagent.ui.camera.CameraScreen
-import com.example.myagent.ui.components.ThemeSwitch
 import com.example.myagent.ui.folders.MasterFoldersScreen
 import com.example.myagent.ui.map.MapScreen
 import com.example.myagent.ui.onboarding.OnboardingScreen
 import com.example.myagent.ui.splash.SplashScreen
-import com.example.myagent.ui.theme.ThemeViewModel
 
 object AppRoutes {
     const val SPLASH = "splash"
@@ -37,85 +32,73 @@ object AppRoutes {
 }
 
 @Composable
-fun AppNavHost(
-    themeViewModel: ThemeViewModel,
-    darkTheme: Boolean
-) {
+fun AppNavHost() {
     val navController = rememberNavController()
     
-    Box(modifier = Modifier.fillMaxSize()) {
-        NavHost(
-            navController = navController,
-            startDestination = AppRoutes.SPLASH,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            composable(AppRoutes.SPLASH) {
-                SplashScreen(
-                    onAnimationComplete = {
-                        navController.navigate(AppRoutes.camera()) {
-                            popUpTo(AppRoutes.SPLASH) { inclusive = true }
-                        }
+    NavHost(
+        navController = navController,
+        startDestination = AppRoutes.SPLASH,
+        modifier = androidx.compose.ui.Modifier.fillMaxSize()
+    ) {
+        composable(AppRoutes.SPLASH) {
+            SplashScreen(
+                onAnimationComplete = {
+                    navController.navigate(AppRoutes.camera()) {
+                        popUpTo(AppRoutes.SPLASH) { inclusive = true }
                     }
-                )
-            }
-            composable(
-                route = AppRoutes.CAMERA,
-                arguments = listOf(
-                    navArgument("uri") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    },
-                    navArgument("lat") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    },
-                    navArgument("lon") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    }
-                )
-            ) { backStackEntry ->
-                val uri = backStackEntry.arguments?.getString("uri")
-                    ?.let { Uri.decode(it) }
-                    ?.let { Uri.parse(it) }
-                val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull()
-                val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull()
-                CameraScreen(
-                    initialReferenceUri = uri,
-                    initialLat = lat,
-                    initialLon = lon
-                )
-            }
-            composable(AppRoutes.ONBOARDING) {
-                OnboardingScreen(
-                    onContinue = {
-                        navController.navigate(AppRoutes.camera(null)) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
-                )
-            }
-            composable(AppRoutes.MAP) {
-                MapScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenCamera = { lat, lon ->
-                        navController.navigate(AppRoutes.camera(lat = lat, lon = lon))
-                    }
-                )
-            }
-            composable(AppRoutes.MASTER_FOLDERS) {
-                MasterFoldersScreen(onBack = { navController.popBackStack() })
-            }
+                }
+            )
         }
-        
-        ThemeSwitch(
-            isDark = darkTheme,
-            onToggle = { themeViewModel.toggleTheme(darkTheme) },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-        )
+        composable(
+            route = AppRoutes.CAMERA,
+            arguments = listOf(
+                navArgument("uri") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("lat") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("lon") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val uri = backStackEntry.arguments?.getString("uri")
+                ?.let { Uri.decode(it) }
+                ?.let { Uri.parse(it) }
+            val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull()
+            val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull()
+            CameraScreen(
+                initialReferenceUri = uri,
+                initialLat = lat,
+                initialLon = lon
+            )
+        }
+        composable(AppRoutes.ONBOARDING) {
+            OnboardingScreen(
+                onContinue = {
+                    navController.navigate(AppRoutes.camera(null)) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(AppRoutes.MAP) {
+            MapScreen(
+                onBack = { navController.popBackStack() },
+                onOpenCamera = { lat, lon ->
+                    navController.navigate(AppRoutes.camera(lat = lat, lon = lon))
+                }
+            )
+        }
+        composable(AppRoutes.MASTER_FOLDERS) {
+            MasterFoldersScreen(onBack = { navController.popBackStack() })
+        }
     }
 }
