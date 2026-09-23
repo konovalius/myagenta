@@ -3,6 +3,7 @@ package com.example.myagent.ui.camera
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -23,6 +24,21 @@ class CameraViewModel @Inject constructor(
 
     private val _lastPhotoUri = MutableStateFlow<Uri?>(null)
     val lastPhotoUri: StateFlow<Uri?> = _lastPhotoUri.asStateFlow()
+
+    var lat: Double? = null
+        private set
+    var lon: Double? = null
+        private set
+
+    init {
+        Log.wtf("CameraVM", "ViewModel initialized")
+    }
+
+    fun setLocation(lat: Double?, lon: Double?) {
+        this.lat = lat
+        this.lon = lon
+        Log.wtf("CameraVM", "lat=$lat, lon=$lon")
+    }
 
     fun capturePhoto(imageCapture: ImageCapture, context: Context) {
         val captureTime = LocalDateTime.now()

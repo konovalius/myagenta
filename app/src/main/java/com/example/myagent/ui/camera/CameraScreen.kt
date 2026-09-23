@@ -119,6 +119,10 @@ fun CameraScreen(
     var overlayRotation by remember { mutableStateOf(0f) }
     var isEditingOverlay by remember { mutableStateOf(false) }
 
+    LaunchedEffect(initialLat, initialLon) {
+        viewModel.setLocation(initialLat, initialLon)
+    }
+
     val pickReferenceLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->

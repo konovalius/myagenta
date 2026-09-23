@@ -168,9 +168,9 @@ fun MapScreen(onBack: () -> Unit, onOpenCamera: (lat: Double, lon: Double) -> Un
         }
         currentLocation?.let { location ->
             ExtendedFloatingActionButton(
-                onClick = {
-                    onOpenCamera(location.latitude, location.longitude)
-                },
+onClick = {
+                     onOpenCamera(location.latitude, location.longitude)
+                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 24.dp),
