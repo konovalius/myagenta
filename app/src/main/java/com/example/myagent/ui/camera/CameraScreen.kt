@@ -11,6 +11,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
+import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.ViewPort
+import android.util.Rational
+import androidx.camera.core.impl.utils.AspectRatioUtil
+import androidx.camera.core.impl.utils.CameraOrientationUtil
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.Spring
@@ -382,7 +388,7 @@ fun CameraPreview(
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember {
         PreviewView(context).apply {
-            scaleType = PreviewView.ScaleType.FILL_CENTER
+            scaleType = PreviewView.ScaleType.FIT_CENTER
         }
     }
     val imageCapture = remember { ImageCapture.Builder().build() }
@@ -396,12 +402,25 @@ fun CameraPreview(
                     val preview = Preview.Builder().build().also {
                         it.setSurfaceProvider(previewView.surfaceProvider)
                     }
+                    
+                    // Создаём ViewPort для согласования Preview и ImageCapture
+                    val viewPort = previewView.viewPort ?: ViewPort.Builder(
+                        Rational(previewView.width, previewView.height),
+                        previewView.display.rotation
+                    ).build()
+                    
+                    // Используем UseCaseGroup с ViewPort
+                    val useCaseGroup = UseCaseGroup.Builder()
+                        .setViewPort(viewPort)
+                        .addUseCase(preview)
+                        .addUseCase(imageCapture)
+                        .build()
+                    
                     cameraProvider.unbindAll()
                     cameraProvider.bindToLifecycle(
                         lifecycleOwner,
                         cameraSelector,
-                        preview,
-                        imageCapture
+                        useCaseGroup
                     )
                     onCameraReady(imageCapture)
                 } catch (e: Exception) {
