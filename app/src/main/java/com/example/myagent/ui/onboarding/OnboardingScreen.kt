@@ -1,8 +1,6 @@
 package com.example.myagent.ui.onboarding
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,14 +15,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myagent.ui.theme.GradientBackground
 
 @Composable
 fun OnboardingScreen(onContinue: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF101418))
-    ) {
+    GradientBackground {
         Column(
             modifier = Modifier
                 .fillMaxSize()

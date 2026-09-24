@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myagent.ui.theme.SmoochSans
 
 @Composable
 fun CameraTopBar() {
@@ -39,7 +40,7 @@ fun CameraTopBar() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 72.dp),
+            .padding(horizontal = 16.dp, vertical = 88.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -66,7 +67,7 @@ fun CameraTopBar() {
             contentDescription = "Вспышка",
             tint = if (isFlashActive.value) Color(0xFFFF6A44) else Color.White,
             modifier = Modifier
-                .size(40.dp)
+                .size(24.dp)
                 .shadow(
                     elevation = 3.dp,
                     shape = CircleShape,
@@ -80,7 +81,8 @@ fun CameraTopBar() {
         // Разрешение
         Text(
             text = "1080",
-            fontSize = 28.sp,
+            fontSize = 20.sp,
+            fontFamily = SmoochSans,
             color = if (isResolutionActive.value) Color(0xFFFF6A44) else Color.White.copy(alpha = 0.85f),
             fontWeight = FontWeight.Light,
             modifier = Modifier
@@ -90,7 +92,8 @@ fun CameraTopBar() {
         // Ручной режим
         Text(
             text = "PRO",
-            fontSize = 28.sp,
+            fontSize = 20.sp,
+            fontFamily = SmoochSans,
             color = if (isProModeActive.value) Color(0xFFFF6A44) else Color.White.copy(alpha = 0.85f),
             fontWeight = FontWeight.Light,
             modifier = Modifier
@@ -103,7 +106,7 @@ fun CameraTopBar() {
             contentDescription = "Помощь ИИ",
             tint = if (isAiHelpActive.value) Color(0xFFFF6A44) else Color.White,
             modifier = Modifier
-                .size(40.dp)
+                .size(24.dp)
                 .shadow(
                     elevation = 3.dp,
                     shape = CircleShape,

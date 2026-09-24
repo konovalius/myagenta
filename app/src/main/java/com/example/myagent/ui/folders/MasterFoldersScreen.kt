@@ -35,7 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.myagent.data.db.entity.MasterFolder
-import com.example.myagent.ui.theme.TrailText
+import com.example.myagent.ui.theme.GradientBackground
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -53,100 +53,112 @@ fun MasterFoldersScreen(
     onBack: () -> Unit,
     viewModel: MasterFolderViewModel = hiltViewModel()
 ) {
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    if (errorMessage != null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = errorMessage.orEmpty(),
+                color = Color.Red,
+                fontSize = 12.sp
+            )
+        }
+        return
+    }
+
     val folders by viewModel.folders.collectAsStateWithLifecycle()
     var showCreateDialog by remember { mutableStateOf(false) }
     var folderToDelete by remember { mutableStateOf<MasterFolder?>(null) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        if (folders.isEmpty()) {
-            Text(
-                text = "Мастер-папок пока нет",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 15.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 88.dp)
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
-            ) {
-                items(folders, key = { it.uuid }) { folder ->
-                    MasterFolderCard(
-                        folder = folder,
-                        onLongClick = { folderToDelete = folder }
-                    )
+    GradientBackground {
+            if (folders.isEmpty()) {
+                Text(
+                    text = "Мастер-папок пока нет",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 15.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 88.dp)
+                        .padding(horizontal = 20.dp),
+                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
+                ) {
+                    items(folders, key = { it.uuid }) { folder ->
+                        MasterFolderCard(
+                            folder = folder,
+                            onLongClick = { folderToDelete = folder }
+                        )
+                    }
                 }
             }
-        }
-        FloatingActionButton(
-            onClick = { showCreateDialog = true },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(24.dp)
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = "Создать папку")
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
+            FloatingActionButton(
+                onClick = { showCreateDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(24.dp)
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "Создать папку")
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Назад",
-                    tint = MaterialTheme.colorScheme.onSurface
+                    tint = Color.White
                 )
             }
             Spacer(Modifier.width(8.dp))
-            TrailText(
+            Text(
                 text = "Мастер-папки",
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.headlineMedium,
-                isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+                color = Color.White,
+                style = MaterialTheme.typography.headlineMedium
+            )
+            }
+        }
+
+        if (showCreateDialog) {
+            CreateFolderDialog(
+                onConfirm = { name ->
+                    viewModel.createFolder(name)
+                    showCreateDialog = false
+                },
+                onDismiss = { showCreateDialog = false }
             )
         }
-    }
 
-    if (showCreateDialog) {
-        CreateFolderDialog(
-            onConfirm = { name ->
-                viewModel.createFolder(name)
-                showCreateDialog = false
-            },
-            onDismiss = { showCreateDialog = false }
-        )
-    }
-
-    folderToDelete?.let { folder ->
-        AlertDialog(
-            onDismissRequest = { folderToDelete = null },
-            title = { Text("Удалить папку?") },
-            text = { Text("Папка «${folder.name}» будет удалена.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteFolder(folder)
-                    folderToDelete = null
-                }) {
-                    Text("Да")
+        folderToDelete?.let { folder ->
+            AlertDialog(
+                onDismissRequest = { folderToDelete = null },
+                title = { Text("Удалить папку?") },
+                text = { Text("Папка «${folder.name}» будет удалена.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.deleteFolder(folder)
+                        folderToDelete = null
+                    }) {
+                        Text("Да")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { folderToDelete = null }) {
+                        Text("Нет")
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { folderToDelete = null }) {
-                    Text("Нет")
-                }
-            }
-        )
-    }
+            )
+        }
 }
 
 @Composable
