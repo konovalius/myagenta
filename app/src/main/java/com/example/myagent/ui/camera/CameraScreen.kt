@@ -192,25 +192,21 @@ fun CameraScreen(
                 }
                 
                 // Тулбар над кнопкой съёмки
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 120.dp)
-                ) {
-                    CameraToolbar(
-                        onNavigateToMasterFolders = onNavigateToMasterFolders,
-                        onNavigateToMap = onNavigateToMap,
-                        onOpenGallery = {
-                            pickReferenceLauncher.launch(
-                                PickVisualMediaRequest(
-                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                )
+                CameraToolbar(
+                    onNavigateToMasterFolders = onNavigateToMasterFolders,
+                    onNavigateToMap = onNavigateToMap,
+                    onOpenGallery = {
+                        pickReferenceLauncher.launch(
+                            PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
                             )
-                        },
-                        onNavigateToOnboarding = onNavigateToOnboarding
-                    )
-                }
+                        )
+                    },
+                    onNavigateToOnboarding = onNavigateToOnboarding,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 140.dp)
+                )
                 
                 referencePhotoUri?.let { uri ->
                     Box(
