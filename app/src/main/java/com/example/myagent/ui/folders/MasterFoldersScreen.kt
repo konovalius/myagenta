@@ -53,23 +53,6 @@ fun MasterFoldersScreen(
     onBack: () -> Unit,
     viewModel: MasterFolderViewModel = hiltViewModel()
 ) {
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
-    if (errorMessage != null) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = errorMessage.orEmpty(),
-                color = Color.Red,
-                fontSize = 12.sp
-            )
-        }
-        return
-    }
-
     val folders by viewModel.folders.collectAsStateWithLifecycle()
     var showCreateDialog by remember { mutableStateOf(false) }
     var folderToDelete by remember { mutableStateOf<MasterFolder?>(null) }

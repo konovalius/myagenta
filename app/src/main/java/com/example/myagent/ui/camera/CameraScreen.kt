@@ -19,10 +19,14 @@ import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -31,6 +35,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -41,6 +46,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -592,51 +598,64 @@ private fun RecordingIndicator(modifier: Modifier = Modifier) {
 private fun VideoModeToolbar(modifier: Modifier = Modifier) {
     val isSlowMoActive = remember { mutableStateOf(false) }
     val isTimelapseActive = remember { mutableStateOf(false) }
-    val slowMoInteraction = remember { MutableInteractionSource() }
-    val timelapseInteraction = remember { MutableInteractionSource() }
 
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(48.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = Icons.Outlined.HourglassEmpty,
-            contentDescription = "Слоумо",
-            tint = if (isSlowMoActive.value) Color(0xFFFF3B30) else Color.White,
-            modifier = Modifier
-                .size(24.dp)
-                .pressScale(slowMoInteraction)
-                .shadow(
-                    elevation = 3.dp,
-                    shape = CircleShape,
-                    ambientColor = Color.Black,
-                    spotColor = Color.Black
-                )
-                .clickable(
-                    interactionSource = slowMoInteraction,
-                    indication = null
-                ) { isSlowMoActive.value = !isSlowMoActive.value }
-                .alpha(if (isSlowMoActive.value) 1f else 0.85f)
+        VideoModeRoundButton(
+            icon = Icons.Outlined.HourglassEmpty,
+            isActive = isSlowMoActive.value,
+            onToggle = { isSlowMoActive.value = !isSlowMoActive.value }
         )
+        VideoModeRoundButton(
+            icon = Icons.Outlined.FastForward,
+            isActive = isTimelapseActive.value,
+            onToggle = { isTimelapseActive.value = !isTimelapseActive.value }
+        )
+    }
+}
+
+@Composable
+private fun VideoModeRoundButton(
+    icon: ImageVector,
+    isActive: Boolean,
+    onToggle: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val bgColor by animateColorAsState(
+        targetValue = if (isActive) Color(0xFFFF3B30) else Color.Black.copy(alpha = 0.4f),
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "circleBg"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 1.1f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "circleScale"
+    )
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(CircleShape)
+            .background(bgColor)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null
+            ) { onToggle() }
+            .wrapContentSize(Alignment.Center),
+        contentAlignment = Alignment.Center
+    ) {
         Icon(
-            imageVector = Icons.Outlined.FastForward,
-            contentDescription = "Таймлапс",
-            tint = if (isTimelapseActive.value) Color(0xFFFF3B30) else Color.White,
-            modifier = Modifier
-                .size(24.dp)
-                .pressScale(timelapseInteraction)
-                .shadow(
-                    elevation = 3.dp,
-                    shape = CircleShape,
-                    ambientColor = Color.Black,
-                    spotColor = Color.Black
-                )
-                .clickable(
-                    interactionSource = timelapseInteraction,
-                    indication = null
-                ) { isTimelapseActive.value = !isTimelapseActive.value }
-                .alpha(if (isTimelapseActive.value) 1f else 0.85f)
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
         )
     }
 }
