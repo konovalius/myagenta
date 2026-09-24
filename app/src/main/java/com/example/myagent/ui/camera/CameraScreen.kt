@@ -20,11 +20,18 @@ import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -47,6 +54,8 @@ import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.SlowMotionVideo
+import androidx.compose.material.icons.outlined.Timelapse
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
@@ -64,6 +73,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -119,6 +129,8 @@ fun CameraScreen(
 
     var isFrontCamera by remember { mutableStateOf(false) }
     var hasFrontCamera by remember { mutableStateOf(true) }
+    var isVideoMode by remember { mutableStateOf(false) }
+    var isRecording by remember { mutableStateOf(false) }
     val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
     var viewerUri by remember { mutableStateOf<Uri?>(null) }
     var referencePhotoUri by remember(initialReferenceUri) { mutableStateOf(initialReferenceUri) }
@@ -209,6 +221,7 @@ fun CameraScreen(
                         )
                     },
                     onNavigateToOnboarding = onNavigateToOnboarding,
+                    enabled = !isVideoMode,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 120.dp)
@@ -349,6 +362,20 @@ fun CameraScreen(
                             .padding(start = 24.dp, bottom = 24.dp)
                     )
                 }
+                if (isRecording) {
+                    RecordingIndicator(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 140.dp)
+                    )
+                }
+                if (isVideoMode) {
+                    VideoModeToolbar(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 160.dp)
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -363,7 +390,22 @@ fun CameraScreen(
                         onClick = { isFrontCamera = !isFrontCamera },
                         modifier = Modifier.offset(x = (-68).dp)
                     )
-                    ShutterButton(onClick = capturePhoto)
+                    ShutterButton(
+                        isVideoMode = isVideoMode,
+                        onClick = {
+                            if (isVideoMode) {
+                                isRecording = !isRecording
+                            } else {
+                                capturePhoto()
+                            }
+                        },
+                        onLongPress = {
+                            if (!isRecording) {
+                                isVideoMode = !isVideoMode
+                                isRecording = false
+                            }
+                        }
+                    )
                 }
             }
         } else {
@@ -489,9 +531,12 @@ private fun CircularIconButton(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ShutterButton(
+    isVideoMode: Boolean,
     onClick: () -> Unit,
+    onLongPress: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -504,6 +549,7 @@ private fun ShutterButton(
         ),
         label = "shutterScale"
     )
+    val shutterColor = if (isVideoMode) Color(0xFFFF6A44) else Color.White
 
     Box(
         modifier = modifier
@@ -513,12 +559,13 @@ private fun ShutterButton(
                 scaleY = scale
             }
             .clip(CircleShape)
-            .border(4.dp, Color.White, CircleShape)
-            .clickable(
+            .border(4.dp, shutterColor, CircleShape)
+            .combinedClickable(
                 interactionSource = interactionSource,
                 indication = null,
                 role = Role.Button,
-                onClick = onClick
+                onClick = onClick,
+                onLongClick = onLongPress
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -526,7 +573,72 @@ private fun ShutterButton(
             modifier = Modifier
                 .size(54.dp)
                 .clip(CircleShape)
-                .background(Color.White, CircleShape)
+                .background(shutterColor, CircleShape)
+        )
+    }
+}
+
+@Composable
+private fun RecordingIndicator(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "recordingIndicator")
+    val blinkAlpha by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 500),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "recordingBlink"
+    )
+
+    Box(
+        modifier = modifier
+            .size(12.dp)
+            .alpha(blinkAlpha)
+            .clip(CircleShape)
+            .background(Color(0xFFFF6A44), CircleShape)
+    )
+}
+
+@Composable
+private fun VideoModeToolbar(modifier: Modifier = Modifier) {
+    val isSlowMoActive = remember { mutableStateOf(false) }
+    val isTimelapseActive = remember { mutableStateOf(false) }
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(48.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.SlowMotionVideo,
+            contentDescription = "Слоумо",
+            tint = if (isSlowMoActive.value) Color(0xFFFF6A44) else Color.White,
+            modifier = Modifier
+                .size(24.dp)
+                .shadow(
+                    elevation = 3.dp,
+                    shape = CircleShape,
+                    ambientColor = Color.Black,
+                    spotColor = Color.Black
+                )
+                .clickable { isSlowMoActive.value = !isSlowMoActive.value }
+                .alpha(if (isSlowMoActive.value) 1f else 0.85f)
+        )
+        Icon(
+            imageVector = Icons.Outlined.Timelapse,
+            contentDescription = "Таймлапс",
+            tint = if (isTimelapseActive.value) Color(0xFFFF6A44) else Color.White,
+            modifier = Modifier
+                .size(24.dp)
+                .shadow(
+                    elevation = 3.dp,
+                    shape = CircleShape,
+                    ambientColor = Color.Black,
+                    spotColor = Color.Black
+                )
+                .clickable { isTimelapseActive.value = !isTimelapseActive.value }
+                .alpha(if (isTimelapseActive.value) 1f else 0.85f)
         )
     }
 }

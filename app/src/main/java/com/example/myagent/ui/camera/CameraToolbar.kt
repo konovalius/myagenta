@@ -29,6 +29,7 @@ fun CameraToolbar(
     onNavigateToMap: () -> Unit,
     onOpenGallery: () -> Unit,
     onNavigateToOnboarding: () -> Unit,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val toolbarItems = listOf(
@@ -71,8 +72,8 @@ fun CameraToolbar(
                         ambientColor = Color.Black,
                         spotColor = Color.Black
                     )
-                    .clickable(onClick = item.onClick)
-                    .alpha(0.85f)
+                    .clickable(enabled = enabled, onClick = item.onClick)
+                    .alpha(if (enabled) 0.85f else 0.2f)
             )
         }
     }
