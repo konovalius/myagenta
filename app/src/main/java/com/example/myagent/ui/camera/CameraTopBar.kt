@@ -66,7 +66,7 @@ fun CameraTopBar() {
             contentDescription = "Вспышка",
             tint = if (isFlashActive.value) Color(0xFFFF6A44) else Color.White,
             modifier = Modifier
-                .size(20.dp)
+                .size(40.dp)
                 .shadow(
                     elevation = 3.dp,
                     shape = CircleShape,
@@ -80,7 +80,7 @@ fun CameraTopBar() {
         // Разрешение
         Text(
             text = "1080",
-            fontSize = 14.sp,
+            fontSize = 28.sp,
             color = if (isResolutionActive.value) Color(0xFFFF6A44) else Color.White.copy(alpha = 0.85f),
             fontWeight = FontWeight.Light,
             modifier = Modifier
@@ -90,7 +90,7 @@ fun CameraTopBar() {
         // Ручной режим
         Text(
             text = "PRO",
-            fontSize = 14.sp,
+            fontSize = 28.sp,
             color = if (isProModeActive.value) Color(0xFFFF6A44) else Color.White.copy(alpha = 0.85f),
             fontWeight = FontWeight.Light,
             modifier = Modifier
@@ -103,7 +103,7 @@ fun CameraTopBar() {
             contentDescription = "Помощь ИИ",
             tint = if (isAiHelpActive.value) Color(0xFFFF6A44) else Color.White,
             modifier = Modifier
-                .size(20.dp)
+                .size(40.dp)
                 .shadow(
                     elevation = 3.dp,
                     shape = CircleShape,
