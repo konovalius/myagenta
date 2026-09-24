@@ -19,13 +19,10 @@ import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -34,7 +31,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -55,7 +51,7 @@ import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.FastForward
-import androidx.compose.material.icons.outlined.SlowMotionVideo
+import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
@@ -89,6 +85,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
+import com.example.myagent.ui.common.pressScale
 
 @Composable
 fun CameraScreen(
@@ -510,24 +507,27 @@ private fun CircularIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
             .size(48.dp)
+            .pressScale(interactionSource)
             .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.4f)),
+            .background(Color.Black.copy(alpha = 0.4f))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                enabled = enabled,
+                onClick = onClick
+            ),
         contentAlignment = Alignment.Center
     ) {
-        IconButton(
-            onClick = onClick,
-            enabled = enabled,
-            modifier = Modifier.size(48.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                tint = if (enabled) Color.White else Color.Gray
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = if (enabled) Color.White else Color.Gray
+        )
     }
 }
 
@@ -540,24 +540,12 @@ private fun ShutterButton(
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.85f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "shutterScale"
-    )
-    val shutterColor = if (isVideoMode) Color(0xFFFF6A44) else Color.White
+    val shutterColor = if (isVideoMode) Color(0xFFFF3B30) else Color.White
 
     Box(
         modifier = modifier
             .size(72.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
+            .pressScale(interactionSource)
             .clip(CircleShape)
             .border(4.dp, shutterColor, CircleShape)
             .combinedClickable(
@@ -596,7 +584,7 @@ private fun RecordingIndicator(modifier: Modifier = Modifier) {
             .size(12.dp)
             .alpha(blinkAlpha)
             .clip(CircleShape)
-            .background(Color(0xFFFF6A44), CircleShape)
+            .background(Color(0xFFFF3B30), CircleShape)
     )
 }
 
@@ -604,6 +592,8 @@ private fun RecordingIndicator(modifier: Modifier = Modifier) {
 private fun VideoModeToolbar(modifier: Modifier = Modifier) {
     val isSlowMoActive = remember { mutableStateOf(false) }
     val isTimelapseActive = remember { mutableStateOf(false) }
+    val slowMoInteraction = remember { MutableInteractionSource() }
+    val timelapseInteraction = remember { MutableInteractionSource() }
 
     Row(
         modifier = modifier,
@@ -611,33 +601,41 @@ private fun VideoModeToolbar(modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Outlined.SlowMotionVideo,
+            imageVector = Icons.Outlined.HourglassEmpty,
             contentDescription = "Слоумо",
-            tint = if (isSlowMoActive.value) Color(0xFFFF6A44) else Color.White,
+            tint = if (isSlowMoActive.value) Color(0xFFFF3B30) else Color.White,
             modifier = Modifier
                 .size(24.dp)
+                .pressScale(slowMoInteraction)
                 .shadow(
                     elevation = 3.dp,
                     shape = CircleShape,
                     ambientColor = Color.Black,
                     spotColor = Color.Black
                 )
-                .clickable { isSlowMoActive.value = !isSlowMoActive.value }
+                .clickable(
+                    interactionSource = slowMoInteraction,
+                    indication = null
+                ) { isSlowMoActive.value = !isSlowMoActive.value }
                 .alpha(if (isSlowMoActive.value) 1f else 0.85f)
         )
         Icon(
             imageVector = Icons.Outlined.FastForward,
             contentDescription = "Таймлапс",
-            tint = if (isTimelapseActive.value) Color(0xFFFF6A44) else Color.White,
+            tint = if (isTimelapseActive.value) Color(0xFFFF3B30) else Color.White,
             modifier = Modifier
                 .size(24.dp)
+                .pressScale(timelapseInteraction)
                 .shadow(
                     elevation = 3.dp,
                     shape = CircleShape,
                     ambientColor = Color.Black,
                     spotColor = Color.Black
                 )
-                .clickable { isTimelapseActive.value = !isTimelapseActive.value }
+                .clickable(
+                    interactionSource = timelapseInteraction,
+                    indication = null
+                ) { isTimelapseActive.value = !isTimelapseActive.value }
                 .alpha(if (isTimelapseActive.value) 1f else 0.85f)
         )
     }

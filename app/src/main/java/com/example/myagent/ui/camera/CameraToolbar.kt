@@ -1,6 +1,7 @@
 package com.example.myagent.ui.camera
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -16,12 +17,14 @@ import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.myagent.ui.common.pressScale
 
 @Composable
 fun CameraToolbar(
@@ -60,19 +63,26 @@ fun CameraToolbar(
         horizontalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         items(toolbarItems) { item ->
+            val interactionSource = remember { MutableInteractionSource() }
             Icon(
                 imageVector = item.icon,
                 contentDescription = item.description,
                 tint = Color.White,
                 modifier = Modifier
                     .size(20.dp)
+                    .pressScale(interactionSource)
                     .shadow(
                         elevation = 3.dp,
                         shape = CircleShape,
                         ambientColor = Color.Black,
                         spotColor = Color.Black
                     )
-                    .clickable(enabled = enabled, onClick = item.onClick)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        enabled = enabled,
+                        onClick = item.onClick
+                    )
                     .alpha(if (enabled) 0.85f else 0.2f)
             )
         }
