@@ -18,7 +18,9 @@ object DataModule {
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.DB_NAME).build()
+        Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.DB_NAME)
+            .fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
 
     @Provides
     fun provideMasterFolderDao(database: AppDatabase): MasterFolderDao =
