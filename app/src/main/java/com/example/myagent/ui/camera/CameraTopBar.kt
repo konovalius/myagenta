@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,7 +34,7 @@ fun CameraTopBar() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -44,6 +45,7 @@ fun CameraTopBar() {
             tint = if (isSettingsActive.value) MaterialTheme.colorScheme.primary else Color.White,
             modifier = Modifier
                 .clickable { isSettingsActive.value = !isSettingsActive.value }
+                .alpha(if (isSettingsActive.value) 1.0f else 0.75f)
         )
 
         // Вспышка
@@ -53,13 +55,14 @@ fun CameraTopBar() {
             tint = if (isFlashActive.value) MaterialTheme.colorScheme.primary else Color.White,
             modifier = Modifier
                 .clickable { isFlashActive.value = !isFlashActive.value }
+                .alpha(if (isFlashActive.value) 1.0f else 0.75f)
         )
 
         // Разрешение
         Text(
             text = "1080",
             fontSize = 14.sp,
-            color = if (isResolutionActive.value) MaterialTheme.colorScheme.primary else Color.White,
+            color = if (isResolutionActive.value) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.75f),
             fontWeight = FontWeight.Light,
             modifier = Modifier
                 .clickable { isResolutionActive.value = !isResolutionActive.value }
@@ -69,7 +72,7 @@ fun CameraTopBar() {
         Text(
             text = "PRO",
             fontSize = 14.sp,
-            color = if (isProModeActive.value) MaterialTheme.colorScheme.primary else Color.White,
+            color = if (isProModeActive.value) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.75f),
             fontWeight = FontWeight.Light,
             modifier = Modifier
                 .clickable { isProModeActive.value = !isProModeActive.value }
@@ -82,6 +85,7 @@ fun CameraTopBar() {
             tint = if (isAiHelpActive.value) MaterialTheme.colorScheme.primary else Color.White,
             modifier = Modifier
                 .clickable { isAiHelpActive.value = !isAiHelpActive.value }
+                .alpha(if (isAiHelpActive.value) 1.0f else 0.75f)
         )
     }
 }
