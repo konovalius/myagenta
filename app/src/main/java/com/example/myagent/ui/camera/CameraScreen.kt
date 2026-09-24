@@ -78,7 +78,10 @@ import coil.compose.AsyncImage
 fun CameraScreen(
     initialReferenceUri: Uri? = null,
     initialLat: Double? = null,
-    initialLon: Double? = null
+    initialLon: Double? = null,
+    onNavigateToMasterFolders: () -> Unit = {},
+    onNavigateToMap: () -> Unit = {},
+    onNavigateToOnboarding: () -> Unit = {}
 ) {
     val viewModel: CameraViewModel = hiltViewModel()
     val context = LocalContext.current
@@ -186,6 +189,27 @@ fun CameraScreen(
                 // Топбар сверху
                 Box(modifier = Modifier.fillMaxSize()) {
                     CameraTopBar()
+                }
+                
+                // Тулбар над кнопкой съёмки
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 120.dp)
+                ) {
+                    CameraToolbar(
+                        onNavigateToMasterFolders = onNavigateToMasterFolders,
+                        onNavigateToMap = onNavigateToMap,
+                        onOpenGallery = {
+                            pickReferenceLauncher.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        },
+                        onNavigateToOnboarding = onNavigateToOnboarding
+                    )
                 }
                 
                 referencePhotoUri?.let { uri ->
@@ -338,19 +362,6 @@ fun CameraScreen(
                         modifier = Modifier.offset(x = (-68).dp)
                     )
                     ShutterButton(onClick = capturePhoto)
-                    CircularIconButton(
-                        icon = Icons.Filled.PhotoLibrary,
-                        contentDescription = "Выбрать ориентир",
-                        enabled = true,
-                        onClick = {
-                            pickReferenceLauncher.launch(
-                                PickVisualMediaRequest(
-                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                )
-                            )
-                        },
-                        modifier = Modifier.offset(x = 68.dp)
-                    )
                 }
             }
         } else {

@@ -2,9 +2,11 @@ package com.example.myagent.ui.camera
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FlashOn
 import androidx.compose.material.icons.outlined.Settings
@@ -39,30 +41,48 @@ fun CameraTopBar() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Настройки
-        Icon(
-            imageVector = Icons.Outlined.Settings,
-            contentDescription = "Настройки",
-            tint = if (isSettingsActive.value) MaterialTheme.colorScheme.primary else Color.White,
-            modifier = Modifier
-                .clickable { isSettingsActive.value = !isSettingsActive.value }
-                .alpha(if (isSettingsActive.value) 1.0f else 0.75f)
-        )
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Outlined.Settings,
+                contentDescription = null,
+                tint = Color.Black,
+                modifier = Modifier.size(26.dp)
+            )
+            Icon(
+                imageVector = Icons.Outlined.Settings,
+                contentDescription = "Настройки",
+                tint = if (isSettingsActive.value) Color(0xFFFF6A44) else Color.White.copy(alpha = 0.75f),
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable { isSettingsActive.value = !isSettingsActive.value }
+                    .alpha(if (isSettingsActive.value) 1.0f else 0.75f)
+            )
+        }
 
         // Вспышка
-        Icon(
-            imageVector = Icons.Outlined.FlashOn,
-            contentDescription = "Вспышка",
-            tint = if (isFlashActive.value) MaterialTheme.colorScheme.primary else Color.White,
-            modifier = Modifier
-                .clickable { isFlashActive.value = !isFlashActive.value }
-                .alpha(if (isFlashActive.value) 1.0f else 0.75f)
-        )
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Outlined.FlashOn,
+                contentDescription = null,
+                tint = Color.Black,
+                modifier = Modifier.size(26.dp)
+            )
+            Icon(
+                imageVector = Icons.Outlined.FlashOn,
+                contentDescription = "Вспышка",
+                tint = if (isFlashActive.value) Color(0xFFFF6A44) else Color.White.copy(alpha = 0.75f),
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable { isFlashActive.value = !isFlashActive.value }
+                    .alpha(if (isFlashActive.value) 1.0f else 0.75f)
+            )
+        }
 
         // Разрешение
         Text(
             text = "1080",
             fontSize = 14.sp,
-            color = if (isResolutionActive.value) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.75f),
+            color = if (isResolutionActive.value) Color(0xFFFF6A44) else Color.White.copy(alpha = 0.75f),
             fontWeight = FontWeight.Light,
             modifier = Modifier
                 .clickable { isResolutionActive.value = !isResolutionActive.value }
@@ -72,20 +92,29 @@ fun CameraTopBar() {
         Text(
             text = "PRO",
             fontSize = 14.sp,
-            color = if (isProModeActive.value) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.75f),
+            color = if (isProModeActive.value) Color(0xFFFF6A44) else Color.White.copy(alpha = 0.75f),
             fontWeight = FontWeight.Light,
             modifier = Modifier
                 .clickable { isProModeActive.value = !isProModeActive.value }
         )
 
-            // Помощь ИИ
-        Icon(
-            imageVector = Icons.Outlined.Star,
-            contentDescription = "Помощь ИИ",
-            tint = if (isAiHelpActive.value) MaterialTheme.colorScheme.primary else Color.White,
-            modifier = Modifier
-                .clickable { isAiHelpActive.value = !isAiHelpActive.value }
-                .alpha(if (isAiHelpActive.value) 1.0f else 0.75f)
-        )
+        // Помощь ИИ
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Outlined.Star,
+                contentDescription = null,
+                tint = Color.Black,
+                modifier = Modifier.size(26.dp)
+            )
+            Icon(
+                imageVector = Icons.Outlined.Star,
+                contentDescription = "Помощь ИИ",
+                tint = if (isAiHelpActive.value) Color(0xFFFF6A44) else Color.White.copy(alpha = 0.75f),
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable { isAiHelpActive.value = !isAiHelpActive.value }
+                    .alpha(if (isAiHelpActive.value) 1.0f else 0.75f)
+            )
+        }
     }
 }
