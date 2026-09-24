@@ -211,7 +211,7 @@ fun CameraScreen(
                     onNavigateToOnboarding = onNavigateToOnboarding,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 140.dp)
+                        .padding(bottom = 120.dp)
                 )
                 
                 referencePhotoUri?.let { uri ->
@@ -388,7 +388,7 @@ fun CameraPreview(
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember {
         PreviewView(context).apply {
-            scaleType = PreviewView.ScaleType.FIT_CENTER
+            scaleType = PreviewView.ScaleType.FILL_CENTER
         }
     }
     val imageCapture = remember { ImageCapture.Builder().build() }
