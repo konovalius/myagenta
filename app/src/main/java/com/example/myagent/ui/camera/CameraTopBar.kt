@@ -1,74 +1,87 @@
 package com.example.myagent.ui.camera
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FlashOn
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.FlashOn
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myagent.ui.theme.SmoochSans
 
 @Composable
 fun CameraTopBar() {
-    Box(
+    val isSettingsActive = remember { mutableStateOf(false) }
+    val isFlashActive = remember { mutableStateOf(false) }
+    val isResolutionActive = remember { mutableStateOf(false) }
+    val isProModeActive = remember { mutableStateOf(false) }
+    val isAiHelpActive = remember { mutableStateOf(false) }
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(60.dp)
-            .padding(top = 8.dp, start = 16.dp, end = 16.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Слева - текст "Timelapse"
-        Text(
-            text = "Timelapse",
-            fontFamily = SmoochSans,
-            fontWeight = FontWeight.Black,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.primary,
+        // Настройки
+        Icon(
+            imageVector = Icons.Outlined.Settings,
+            contentDescription = "Настройки",
+            tint = if (isSettingsActive.value) MaterialTheme.colorScheme.primary else Color.White,
             modifier = Modifier
-                .align(Alignment.CenterStart)
+                .clickable { isSettingsActive.value = !isSettingsActive.value }
         )
-        
-        // Справа - иконки
-        Row(
+
+        // Вспышка
+        Icon(
+            imageVector = Icons.Outlined.FlashOn,
+            contentDescription = "Вспышка",
+            tint = if (isFlashActive.value) MaterialTheme.colorScheme.primary else Color.White,
             modifier = Modifier
-                .align(Alignment.CenterEnd),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Иконка Settings
-            Icon(
-                imageVector = Icons.Filled.Settings,
-                contentDescription = "Настройки",
-                modifier = Modifier
-                    .alpha(0.7f)
-            )
-            
-            // Иконка FlashOn
-            Icon(
-                imageVector = Icons.Filled.FlashOn,
-                contentDescription = "Вспышка",
-                modifier = Modifier
-                    .alpha(0.7f)
-            )
-            
-            // Текст разрешения
-            Text(
-                text = "1080p",
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .alpha(0.7f)
-            )
-        }
+                .clickable { isFlashActive.value = !isFlashActive.value }
+        )
+
+        // Разрешение
+        Text(
+            text = "1080",
+            fontSize = 14.sp,
+            color = if (isResolutionActive.value) MaterialTheme.colorScheme.primary else Color.White,
+            fontWeight = FontWeight.Light,
+            modifier = Modifier
+                .clickable { isResolutionActive.value = !isResolutionActive.value }
+        )
+
+        // Ручной режим
+        Text(
+            text = "PRO",
+            fontSize = 14.sp,
+            color = if (isProModeActive.value) MaterialTheme.colorScheme.primary else Color.White,
+            fontWeight = FontWeight.Light,
+            modifier = Modifier
+                .clickable { isProModeActive.value = !isProModeActive.value }
+        )
+
+            // Помощь ИИ
+        Icon(
+            imageVector = Icons.Outlined.Star,
+            contentDescription = "Помощь ИИ",
+            tint = if (isAiHelpActive.value) MaterialTheme.colorScheme.primary else Color.White,
+            modifier = Modifier
+                .clickable { isAiHelpActive.value = !isAiHelpActive.value }
+        )
     }
 }
