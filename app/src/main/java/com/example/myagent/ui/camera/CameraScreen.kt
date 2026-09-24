@@ -54,8 +54,8 @@ import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.FastForward
 import androidx.compose.material.icons.outlined.SlowMotionVideo
-import androidx.compose.material.icons.outlined.Timelapse
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
@@ -365,8 +365,8 @@ fun CameraScreen(
                 if (isRecording) {
                     RecordingIndicator(
                         modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 140.dp)
+                            .align(Alignment.TopStart)
+                            .padding(start = 16.dp, top = 140.dp)
                     )
                 }
                 if (isVideoMode) {
@@ -626,7 +626,7 @@ private fun VideoModeToolbar(modifier: Modifier = Modifier) {
                 .alpha(if (isSlowMoActive.value) 1f else 0.85f)
         )
         Icon(
-            imageVector = Icons.Outlined.Timelapse,
+            imageVector = Icons.Outlined.FastForward,
             contentDescription = "Таймлапс",
             tint = if (isTimelapseActive.value) Color(0xFFFF6A44) else Color.White,
             modifier = Modifier
