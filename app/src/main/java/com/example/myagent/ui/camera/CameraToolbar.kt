@@ -51,9 +51,9 @@ fun CameraToolbar(
             val interactionSource = remember { MutableInteractionSource() }
             Text(
                 text = item.label,
-                fontSize = 18.sp,
+                fontSize = 14.sp,
                 fontFamily = SmoochSans,
-                fontWeight = FontWeight.Bold,
+                fontWeight = if (item.isActive) FontWeight.Bold else FontWeight.Medium,
                 color = if (item.isActive) Color(0xFFFF3B30) else Color.White.copy(alpha = 0.5f),
                 modifier = Modifier
                     .pressScale(interactionSource)

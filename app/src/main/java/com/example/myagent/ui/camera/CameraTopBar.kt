@@ -15,8 +15,10 @@ import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -35,14 +37,20 @@ fun CameraTopBar() {
     val isResolutionActive = remember { mutableStateOf(false) }
     val isProModeActive = remember { mutableStateOf(false) }
     val isAiHelpActive = remember { mutableStateOf(false) }
+    var isFormatMenuOpen by remember { mutableStateOf(false) }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 0.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    if (isFormatMenuOpen) {
+        FormatMenuRow(
+            onSelect = { isFormatMenuOpen = false }
+        )
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 0.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
         // Настройки
         val settingsInteraction = remember { MutableInteractionSource() }
         Icon(
@@ -91,10 +99,10 @@ fun CameraTopBar() {
         val resolutionInteraction = remember { MutableInteractionSource() }
         Text(
             text = "1080",
-            fontSize = 20.sp,
+            fontSize = 12.sp,
             fontFamily = SmoochSans,
             color = if (isResolutionActive.value) Color(0xFFFF3B30) else Color.White.copy(alpha = 0.85f),
-            fontWeight = FontWeight.Light,
+            fontWeight = FontWeight.Medium,
             modifier = Modifier
                 .pressScale(resolutionInteraction)
                 .clickable(
@@ -107,16 +115,32 @@ fun CameraTopBar() {
         val proInteraction = remember { MutableInteractionSource() }
         Text(
             text = "PRO",
-            fontSize = 20.sp,
+            fontSize = 12.sp,
             fontFamily = SmoochSans,
             color = if (isProModeActive.value) Color(0xFFFF3B30) else Color.White.copy(alpha = 0.85f),
-            fontWeight = FontWeight.Light,
+            fontWeight = FontWeight.Medium,
             modifier = Modifier
                 .pressScale(proInteraction)
                 .clickable(
                     interactionSource = proInteraction,
                     indication = null
                 ) { isProModeActive.value = !isProModeActive.value }
+        )
+
+        // Формат
+        val formatInteraction = remember { MutableInteractionSource() }
+        Text(
+            text = "4:3",
+            fontSize = 12.sp,
+            fontFamily = SmoochSans,
+            color = Color.White.copy(alpha = 0.85f),
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier
+                .pressScale(formatInteraction)
+                .clickable(
+                    interactionSource = formatInteraction,
+                    indication = null
+                ) { isFormatMenuOpen = true }
         )
 
         // Помощь ИИ
@@ -140,5 +164,36 @@ fun CameraTopBar() {
                 ) { isAiHelpActive.value = !isAiHelpActive.value }
                 .alpha(if (isAiHelpActive.value) 1.0f else 0.85f)
         )
+        }
+    }
+}
+
+@Composable
+private fun FormatMenuRow(onSelect: () -> Unit) {
+    val formats = listOf("16:9", "4:3", "1:1", "Full")
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 0.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        formats.forEach { format ->
+            val interactionSource = remember { MutableInteractionSource() }
+            Text(
+                text = format,
+                fontSize = 12.sp,
+                fontFamily = SmoochSans,
+                color = Color.White.copy(alpha = 0.85f),
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .pressScale(interactionSource)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onSelect
+                    )
+            )
+        }
     }
 }
