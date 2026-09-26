@@ -201,7 +201,7 @@ fun CameraScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(0.5f)
+                        .weight(0.3f)
                         .background(Color.Black),
                     contentAlignment = Alignment.BottomCenter
                 ) {
