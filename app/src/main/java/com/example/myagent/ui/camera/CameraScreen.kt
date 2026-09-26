@@ -19,14 +19,10 @@ import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -35,7 +31,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -46,7 +41,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -56,8 +50,6 @@ import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.outlined.FastForward
-import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
@@ -75,7 +67,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -132,6 +123,8 @@ fun CameraScreen(
 
     var isFrontCamera by remember { mutableStateOf(false) }
     var hasFrontCamera by remember { mutableStateOf(true) }
+    var isSlowMotionActive by remember { mutableStateOf(false) }
+    var isTimelapseActive by remember { mutableStateOf(false) }
     var isVideoMode by remember { mutableStateOf(false) }
     var isRecording by remember { mutableStateOf(false) }
     val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
@@ -214,6 +207,12 @@ fun CameraScreen(
                 
                 // Тулбар над кнопкой съёмки
                 CameraToolbar(
+                    isSlowMotionActive = isSlowMotionActive,
+                    onToggleSlowMotion = { isSlowMotionActive = !isSlowMotionActive },
+                    isTimelapseActive = isTimelapseActive,
+                    onToggleTimelapse = { isTimelapseActive = !isTimelapseActive },
+                    isVideoMode = isVideoMode,
+                    onToggleVideoMode = { isVideoMode = !isVideoMode },
                     onNavigateToMasterFolders = onNavigateToMasterFolders,
                     onNavigateToMap = onNavigateToMap,
                     onOpenGallery = {
@@ -224,10 +223,9 @@ fun CameraScreen(
                         )
                     },
                     onNavigateToOnboarding = onNavigateToOnboarding,
-                    enabled = !isVideoMode,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 120.dp)
+                        .padding(bottom = 200.dp)
                 )
                 
                 referencePhotoUri?.let { uri ->
@@ -372,13 +370,6 @@ fun CameraScreen(
                             .padding(start = 16.dp, top = 140.dp)
                     )
                 }
-                if (isVideoMode) {
-                    VideoModeToolbar(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 160.dp)
-                    )
-                }
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -394,20 +385,9 @@ fun CameraScreen(
                         modifier = Modifier.offset(x = (-68).dp)
                     )
                     ShutterButton(
-                        isVideoMode = isVideoMode,
-                        onClick = {
-                            if (isVideoMode) {
-                                isRecording = !isRecording
-                            } else {
-                                capturePhoto()
-                            }
-                        },
-                        onLongPress = {
-                            if (!isRecording) {
-                                isVideoMode = !isVideoMode
-                                isRecording = false
-                            }
-                        }
+                        isVideoMode = false,
+                        onClick = { capturePhoto() },
+                        onLongPress = {}
                     )
                 }
             }
@@ -592,70 +572,4 @@ private fun RecordingIndicator(modifier: Modifier = Modifier) {
             .clip(CircleShape)
             .background(Color(0xFFFF3B30), CircleShape)
     )
-}
-
-@Composable
-private fun VideoModeToolbar(modifier: Modifier = Modifier) {
-    val isSlowMoActive = remember { mutableStateOf(false) }
-    val isTimelapseActive = remember { mutableStateOf(false) }
-
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(48.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        VideoModeRoundButton(
-            icon = Icons.Outlined.HourglassEmpty,
-            isActive = isSlowMoActive.value,
-            onToggle = { isSlowMoActive.value = !isSlowMoActive.value }
-        )
-        VideoModeRoundButton(
-            icon = Icons.Outlined.FastForward,
-            isActive = isTimelapseActive.value,
-            onToggle = { isTimelapseActive.value = !isTimelapseActive.value }
-        )
-    }
-}
-
-@Composable
-private fun VideoModeRoundButton(
-    icon: ImageVector,
-    isActive: Boolean,
-    onToggle: () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val bgColor by animateColorAsState(
-        targetValue = if (isActive) Color(0xFFFF3B30) else Color.Black.copy(alpha = 0.4f),
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "circleBg"
-    )
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 1.1f else 1.0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "circleScale"
-    )
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clip(CircleShape)
-            .background(bgColor)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null
-            ) { onToggle() }
-            .wrapContentSize(Alignment.Center),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(24.dp)
-        )
-    }
 }
