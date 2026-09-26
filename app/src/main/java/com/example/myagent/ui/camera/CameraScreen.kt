@@ -198,21 +198,21 @@ fun CameraScreen(
                 CameraSelector.DEFAULT_BACK_CAMERA
             }
             Column(modifier = Modifier.fillMaxSize()) {
-                // Зона 1: верхняя чёрная полоса (1 часть)
+                // Зона 1: топбар — фиксированная высота
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
+                        .height(48.dp)
                         .background(Color.Black)
                 ) {
                     CameraTopBar()
                 }
 
-                // Зона 2: фото
+                // Зона 2: фото — сразу под топбаром
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
+                        .aspectRatio(4f / 3f)
                         .background(Color.Black)
                 ) {
                     CameraPreview(
@@ -363,11 +363,11 @@ fun CameraScreen(
                     )
                 }
                 }
-                // Зона 3: нижняя чёрная полоса (2 части)
+                // Зона 3: нижняя — всё оставшееся место
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(2f)
+                        .weight(1f)
                         .background(Color.Black)
                 ) {
                     Column(
