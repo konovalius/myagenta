@@ -393,7 +393,9 @@ fun CameraScreen(
                                 )
                             },
                             onNavigateToOnboarding = onNavigateToOnboarding,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
                         )
                         Box(
                             modifier = Modifier
