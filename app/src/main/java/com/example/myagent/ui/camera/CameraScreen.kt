@@ -202,7 +202,8 @@ fun CameraScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(0.5f)
-                        .background(Color.Black)
+                        .background(Color.Black),
+                    contentAlignment = Alignment.BottomCenter
                 ) {
                     CameraTopBar()
                 }
