@@ -199,12 +199,13 @@ fun CameraScreen(
                 CameraSelector.DEFAULT_BACK_CAMERA
             }
             Column(modifier = Modifier.fillMaxSize()) {
-                // Зона 1: топбар — БЕЗ weight, высота = размер содержимого
+                // Зона 1: верхняя полоса — фиксированная высота, топбар прижат к низу
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight()
-                        .background(Color.Black)
+                        .height(80.dp)
+                        .background(Color.Black),
+                    contentAlignment = Alignment.BottomCenter
                 ) {
                     CameraTopBar()
                 }
