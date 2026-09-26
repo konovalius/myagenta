@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myagent.ui.common.pressScale
+import com.example.myagent.ui.theme.GoshaSans
 import com.example.myagent.ui.theme.SmoochSans
 
 @Composable
@@ -98,7 +99,7 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
         Text(
             text = "1080",
             fontSize = 12.sp,
-            fontFamily = SmoochSans,
+            fontFamily = GoshaSans,
             color = if (isResolutionActive.value) Color(0xFFFF3B30) else Color.White.copy(alpha = 0.85f),
             fontWeight = FontWeight.Medium,
             modifier = Modifier
@@ -114,7 +115,7 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
         Text(
             text = "PRO",
             fontSize = 12.sp,
-            fontFamily = SmoochSans,
+            fontFamily = GoshaSans,
             color = if (isProModeActive.value) Color(0xFFFF3B30) else Color.White.copy(alpha = 0.85f),
             fontWeight = FontWeight.Medium,
             modifier = Modifier
@@ -130,7 +131,7 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
         Text(
             text = "4:3",
             fontSize = 12.sp,
-            fontFamily = SmoochSans,
+            fontFamily = GoshaSans,
             color = Color.White.copy(alpha = 0.85f),
             fontWeight = FontWeight.Medium,
             modifier = Modifier
