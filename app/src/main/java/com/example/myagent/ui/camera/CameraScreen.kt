@@ -66,6 +66,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -200,8 +201,15 @@ fun CameraScreen(
                     onCameraReady = { imageCapture = it }
                 )
                 
-                // Топбар сверху
-                Box(modifier = Modifier.fillMaxSize()) {
+                // Топбар сверху — узкая чёрная полоса 20dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(20.dp)
+                        .align(Alignment.TopCenter)
+                        .background(Color.Black)
+                        .clipToBounds()
+                ) {
                     CameraTopBar()
                 }
                 
