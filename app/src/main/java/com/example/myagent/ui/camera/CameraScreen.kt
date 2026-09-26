@@ -197,21 +197,21 @@ fun CameraScreen(
                 CameraSelector.DEFAULT_BACK_CAMERA
             }
             Column(modifier = Modifier.fillMaxSize()) {
-                // Зона 1: верхняя полоса (10%)
+                // Зона 1: верхняя полоса
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
+                        .weight(0.5f)
                         .background(Color.Black)
                 ) {
                     CameraTopBar()
                 }
 
-                // Зона 2: фото (70%)
+                // Зона 2: фото
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(7f)
+                        .weight(7.5f)
                         .background(Color.Black)
                 ) {
                     CameraPreview(
@@ -362,7 +362,7 @@ fun CameraScreen(
                     )
                 }
                 }
-                // Зона 3: нижняя полоса (20%)
+                // Зона 3: нижняя полоса
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
