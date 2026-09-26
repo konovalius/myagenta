@@ -33,7 +33,9 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -195,46 +197,28 @@ fun CameraScreen(
             } else {
                 CameraSelector.DEFAULT_BACK_CAMERA
             }
-            Box(modifier = Modifier.fillMaxSize()) {
-                CameraPreview(
-                    cameraSelector = cameraSelector,
-                    onCameraReady = { imageCapture = it }
-                )
-                
-                // Топбар сверху — узкая чёрная полоса 20dp
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Зона 1: верхняя чёрная полоса (1 часть)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(20.dp)
-                        .align(Alignment.TopCenter)
+                        .weight(1f)
                         .background(Color.Black)
-                        .clipToBounds()
                 ) {
                     CameraTopBar()
                 }
-                
-                // Тулбар над кнопкой съёмки
-                CameraToolbar(
-                    isSlowMotionActive = isSlowMotionActive,
-                    onToggleSlowMotion = { isSlowMotionActive = !isSlowMotionActive },
-                    isTimelapseActive = isTimelapseActive,
-                    onToggleTimelapse = { isTimelapseActive = !isTimelapseActive },
-                    isVideoMode = isVideoMode,
-                    onToggleVideoMode = { isVideoMode = !isVideoMode },
-                    onNavigateToMasterFolders = onNavigateToMasterFolders,
-                    onNavigateToMap = onNavigateToMap,
-                    onOpenGallery = {
-                        pickReferenceLauncher.launch(
-                            PickVisualMediaRequest(
-                                ActivityResultContracts.PickVisualMedia.ImageOnly
-                            )
-                        )
-                    },
-                    onNavigateToOnboarding = onNavigateToOnboarding,
+
+                // Зона 2: фото
+                Box(
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 200.dp)
-                )
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .background(Color.Black)
+                ) {
+                    CameraPreview(
+                        cameraSelector = cameraSelector,
+                        onCameraReady = { imageCapture = it }
+                    )
                 
                 referencePhotoUri?.let { uri ->
                     Box(
@@ -378,25 +362,57 @@ fun CameraScreen(
                             .padding(start = 16.dp, top = 140.dp)
                     )
                 }
+                }
+                // Зона 3: нижняя чёрная полоса (2 части)
                 Box(
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .padding(bottom = 24.dp),
-                    contentAlignment = Alignment.Center
+                        .weight(2f)
+                        .background(Color.Black)
                 ) {
-                    CircularIconButton(
-                        icon = Icons.Filled.FlipCameraAndroid,
-                        contentDescription = "Переключить камеру",
-                        enabled = hasFrontCamera,
-                        onClick = { isFrontCamera = !isFrontCamera },
-                        modifier = Modifier.offset(x = (-68).dp)
-                    )
-                    ShutterButton(
-                        isVideoMode = false,
-                        onClick = { capturePhoto() },
-                        onLongPress = {}
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        CameraToolbar(
+                            isSlowMotionActive = isSlowMotionActive,
+                            onToggleSlowMotion = { isSlowMotionActive = !isSlowMotionActive },
+                            isTimelapseActive = isTimelapseActive,
+                            onToggleTimelapse = { isTimelapseActive = !isTimelapseActive },
+                            isVideoMode = isVideoMode,
+                            onToggleVideoMode = { isVideoMode = !isVideoMode },
+                            onNavigateToMasterFolders = onNavigateToMasterFolders,
+                            onNavigateToMap = onNavigateToMap,
+                            onOpenGallery = {
+                                pickReferenceLauncher.launch(
+                                    PickVisualMediaRequest(
+                                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
+                                )
+                            },
+                            onNavigateToOnboarding = onNavigateToOnboarding,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularIconButton(
+                                icon = Icons.Filled.FlipCameraAndroid,
+                                contentDescription = "Переключить камеру",
+                                enabled = hasFrontCamera,
+                                onClick = { isFrontCamera = !isFrontCamera },
+                                modifier = Modifier.offset(x = (-68).dp)
+                            )
+                            ShutterButton(
+                                isVideoMode = false,
+                                onClick = { capturePhoto() },
+                                onLongPress = {}
+                            )
+                        }
+                    }
                 }
             }
         } else {
@@ -421,7 +437,8 @@ fun CameraPreview(
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember {
         PreviewView(context).apply {
-            scaleType = PreviewView.ScaleType.FIT_CENTER
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            scaleType = PreviewView.ScaleType.FILL_CENTER
         }
     }
     val imageCapture = remember { ImageCapture.Builder().build() }
@@ -466,7 +483,9 @@ fun CameraPreview(
 
     AndroidView(
         factory = { previewView },
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .clipToBounds()
     )
 }
 
