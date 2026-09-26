@@ -207,7 +207,7 @@ fun CameraScreen(
                         .background(Color.Black),
                     contentAlignment = Alignment.BottomCenter
                 ) {
-                    CameraTopBar()
+                    CameraTopBar(Modifier.padding(bottom = 8.dp))
                 }
 
                 // Зона 2: фото — ровно 3:4, без weight

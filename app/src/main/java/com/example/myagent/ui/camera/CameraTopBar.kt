@@ -31,7 +31,7 @@ import com.example.myagent.ui.common.pressScale
 import com.example.myagent.ui.theme.SmoochSans
 
 @Composable
-fun CameraTopBar() {
+fun CameraTopBar(modifier: Modifier = Modifier) {
     val isSettingsActive = remember { mutableStateOf(false) }
     val isFlashActive = remember { mutableStateOf(false) }
     val isResolutionActive = remember { mutableStateOf(false) }
@@ -40,12 +40,10 @@ fun CameraTopBar() {
     var isFormatMenuOpen by remember { mutableStateOf(false) }
 
     if (isFormatMenuOpen) {
-        FormatMenuRow(
-            onSelect = { isFormatMenuOpen = false }
-        )
+        FormatMenuRow(modifier = modifier, onSelect = { isFormatMenuOpen = false })
     } else {
         Row(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 0.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -169,10 +167,10 @@ fun CameraTopBar() {
 }
 
 @Composable
-private fun FormatMenuRow(onSelect: () -> Unit) {
+private fun FormatMenuRow(modifier: Modifier = Modifier, onSelect: () -> Unit) {
     val formats = listOf("16:9", "4:3", "1:1", "Full")
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 0.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
