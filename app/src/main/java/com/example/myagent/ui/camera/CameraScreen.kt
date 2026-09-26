@@ -35,7 +35,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -198,21 +197,21 @@ fun CameraScreen(
                 CameraSelector.DEFAULT_BACK_CAMERA
             }
             Column(modifier = Modifier.fillMaxSize()) {
-                // Зона 1: топбар — фиксированная высота
+                // Зона 1: верхняя полоса (10%)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .weight(1f)
                         .background(Color.Black)
                 ) {
                     CameraTopBar()
                 }
 
-                // Зона 2: фото — сразу под топбаром
+                // Зона 2: фото (70%)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(4f / 3f)
+                        .weight(7f)
                         .background(Color.Black)
                 ) {
                     CameraPreview(
@@ -363,11 +362,11 @@ fun CameraScreen(
                     )
                 }
                 }
-                // Зона 3: нижняя — всё оставшееся место
+                // Зона 3: нижняя полоса (20%)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
+                        .weight(2f)
                         .background(Color.Black)
                 ) {
                     Column(
