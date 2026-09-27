@@ -30,12 +30,15 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,7 +58,6 @@ import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -78,6 +80,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -339,28 +342,61 @@ fun CameraScreen(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
                             .padding(end = 12.dp)
-                            .width(56.dp)
+                            .width(48.dp)
                             .height(440.dp)
-                            .clip(RoundedCornerShape(28.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(Color.Black.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.TopCenter
                     ) {
-                        Slider(
-                            value = overlayAlpha,
-                            onValueChange = { overlayAlpha = it },
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .rotate(-90f)
-                        )
-                        Icon(
-                            imageVector = Icons.Filled.Opacity,
-                            contentDescription = "Прозрачность ориентира",
-                            tint = Color.White,
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(4.dp)
-                                .size(10.dp)
-                        )
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Icon(
+                                imageVector = Icons.Filled.Opacity,
+                                contentDescription = "Прозрачность ориентира",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(top = 6.dp)
+                                    .size(12.dp)
+                            )
+                            BoxWithConstraints(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                                    .padding(top = 8.dp, bottom = 16.dp)
+                            ) {
+                                val trackHeightPx =
+                                    maxHeight.value * LocalDensity.current.density
+                                val barHeight = maxHeight
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .pointerInput(trackHeightPx, overlayAlpha) {
+                                            detectVerticalDragGestures { change, dragAmount ->
+                                                change.consume()
+                                                overlayAlpha =
+                                                    (overlayAlpha - dragAmount / trackHeightPx)
+                                                        .coerceIn(0f, 1f)
+                                            }
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(4.dp)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(2.dp))
+                                            .background(Color.White.copy(alpha = 0.4f))
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .offset(y = (barHeight - 16.dp) * (1f - overlayAlpha))
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFFF3B30))
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
                 if (isRecording) {
