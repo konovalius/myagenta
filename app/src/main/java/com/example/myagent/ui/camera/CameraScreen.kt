@@ -29,8 +29,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -342,8 +344,9 @@ fun CameraScreen(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
                             .padding(end = 12.dp)
+                            .offset(y = 20.dp)
                             .width(48.dp)
-                            .height(440.dp)
+                            .height(400.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color.Black.copy(alpha = 0.3f)),
                         contentAlignment = Alignment.TopCenter
@@ -356,7 +359,7 @@ fun CameraScreen(
                                 modifier = Modifier
                                     .align(Alignment.CenterHorizontally)
                                     .padding(top = 6.dp)
-                                    .size(12.dp)
+                                    .size(18.dp)
                             )
                             BoxWithConstraints(
                                 modifier = Modifier
@@ -364,37 +367,51 @@ fun CameraScreen(
                                     .weight(1f)
                                     .padding(top = 8.dp, bottom = 16.dp)
                             ) {
-                                val trackHeightPx =
-                                    maxHeight.value * LocalDensity.current.density
                                 val barHeight = maxHeight
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .pointerInput(trackHeightPx, overlayAlpha) {
-                                            detectVerticalDragGestures { change, dragAmount ->
-                                                change.consume()
-                                                overlayAlpha =
-                                                    (overlayAlpha - dragAmount / trackHeightPx)
-                                                        .coerceIn(0f, 1f)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(Color.Black.copy(alpha = 0.45f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .fillMaxHeight(overlayAlpha)
+                                        .align(Alignment.BottomCenter)
+                                        .background(Color.White.copy(alpha = 0.45f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(2.dp)
+                                        .align(Alignment.BottomCenter)
+                                        .offset(y = -barHeight * overlayAlpha)
+                                        .background(Color.White)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .pointerInput(Unit) {
+                                            awaitEachGesture {
+                                                val down = awaitFirstDown(requireUnconsumed = false)
+                                                val pillHeight = size.height.toFloat()
+                                                var dragged = false
+                                                drag(down.id) { change ->
+                                                    dragged = true
+                                                    change.consume()
+                                                    overlayAlpha =
+                                                        (1f - change.position.y / pillHeight)
+                                                            .coerceIn(0f, 1f)
+                                                }
+                                                if (!dragged) {
+                                                    overlayAlpha =
+                                                        (1f - down.position.y / pillHeight)
+                                                            .coerceIn(0f, 1f)
+                                                }
                                             }
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(4.dp)
-                                            .fillMaxHeight()
-                                            .clip(RoundedCornerShape(2.dp))
-                                            .background(Color.White.copy(alpha = 0.4f))
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .size(16.dp)
-                                            .offset(y = (barHeight - 16.dp) * (1f - overlayAlpha))
-                                            .clip(CircleShape)
-                                            .background(Color(0xFFFF3B30))
-                                    )
-                                }
+                                        }
+                                )
                             }
                         }
                     }
