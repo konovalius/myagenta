@@ -3,17 +3,24 @@ package com.example.myagent
 import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myagent.ui.camera.CameraScreen
 import com.example.myagent.ui.folders.MasterFolderContentScreen
 import com.example.myagent.ui.folders.MasterFoldersScreen
+import com.example.myagent.ui.folders.PhotoViewerViewModel
 import com.example.myagent.ui.map.MapScreen
 import com.example.myagent.ui.onboarding.OnboardingScreen
 import com.example.myagent.ui.splash.SplashScreen
+import com.example.myagent.ui.camera.PhotoViewerScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object AppRoutes {
     const val SPLASH = "splash"
@@ -22,6 +29,12 @@ object AppRoutes {
     const val MAP = "map"
     const val MASTER_FOLDERS = "master-folders"
     const val MASTER_FOLDER_CONTENT = "master-folder/{folderUuid}"
+    const val PHOTO_VIEWER = "photo-viewer?uri={uri}&folderUuid={folderUuid}&showUseButton={showUseButton}"
+
+    fun photoViewer(uri: Uri, folderUuid: String, showUseButton: Boolean = true): String =
+        "photo-viewer?uri=" + Uri.encode(uri.toString()) +
+            "&folderUuid=" + folderUuid +
+            "&showUseButton=" + showUseButton
 
     fun camera(
         uri: Uri? = null,
@@ -133,10 +146,62 @@ fun AppNavHost() {
         ) {
             MasterFolderContentScreen(
                 onBack = { navController.popBackStack() },
-                onOpenCamera = { uri, folderUuid ->
-                    navController.navigate(AppRoutes.camera(uri = uri, folderUuid = folderUuid))
+                onOpenPhoto = { uri, folderUuid ->
+                    navController.navigate(AppRoutes.photoViewer(uri, folderUuid))
                 }
             )
+        }
+        composable(
+            route = AppRoutes.PHOTO_VIEWER,
+            arguments = listOf(
+                navArgument("uri") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("folderUuid") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("showUseButton") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val uri = backStackEntry.arguments?.getString("uri")
+                ?.let { Uri.decode(it) }
+                ?.let { Uri.parse(it) }
+            val folderUuid = backStackEntry.arguments?.getString("folderUuid")
+            val showUseButton = backStackEntry.arguments?.getString("showUseButton")?.toBoolean() ?: false
+            val viewerViewModel: PhotoViewerViewModel = hiltViewModel()
+            val scope = rememberCoroutineScope()
+            if (uri != null) {
+                PhotoViewerScreen(
+                    uri = uri,
+                    onUsePhoto = if (showUseButton && folderUuid != null) {
+                        {
+                            navController.navigate(
+                                AppRoutes.camera(uri = uri, folderUuid = folderUuid)
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                    onBack = { navController.popBackStack() },
+                    onDelete = {
+                        val uriToDelete = uri
+                        scope.launch(Dispatchers.IO) {
+                            viewerViewModel.deletePhoto(uriToDelete)
+                            withContext(Dispatchers.Main) {
+                                navController.popBackStack()
+                            }
+                        }
+                    }
+                )
+            }
         }
     }
 }

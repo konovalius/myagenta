@@ -3,6 +3,7 @@ package com.example.myagent.ui.camera
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -19,7 +20,8 @@ import coil.compose.AsyncImage
 fun PhotoViewerScreen(
     uri: Uri,
     onBack: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onUsePhoto: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
@@ -40,13 +42,19 @@ fun PhotoViewerScreen(
         ) {
             Text("Назад", color = Color.White)
         }
-        TextButton(
-            onClick = onDelete,
+        Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
         ) {
-            Text("Удалить", color = Color.White)
+            onUsePhoto?.let { usePhoto ->
+                TextButton(onClick = usePhoto) {
+                    Text("Использовать", color = Color.White)
+                }
+            }
+            TextButton(onClick = onDelete) {
+                Text("Удалить", color = Color.White)
+            }
         }
     }
 }

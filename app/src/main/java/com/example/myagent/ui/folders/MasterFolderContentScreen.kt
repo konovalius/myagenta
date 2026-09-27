@@ -39,7 +39,7 @@ import com.example.myagent.ui.theme.GradientBackground
 @Composable
 fun MasterFolderContentScreen(
     onBack: () -> Unit,
-    onOpenCamera: (Uri, String) -> Unit,
+    onOpenPhoto: (Uri, String) -> Unit,
     viewModel: MasterFolderContentViewModel = hiltViewModel()
 ) {
     val folder by viewModel.folder.collectAsStateWithLifecycle()
@@ -96,7 +96,7 @@ fun MasterFolderContentScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .clickable {
                                 val folderUuid = folder?.uuid ?: return@clickable
-                                onOpenCamera(Uri.parse(photo.uri), folderUuid)
+                                onOpenPhoto(Uri.parse(photo.uri), folderUuid)
                             }
                     )
                 }
