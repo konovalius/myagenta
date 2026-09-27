@@ -301,23 +301,23 @@ fun CameraScreen(
                             IconButton(
                                 onClick = { isEditingOverlay = !isEditingOverlay },
                                 modifier = Modifier
-                                    .size(20.dp)
+                                    .size(15.dp)
                                     .background(
                                         if (isEditingOverlay) Color.White
                                         else Color.Black.copy(alpha = 0.6f),
                                         CircleShape
                                     )
                             ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Edit,
-                                    contentDescription = if (isEditingOverlay) {
-                                        "Выключить редактирование"
-                                    } else {
-                                        "Редактировать"
-                                    },
-                                    tint = if (isEditingOverlay) Color.Black else Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
+Icon(
+                                imageVector = Icons.Filled.Edit,
+                                contentDescription = if (isEditingOverlay) {
+                                    "Выключить редактирование"
+                                } else {
+                                    "Редактировать"
+                                },
+                                tint = if (isEditingOverlay) Color.Black else Color.White,
+                                modifier = Modifier.size(12.dp)
+                            )
                             }
                             IconButton(
                                 onClick = {
@@ -327,15 +327,15 @@ fun CameraScreen(
                                     overlayAlpha = 0.5f
                                 },
                                 modifier = Modifier
-                                    .size(20.dp)
+                                    .size(15.dp)
                                     .background(Color.Black.copy(alpha = 0.6f), CircleShape)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Refresh,
-                                    contentDescription = "Сбросить ориентир",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
+Icon(
+                                imageVector = Icons.Filled.Refresh,
+                                contentDescription = "Сбросить ориентир",
+                                tint = Color.White,
+                                modifier = Modifier.size(12.dp)
+                            )
                             }
                         }
                     }
