@@ -6,11 +6,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -40,77 +42,97 @@ fun PhotoViewerScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        AsyncImage(
-            model = uri,
-            contentDescription = "Снимок",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize()
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 24.dp, bottom = 38.dp)
-                .height(44.dp)
-                .clickable(onClick = onBack),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "back",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text("back", color = Color.White, fontSize = 12.sp)
-            }
-        }
-        onUsePhoto?.let { usePhoto ->
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+            )
             Box(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 24.dp)
-                    .size(72.dp)
-                    .clip(CircleShape)
-                    .border(4.dp, Color.White, CircleShape)
-                    .clickable(onClick = usePhoto),
+                    .fillMaxWidth()
+                    .aspectRatio(3f / 4f)
+                    .background(Color.Black)
+            ) {
+                AsyncImage(
+                    model = uri,
+                    contentDescription = "Снимок",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .background(Color.Black),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(54.dp)
-                        .clip(CircleShape)
-                        .background(Color.White, CircleShape),
-                    contentAlignment = Alignment.Center
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(40.dp)
                 ) {
-                    Text(
-                        text = "use",
-                        color = Color.Black,
-                        fontSize = 12.sp,
-                        textAlign = TextAlign.Center
-                    )
+                    Box(
+                        modifier = Modifier
+                            .height(44.dp)
+                            .clickable(onClick = onBack),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "back",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text("back", color = Color.White, fontSize = 12.sp)
+                        }
+                    }
+                    onUsePhoto?.let { usePhoto ->
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .border(4.dp, Color.White, CircleShape)
+                                .clickable(onClick = usePhoto),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "use",
+                                    color = Color.Black,
+                                    fontSize = 12.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFFF3B30), CircleShape)
+                            .clickable(onClick = onDelete),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "delete",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
-        }
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .offset(x = 108.dp)
-                .padding(bottom = 38.dp)
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(Color(0xFFFF3B30), CircleShape)
-                .clickable(onClick = onDelete),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "delete",
-                color = Color.White,
-                fontSize = 10.sp,
-                textAlign = TextAlign.Center
-            )
         }
     }
 }
