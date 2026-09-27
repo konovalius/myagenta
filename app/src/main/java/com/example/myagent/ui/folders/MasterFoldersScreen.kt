@@ -2,7 +2,9 @@ package com.example.myagent.ui.folders
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.focus.FocusState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -89,20 +92,28 @@ fun MasterFoldersScreen(
                     )
                 }
             }
-            OutlinedTextField(
-                value = viewModel.searchQuery.value,
-                onValueChange = { viewModel.searchQuery.value = it },
-                label = { Text("Поиск по названию", color = Color.White.copy(alpha = 0.7f)) },
-                placeholder = { Text("Поиск по названию", color = Color.White.copy(alpha = 0.5f)) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Поиск", tint = Color.White.copy(alpha = 0.7f)) },
-                trailingIcon = {
-                    if (viewModel.searchQuery.value.isNotBlank()) {
-                        IconButton(onClick = { viewModel.searchQuery.value = "" }) {
-                            Icon(Icons.Filled.Clear, contentDescription = "Очистить", tint = Color.White.copy(alpha = 0.7f))
-                        }
-                    }
-                },
-                )
+            Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = viewModel.searchQuery.value,
+                        onValueChange = { viewModel.searchQuery.value = it },
+                        label = null,
+                        placeholder = { Text("Поиск по названию", color = Color.White.copy(alpha = 0.5f)) },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Поиск", tint = Color.White.copy(alpha = 0.7f)) },
+                        trailingIcon = {
+                            if (viewModel.searchQuery.value.isNotBlank()) {
+                                IconButton(onClick = { viewModel.searchQuery.value = "" }) {
+                                    Icon(Icons.Filled.Clear, contentDescription = "Очистить", tint = Color.White.copy(alpha = 0.7f))
+                                }
+                            }
+                        },
+                        singleLine = true
+                    )
+                }
             val filteredFolders by viewModel.filteredFolders.collectAsStateWithLifecycle()
             if (filteredFolders.isEmpty()) {
                 Box(
@@ -196,6 +207,7 @@ private fun CreateFolderDialog(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Название папки") },
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 singleLine = true
             )
         },
