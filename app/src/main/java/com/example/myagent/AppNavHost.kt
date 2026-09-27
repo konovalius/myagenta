@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.myagent.ui.camera.CameraScreen
+import com.example.myagent.ui.folders.MasterFolderContentScreen
 import com.example.myagent.ui.folders.MasterFoldersScreen
 import com.example.myagent.ui.map.MapScreen
 import com.example.myagent.ui.onboarding.OnboardingScreen
@@ -20,6 +21,7 @@ object AppRoutes {
     const val ONBOARDING = "onboarding"
     const val MAP = "map"
     const val MASTER_FOLDERS = "master-folders"
+    const val MASTER_FOLDER_CONTENT = "master-folder/{folderUuid}"
 
     fun camera(uri: Uri? = null, lat: Double? = null, lon: Double? = null): String {
         val params = buildList {
@@ -101,7 +103,22 @@ fun AppNavHost() {
             )
         }
         composable(AppRoutes.MASTER_FOLDERS) {
-            MasterFoldersScreen(onBack = { navController.popBackStack() })
+            MasterFoldersScreen(
+                onBack = { navController.popBackStack() },
+                onOpenFolder = { folderUuid ->
+                    navController.navigate("master-folder/$folderUuid")
+                }
+            )
+        }
+        composable(
+            route = AppRoutes.MASTER_FOLDER_CONTENT,
+            arguments = listOf(
+                navArgument("folderUuid") {
+                    type = NavType.StringType
+                }
+            )
+        ) {
+            MasterFolderContentScreen(onBack = { navController.popBackStack() })
         }
     }
 }

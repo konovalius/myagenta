@@ -51,6 +51,7 @@ import java.util.Locale
 @Composable
 fun MasterFoldersScreen(
     onBack: () -> Unit,
+    onOpenFolder: (String) -> Unit,
     viewModel: MasterFolderViewModel = hiltViewModel()
 ) {
     val folders by viewModel.folders.collectAsStateWithLifecycle()
@@ -77,6 +78,7 @@ fun MasterFoldersScreen(
                     items(folders, key = { it.uuid }) { folder ->
                         MasterFolderCard(
                             folder = folder,
+                            onClick = { onOpenFolder(folder.uuid) },
                             onLongClick = { folderToDelete = folder }
                         )
                     }
@@ -182,6 +184,7 @@ private fun CreateFolderDialog(
 @Composable
 private fun MasterFolderCard(
     folder: MasterFolder,
+    onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
     val (icon, typeLabel) = if (folder.type == "geo") {
@@ -197,7 +200,7 @@ private fun MasterFolderCard(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
             .combinedClickable(
-                onClick = {},
+                onClick = onClick,
                 onLongClick = onLongClick
             )
             .padding(16.dp),
