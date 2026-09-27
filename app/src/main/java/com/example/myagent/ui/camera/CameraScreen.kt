@@ -40,7 +40,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -76,13 +75,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -343,76 +342,67 @@ fun CameraScreen(
                     Box(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
-                            .padding(end = 12.dp)
-                            .offset(y = 20.dp)
+                            .padding(end = 8.dp)
                             .width(48.dp)
-                            .height(400.dp)
+                            .height(340.dp)
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color.Black.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.TopCenter
+                            .background(Color.Black.copy(alpha = 0.3f))
                     ) {
-                        Column(modifier = Modifier.fillMaxSize()) {
+                        BoxWithConstraints(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = 8.dp, bottom = 16.dp)
+                        ) {
+                            val light = Color.White.copy(alpha = 0.45f)
+                            val dark = Color.Black.copy(alpha = 0.45f)
+                            val soft = 0.08f
+                            val stop0 = (overlayAlpha - soft).coerceIn(0f, 1f)
+                            val stop1 = (overlayAlpha + soft).coerceIn(0f, 1f)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            0f to light,
+                                            stop0 to light,
+                                            stop1 to dark,
+                                            1f to dark
+                                        )
+                                    )
+                            )
                             Icon(
                                 imageVector = Icons.Filled.Opacity,
                                 contentDescription = "Прозрачность ориентира",
                                 tint = Color.White,
                                 modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
-                                    .padding(top = 6.dp)
+                                    .align(Alignment.TopCenter)
+                                    .padding(top = 8.dp)
                                     .size(18.dp)
                             )
-                            BoxWithConstraints(
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f)
-                                    .padding(top = 8.dp, bottom = 16.dp)
-                            ) {
-                                val barHeight = maxHeight
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(Color.Black.copy(alpha = 0.45f))
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .fillMaxHeight(overlayAlpha)
-                                        .align(Alignment.BottomCenter)
-                                        .background(Color.White.copy(alpha = 0.45f))
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(2.dp)
-                                        .align(Alignment.BottomCenter)
-                                        .offset(y = -barHeight * overlayAlpha)
-                                        .background(Color.White)
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .pointerInput(Unit) {
-                                            awaitEachGesture {
-                                                val down = awaitFirstDown(requireUnconsumed = false)
-                                                val pillHeight = size.height.toFloat()
-                                                var dragged = false
-                                                drag(down.id) { change ->
-                                                    dragged = true
-                                                    change.consume()
-                                                    overlayAlpha =
-                                                        (1f - change.position.y / pillHeight)
-                                                            .coerceIn(0f, 1f)
-                                                }
-                                                if (!dragged) {
-                                                    overlayAlpha =
-                                                        (1f - down.position.y / pillHeight)
-                                                            .coerceIn(0f, 1f)
-                                                }
+                                    .fillMaxSize()
+                                    .pointerInput(Unit) {
+                                        awaitEachGesture {
+                                            val down = awaitFirstDown(requireUnconsumed = false)
+                                            val pillHeight = size.height.toFloat()
+                                            var dragged = false
+                                            drag(down.id) { change ->
+                                                dragged = true
+                                                change.consume()
+                                                overlayAlpha =
+                                                    (1f - change.position.y / pillHeight)
+                                                        .coerceIn(0f, 1f)
+                                            }
+                                            if (!dragged) {
+                                                overlayAlpha =
+                                                    (1f - down.position.y / pillHeight)
+                                                        .coerceIn(0f, 1f)
                                             }
                                         }
-                                )
-                            }
+                                    }
+                            )
                         }
                     }
                 }
