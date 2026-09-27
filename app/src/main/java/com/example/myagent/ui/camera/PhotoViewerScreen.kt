@@ -47,13 +47,13 @@ fun PhotoViewerScreen(
             TextButton(onClick = onBack) {
                 Text("Назад", color = Color.White)
             }
-            TextButton(onClick = onDelete) {
-                Text("Удалить", color = Color.White)
-            }
             onUsePhoto?.let { usePhoto ->
                 TextButton(onClick = usePhoto) {
                     Text("Использовать", color = Color.White)
                 }
+            }
+            TextButton(onClick = onDelete) {
+                Text("Удалить", color = Color.White)
             }
         }
     }
