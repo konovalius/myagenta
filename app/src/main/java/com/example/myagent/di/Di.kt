@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.myagent.data.db.AppDatabase
 import com.example.myagent.data.db.dao.MasterFolderDao
+import com.example.myagent.data.db.dao.PhotoDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,4 +26,8 @@ object DataModule {
     @Provides
     fun provideMasterFolderDao(database: AppDatabase): MasterFolderDao =
         database.masterFolderDao()
+
+    @Provides
+    fun providePhotoDao(database: AppDatabase): PhotoDao =
+        database.photoDao()
 }

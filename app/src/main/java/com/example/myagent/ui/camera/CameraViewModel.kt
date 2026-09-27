@@ -9,17 +9,24 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.myagent.data.db.entity.Photo
 import com.example.myagent.data.repository.FileRepository
+import com.example.myagent.data.repository.PhotoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDateTime
+import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class CameraViewModel @Inject constructor(
-    private val fileRepository: FileRepository
+    private val fileRepository: FileRepository,
+    private val photoRepository: PhotoRepository
 ) : ViewModel() {
 
     private val _lastPhotoUri = MutableStateFlow<Uri?>(null)
@@ -42,6 +49,8 @@ class CameraViewModel @Inject constructor(
 
     fun capturePhoto(imageCapture: ImageCapture, context: Context) {
         val captureTime = LocalDateTime.now()
+        val captureLat = lat
+        val captureLon = lon
         val contentValues = fileRepository.newPhotoContentValues(captureTime)
         val pendingName = contentValues.getAsString(MediaStore.MediaColumns.DISPLAY_NAME)
         val outputOptions = ImageCapture.OutputFileOptions.Builder(
@@ -59,6 +68,20 @@ class CameraViewModel @Inject constructor(
                         fileRepository.writeDateExif(savedUri, captureTime)
                         fileRepository.setPending(savedUri, false)
                         _lastPhotoUri.value = savedUri
+                        if (captureLat != null && captureLon != null) {
+                            val photo = Photo(
+                                uuid = UUID.randomUUID().toString(),
+                                uri = savedUri.toString(),
+                                folderUuid = null,
+                                createdAt = System.currentTimeMillis(),
+                                lat = captureLat,
+                                lon = captureLon
+                            )
+                            viewModelScope.launch(Dispatchers.IO) {
+                                photoRepository.insert(photo)
+                            }
+                            Log.wtf("CameraVM", "Photo record created: ${photo.uuid} at $captureLat,$captureLon")
+                        }
                         Toast.makeText(context, "Фото сохранено в галерею", Toast.LENGTH_SHORT)
                             .show()
                     } else {
