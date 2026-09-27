@@ -17,6 +17,8 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -44,8 +47,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -59,6 +64,7 @@ import coil.size.Scale
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.ui.theme.GoshaSans
 import java.util.Locale
 import kotlinx.coroutines.Job
@@ -123,6 +129,8 @@ fun MapScreen(
     val scope = rememberCoroutineScope()
     val geoPickScope = rememberCoroutineScope()
     var geoPick by remember { mutableStateOf<GeoPickState?>(null) }
+    var deleteMode by remember { mutableStateOf(false) }
+    var folderToDelete by remember { mutableStateOf<MasterFolder?>(null) }
 
     fun openGeoCameraToFolder(lat: Double, lon: Double, folderUuid: String?) {
         geoPickScope.launch {
@@ -261,7 +269,11 @@ fun MapScreen(
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 title = pin.folder.name
                 setOnMarkerClickListener { _, _ ->
-                    onOpenFolder(pin.folder.uuid)
+                    if (deleteMode) {
+                        folderToDelete = pin.folder
+                    } else {
+                        onOpenFolder(pin.folder.uuid)
+                    }
                     true
                 }
             }
@@ -296,6 +308,35 @@ fun MapScreen(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Назад",
                 tint = Color.White
+            )
+        }
+        val deleteInteraction = remember { MutableInteractionSource() }
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(end = 16.dp, top = 48.dp)
+                .size(35.2.dp)
+                .clip(CircleShape)
+                .background(
+                    if (deleteMode) {
+                        Color(0xFFFF3B30)
+                    } else {
+                        Color.Black.copy(alpha = 0.56f)
+                    }
+                )
+                .clickable(
+                    interactionSource = deleteInteraction,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = { deleteMode = !deleteMode }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = "Режим удаления папок",
+                tint = Color.White.copy(alpha = if (deleteMode) 1f else 0.56f),
+                modifier = Modifier.size(28.6.dp)
             )
         }
         currentLocation?.let { location ->
@@ -391,6 +432,30 @@ onClick = {
                     }
                 )
             }
+        }
+        folderToDelete?.let { folder ->
+            AlertDialog(
+                onDismissRequest = { folderToDelete = null },
+                title = { Text("Удалить папку?", fontFamily = GoshaSans) },
+                text = {
+                    Text("Папка «${folder.name}» и все её фото будут удалены безвозвратно.")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            folderToDelete = null
+                            geoPickScope.launch { viewModel.deleteFolderWithPhotos(folder) }
+                        }
+                    ) {
+                        Text("Да")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { folderToDelete = null }) {
+                        Text("Нет")
+                    }
+                }
+            )
         }
     }
 }

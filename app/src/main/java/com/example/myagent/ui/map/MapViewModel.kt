@@ -1,9 +1,11 @@
 package com.example.myagent.ui.map
 
 import android.location.Location
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myagent.data.db.entity.MasterFolder
+import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.PhotoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +32,8 @@ data class GeoPickFolder(
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val masterFolderRepository: MasterFolderRepository,
-    private val photoRepository: PhotoRepository
+    private val photoRepository: PhotoRepository,
+    private val fileRepository: FileRepository
 ) : ViewModel() {
 
     private val _geoFolders = MutableStateFlow<List<GeoFolderPin>>(emptyList())
@@ -88,5 +91,15 @@ class MapViewModel @Inject constructor(
         )
         masterFolderRepository.insert(folder)
         return folder
+    }
+
+    suspend fun deleteFolderWithPhotos(folder: MasterFolder) {
+        val photos = photoRepository.getByFolder(folder.uuid).first()
+        photos.forEach { photo ->
+            fileRepository.delete(Uri.parse(photo.uri))
+            photoRepository.delete(photo)
+        }
+        masterFolderRepository.delete(folder)
+        refresh()
     }
 }
