@@ -43,7 +43,7 @@ object AppRoutes {
         folderUuid: String? = null
     ): String {
         val params = buildList {
-            uri?.let { add("uri=" + Uri.encode(it.toString())) }
+            uri?.let { add("uri=${it.toString()}") }
             lat?.let { add("lat=$it") }
             lon?.let { add("lon=$it") }
             folderUuid?.let { add("folderUuid=$it") }
@@ -207,13 +207,9 @@ fun AppNavHost() {
                     },
                     onSavePhoto = if (showUseButton && folderUuid != null) {
                         {
-                            val uriToSave = uri
-                            val targetFolder = folderUuid
-                            scope.launch(Dispatchers.IO) {
-                                viewerViewModel.attachPhotoToFolder(uriToSave, targetFolder)
-                                withContext(Dispatchers.Main) {
-                                    navController.popBackStack()
-                                    navController.navigate("master-folder/$targetFolder")
+                            scope.launch {
+                                navController.navigate(AppRoutes.camera()) {
+                                    popUpTo(AppRoutes.MASTER_FOLDER_CONTENT) { inclusive = true }
                                 }
                             }
                         }
