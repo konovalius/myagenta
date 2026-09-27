@@ -282,7 +282,7 @@ fun CameraScreen(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(16.dp)
-                                .size(20.dp)
+                                .size(40.dp)
                                 .clip(CircleShape)
                                 .background(Color.Black.copy(alpha = 0.6f))
                                 .clickable(
@@ -297,19 +297,19 @@ fun CameraScreen(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = "Убрать ориентир",
                                 tint = Color.White,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                         Row(
                             modifier = Modifier
                                 .align(Alignment.TopStart)
                                 .padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
 val editInteraction = remember { MutableInteractionSource() }
                             Box(
                                 modifier = Modifier
-                                    .size(15.dp)
+                                    .size(30.dp)
                                     .clip(CircleShape)
                                     .background(
                                         if (isEditingOverlay) Color.White
@@ -331,13 +331,13 @@ val editInteraction = remember { MutableInteractionSource() }
                                         "Редактировать"
                                     },
                                     tint = if (isEditingOverlay) Color.Black else Color.White,
-                                    modifier = Modifier.size(12.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                             val flipInteraction = remember { MutableInteractionSource() }
                             Box(
                                 modifier = Modifier
-                                    .size(15.dp)
+                                    .size(30.dp)
                                     .clip(CircleShape)
                                     .background(Color.Black.copy(alpha = 0.6f))
                                     .clickable(
@@ -357,7 +357,7 @@ val editInteraction = remember { MutableInteractionSource() }
                                     imageVector = Icons.Filled.Refresh,
                                     contentDescription = "Сбросить ориентир",
                                     tint = Color.White,
-                                    modifier = Modifier.size(12.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                         }
@@ -367,13 +367,13 @@ val editInteraction = remember { MutableInteractionSource() }
                     Box(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
-                            .padding(end = 17.67.dp)
+                            .padding(end = 24.dp)
                             .height(300.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
-                                .width(12.dp)
+                                .width(24.dp)
                                 .height(220.dp)
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.Black.copy(alpha = 0.3f))
@@ -421,7 +421,7 @@ val editInteraction = remember { MutableInteractionSource() }
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .padding(top = 6.dp)
-                                .size(10.dp)
+                                .size(20.dp)
                         )
                     }
                 }
