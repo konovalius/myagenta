@@ -348,15 +348,6 @@ fun CameraScreen(
                         )
                     }
                 }
-                lastPhotoUri?.let { uri ->
-                    ThumbnailButton(
-                        uri = uri,
-                        onClick = { viewerUri = uri },
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(start = 24.dp, bottom = 24.dp)
-                    )
-                }
                 if (isRecording) {
                     RecordingIndicator(
                         modifier = Modifier
@@ -512,29 +503,6 @@ private fun LastPhotoThumbnail(
             .size(48.dp)
             .clip(CircleShape)
             .border(1.dp, Color.White, CircleShape)
-            .clickable(onClick = onClick)
-    ) {
-        AsyncImage(
-            model = uri,
-            contentDescription = "Последнее фото",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-    }
-}
-
-@Composable
-private fun ThumbnailButton(
-    uri: Uri,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .size(56.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .border(2.dp, Color.White, RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.5f))
             .clickable(onClick = onClick)
     ) {
         AsyncImage(
