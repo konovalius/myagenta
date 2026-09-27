@@ -36,7 +36,6 @@ import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -283,13 +282,14 @@ fun CameraScreen(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(16.dp)
-                                .size(32.dp)
+                                .size(21.33.dp)
                                 .background(Color.Black.copy(alpha = 0.6f), CircleShape)
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = "Убрать ориентир",
-                                tint = Color.White
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                         Row(
@@ -301,7 +301,7 @@ fun CameraScreen(
                             IconButton(
                                 onClick = { isEditingOverlay = !isEditingOverlay },
                                 modifier = Modifier
-                                    .size(40.dp)
+                                    .size(26.67.dp)
                                     .background(
                                         if (isEditingOverlay) Color.White
                                         else Color.Black.copy(alpha = 0.6f),
@@ -315,7 +315,8 @@ fun CameraScreen(
                                     } else {
                                         "Редактировать"
                                     },
-                                    tint = if (isEditingOverlay) Color.Black else Color.White
+                                    tint = if (isEditingOverlay) Color.Black else Color.White,
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                             IconButton(
@@ -326,13 +327,14 @@ fun CameraScreen(
                                     overlayAlpha = 0.5f
                                 },
                                 modifier = Modifier
-                                    .size(40.dp)
+                                    .size(26.67.dp)
                                     .background(Color.Black.copy(alpha = 0.6f), CircleShape)
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Refresh,
                                     contentDescription = "Сбросить ориентир",
-                                    tint = Color.White
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         }
@@ -342,14 +344,16 @@ fun CameraScreen(
                     Box(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
-                            .padding(end = 8.dp)
-                            .width(48.dp)
-                            .height(340.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.Black.copy(alpha = 0.3f))
+                            .padding(end = 17.67.dp)
+                            .height(300.dp)
                     ) {
-                        BoxWithConstraints(
-                            modifier = Modifier.fillMaxSize()
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .width(12.dp)
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.Black.copy(alpha = 0.3f))
                         ) {
                             Box(
                                 modifier = Modifier
@@ -362,15 +366,6 @@ fun CameraScreen(
                                     .fillMaxHeight(overlayAlpha)
                                     .align(Alignment.BottomCenter)
                                     .background(Color.White.copy(alpha = 0.45f))
-                            )
-                            Icon(
-                                imageVector = Icons.Filled.Opacity,
-                                contentDescription = "Прозрачность ориентира",
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .align(Alignment.TopCenter)
-                                    .padding(top = 8.dp)
-                                    .size(18.dp)
                             )
                             Box(
                                 modifier = Modifier
@@ -396,6 +391,15 @@ fun CameraScreen(
                                     }
                             )
                         }
+                        Icon(
+                            imageVector = Icons.Filled.Opacity,
+                            contentDescription = "Прозрачность ориентира",
+                            tint = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 6.dp)
+                                .size(18.dp)
+                        )
                     }
                 }
                 if (isRecording) {
