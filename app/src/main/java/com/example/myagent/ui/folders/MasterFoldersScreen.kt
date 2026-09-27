@@ -3,6 +3,7 @@ package com.example.myagent.ui.folders
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,14 +13,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -28,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,19 +59,65 @@ fun MasterFoldersScreen(
     onOpenFolder: (String) -> Unit,
     viewModel: MasterFolderViewModel = hiltViewModel()
 ) {
-    val folders by viewModel.folders.collectAsStateWithLifecycle()
     var showCreateDialog by remember { mutableStateOf(false) }
     var folderToDelete by remember { mutableStateOf<MasterFolder?>(null) }
 
     GradientBackground {
-            if (folders.isEmpty()) {
-                Text(
-                    text = "Мастер-папок пока нет",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 15.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.align(Alignment.Center)
+        Column(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Назад",
+                            tint = Color.White
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Мастер-папки",
+                        color = Color.White,
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                }
+            }
+            OutlinedTextField(
+                value = viewModel.searchQuery.value,
+                onValueChange = { viewModel.searchQuery.value = it },
+                label = { Text("Поиск по названию", color = Color.White.copy(alpha = 0.7f)) },
+                placeholder = { Text("Поиск по названию", color = Color.White.copy(alpha = 0.5f)) },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Поиск", tint = Color.White.copy(alpha = 0.7f)) },
+                trailingIcon = {
+                    if (viewModel.searchQuery.value.isNotBlank()) {
+                        IconButton(onClick = { viewModel.searchQuery.value = "" }) {
+                            Icon(Icons.Filled.Clear, contentDescription = "Очистить", tint = Color.White.copy(alpha = 0.7f))
+                        }
+                    }
+                },
                 )
+            val filteredFolders by viewModel.filteredFolders.collectAsStateWithLifecycle()
+            if (filteredFolders.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 88.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (viewModel.searchQuery.value.isBlank()) "Мастер-папок пока нет" else "Ничего не найдено",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 15.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
             } else {
                 LazyColumn(
                     modifier = Modifier
@@ -75,7 +126,7 @@ fun MasterFoldersScreen(
                         .padding(horizontal = 20.dp),
                     verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
                 ) {
-                    items(folders, key = { it.uuid }) { folder ->
+                    items(filteredFolders, key = { it.uuid }) { folder ->
                         MasterFolderCard(
                             folder = folder,
                             onClick = { onOpenFolder(folder.uuid) },
@@ -84,35 +135,19 @@ fun MasterFoldersScreen(
                     }
                 }
             }
-            FloatingActionButton(
-                onClick = { showCreateDialog = true },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(24.dp)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomEnd
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Создать папку")
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Назад",
-                    tint = Color.White
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "Мастер-папки",
-                color = Color.White,
-                style = MaterialTheme.typography.headlineMedium
-            )
+                FloatingActionButton(
+                    onClick = { showCreateDialog = true },
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = "Создать папку")
+                }
             }
         }
+    }
 
         if (showCreateDialog) {
             CreateFolderDialog(

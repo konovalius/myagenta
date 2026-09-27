@@ -11,6 +11,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -18,13 +22,19 @@ class MasterFolderViewModel @Inject constructor(
     private val repository: MasterFolderRepository
 ) : ViewModel() {
 
-    private val _folders = MutableStateFlow<List<MasterFolder>>(emptyList())
-    val folders: StateFlow<List<MasterFolder>> = _folders.asStateFlow()
+    val searchQuery = MutableStateFlow("")
+
+    private val _allFolders = MutableStateFlow<List<MasterFolder>>(emptyList())
+    val filteredFolders: StateFlow<List<MasterFolder>> =
+        combine(_allFolders, searchQuery) { folders, query ->
+            if (query.isBlank()) folders else folders.filter { it.name.contains(query, ignoreCase = true) }
+        }
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(), emptyList())
 
     init {
         viewModelScope.launch {
             val source: Flow<List<MasterFolder>> = repository.getAll()
-            source.collect { list -> _folders.value = list }
+            source.collect { list -> _allFolders.value = list }
         }
     }
 
