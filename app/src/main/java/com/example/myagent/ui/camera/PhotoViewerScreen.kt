@@ -4,9 +4,11 @@ import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -48,18 +50,21 @@ fun PhotoViewerScreen(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(start = 24.dp, bottom = 38.dp)
-                .size(width = 72.dp, height = 44.dp)
+                .height(44.dp)
                 .clickable(onClick = onBack),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("back", color = Color.White, fontSize = 11.sp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "back",
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
                 )
+                Text("back", color = Color.White, fontSize = 12.sp)
             }
         }
         onUsePhoto?.let { usePhoto ->
