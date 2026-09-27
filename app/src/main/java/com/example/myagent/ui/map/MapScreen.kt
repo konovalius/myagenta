@@ -16,19 +16,25 @@ import android.view.ViewConfiguration
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -49,8 +55,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -88,6 +98,11 @@ private const val LOCATION_ZOOM = 17.0
 private const val GEO_FOLDER_ZOOM = 14.0
 private const val PIN_SIZE_DP = 48
 private const val LONG_PRESS_MILLIS = 3000L
+
+private val DELETE_SWITCH_WIDTH = 56.dp
+private val DELETE_SWITCH_HEIGHT = 28.dp
+private val DELETE_SWITCH_THUMB = 24.dp
+private val DELETE_SWITCH_TRAVEL = 28.dp
 
 private data class GeoPickState(
     val lat: Double,
@@ -310,34 +325,59 @@ fun MapScreen(
                 tint = Color.White
             )
         }
-        val deleteInteraction = remember { MutableInteractionSource() }
+        val deleteThumbOffset by animateDpAsState(
+            targetValue = if (deleteMode) DELETE_SWITCH_TRAVEL else 0.dp,
+            animationSpec = tween(durationMillis = 140),
+            label = "deleteThumb"
+        )
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(end = 16.dp, top = 48.dp)
-                .size(35.2.dp)
-                .clip(CircleShape)
+                .width(DELETE_SWITCH_WIDTH)
+                .height(DELETE_SWITCH_HEIGHT)
+                .clip(RoundedCornerShape(DELETE_SWITCH_HEIGHT / 2))
                 .background(
                     if (deleteMode) {
                         Color(0xFFFF3B30)
                     } else {
-                        Color.Black.copy(alpha = 0.56f)
+                        Color(0xFF8E8E93)
                     }
                 )
-                .clickable(
-                    interactionSource = deleteInteraction,
-                    indication = null,
-                    role = Role.Button,
-                    onClick = { deleteMode = !deleteMode }
-                ),
-            contentAlignment = Alignment.Center
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                            if (!change.pressed) break
+                            change.consume()
+                        }
+                        deleteMode = !deleteMode
+                    }
+                },
+            contentAlignment = Alignment.CenterStart
         ) {
-            Icon(
-                imageVector = Icons.Filled.Close,
-                contentDescription = "Режим удаления папок",
-                tint = Color.White.copy(alpha = if (deleteMode) 1f else 0.56f),
-                modifier = Modifier.size(28.6.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 2.dp)
+                    .offset(x = deleteThumbOffset)
+                    .size(DELETE_SWITCH_THUMB)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.32f))
+                    .semantics {
+                        contentDescription = "Режим удаления папок"
+                        role = Role.Switch
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Delete,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(15.dp)
+                )
+            }
         }
         currentLocation?.let { location ->
             ExtendedFloatingActionButton(
