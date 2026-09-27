@@ -2,9 +2,11 @@ package com.example.myagent.ui.camera
 
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,19 +36,17 @@ fun PhotoViewerScreen(
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize()
         )
-        TextButton(
-            onClick = onBack,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-        ) {
-            Text("Назад", color = Color.White)
-        }
         Row(
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 24.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            TextButton(onClick = onBack) {
+                Text("Назад", color = Color.White)
+            }
             onUsePhoto?.let { usePhoto ->
                 TextButton(onClick = usePhoto) {
                     Text("Использовать", color = Color.White)
