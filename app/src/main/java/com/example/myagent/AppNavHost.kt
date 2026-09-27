@@ -17,17 +17,23 @@ import com.example.myagent.ui.splash.SplashScreen
 
 object AppRoutes {
     const val SPLASH = "splash"
-    const val CAMERA = "camera?uri={uri}&lat={lat}&lon={lon}"
+    const val CAMERA = "camera?uri={uri}&lat={lat}&lon={lon}&folderUuid={folderUuid}"
     const val ONBOARDING = "onboarding"
     const val MAP = "map"
     const val MASTER_FOLDERS = "master-folders"
     const val MASTER_FOLDER_CONTENT = "master-folder/{folderUuid}"
 
-    fun camera(uri: Uri? = null, lat: Double? = null, lon: Double? = null): String {
+    fun camera(
+        uri: Uri? = null,
+        lat: Double? = null,
+        lon: Double? = null,
+        folderUuid: String? = null
+    ): String {
         val params = buildList {
             uri?.let { add("uri=" + Uri.encode(it.toString())) }
             lat?.let { add("lat=$it") }
             lon?.let { add("lon=$it") }
+            folderUuid?.let { add("folderUuid=$it") }
         }
         return if (params.isNotEmpty()) "camera?${params.joinToString("&")}" else "camera"
     }
@@ -68,6 +74,11 @@ fun AppNavHost() {
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                navArgument("folderUuid") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
@@ -76,10 +87,12 @@ fun AppNavHost() {
                 ?.let { Uri.parse(it) }
             val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull()
             val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull()
+            val folderUuid = backStackEntry.arguments?.getString("folderUuid")
             CameraScreen(
                 initialReferenceUri = uri,
                 initialLat = lat,
                 initialLon = lon,
+                initialFolderUuid = folderUuid,
                 onNavigateToMasterFolders = { navController.navigate(AppRoutes.MASTER_FOLDERS) },
                 onNavigateToMap = { navController.navigate(AppRoutes.MAP) },
                 onNavigateToOnboarding = { navController.navigate(AppRoutes.ONBOARDING) }
@@ -118,7 +131,12 @@ fun AppNavHost() {
                 }
             )
         ) {
-            MasterFolderContentScreen(onBack = { navController.popBackStack() })
+            MasterFolderContentScreen(
+                onBack = { navController.popBackStack() },
+                onOpenCamera = { uri, folderUuid ->
+                    navController.navigate(AppRoutes.camera(uri = uri, folderUuid = folderUuid))
+                }
+            )
         }
     }
 }

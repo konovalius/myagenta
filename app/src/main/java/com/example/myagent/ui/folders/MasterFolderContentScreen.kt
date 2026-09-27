@@ -1,6 +1,7 @@
 package com.example.myagent.ui.folders
 
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -38,6 +39,7 @@ import com.example.myagent.ui.theme.GradientBackground
 @Composable
 fun MasterFolderContentScreen(
     onBack: () -> Unit,
+    onOpenCamera: (Uri, String) -> Unit,
     viewModel: MasterFolderContentViewModel = hiltViewModel()
 ) {
     val folder by viewModel.folder.collectAsStateWithLifecycle()
@@ -92,6 +94,10 @@ fun MasterFolderContentScreen(
                             .fillMaxWidth()
                             .aspectRatio(1f)
                             .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                val folderUuid = folder?.uuid ?: return@clickable
+                                onOpenCamera(Uri.parse(photo.uri), folderUuid)
+                            }
                     )
                 }
             }

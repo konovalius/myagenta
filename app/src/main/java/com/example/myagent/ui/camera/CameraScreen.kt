@@ -93,6 +93,7 @@ fun CameraScreen(
     initialReferenceUri: Uri? = null,
     initialLat: Double? = null,
     initialLon: Double? = null,
+    initialFolderUuid: String? = null,
     onNavigateToMasterFolders: () -> Unit = {},
     onNavigateToMap: () -> Unit = {},
     onNavigateToOnboarding: () -> Unit = {}
@@ -142,6 +143,10 @@ fun CameraScreen(
 
     LaunchedEffect(initialLat, initialLon) {
         viewModel.setLocation(initialLat, initialLon)
+    }
+
+    LaunchedEffect(initialFolderUuid) {
+        viewModel.setFolderUuid(initialFolderUuid)
     }
 
     val pickReferenceLauncher = rememberLauncherForActivityResult(

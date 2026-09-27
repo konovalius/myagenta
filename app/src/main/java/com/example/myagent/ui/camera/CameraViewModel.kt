@@ -43,6 +43,9 @@ class CameraViewModel @Inject constructor(
     var lon: Double? = null
         private set
 
+    var folderUuid: String? = null
+        private set
+
     init {
         Log.wtf("CameraVM", "ViewModel initialized")
     }
@@ -53,10 +56,17 @@ class CameraViewModel @Inject constructor(
         Log.wtf("CameraVM", "lat=$lat, lon=$lon")
     }
 
+    fun setFolderUuid(folderUuid: String?) {
+        this.folderUuid = folderUuid
+        Log.wtf("CameraVM", "folderUuid=$folderUuid")
+    }
+
     fun capturePhoto(imageCapture: ImageCapture, context: Context) {
         val captureTime = LocalDateTime.now()
         val captureLat = lat
         val captureLon = lon
+        val captureFolderUuid = folderUuid
+        Log.wtf("CameraVM", "captureLat=$captureLat, captureLon=$captureLon, captureFolderUuid=$captureFolderUuid")
         val contentValues = fileRepository.newPhotoContentValues(captureTime)
         val pendingName = contentValues.getAsString(MediaStore.MediaColumns.DISPLAY_NAME)
         val outputOptions = ImageCapture.OutputFileOptions.Builder(
@@ -74,20 +84,22 @@ class CameraViewModel @Inject constructor(
                         fileRepository.writeDateExif(savedUri, captureTime)
                         fileRepository.setPending(savedUri, false)
                         _lastPhotoUri.value = savedUri
-                        if (captureLat != null && captureLon != null) {
+                        if (captureFolderUuid != null || (captureLat != null && captureLon != null)) {
                             val savedUriString = savedUri.toString()
                             viewModelScope.launch(Dispatchers.IO) {
-                                val folderUuid = findOrCreateGeoFolder(captureLat, captureLon)
+                                val targetFolderUuid = captureFolderUuid
+                                    ?: findOrCreateGeoFolder(captureLat!!, captureLon!!)
+                                Log.wtf("CameraVM", "folderUuid=$targetFolderUuid (привязка)")
                                 val photo = Photo(
                                     uuid = UUID.randomUUID().toString(),
                                     uri = savedUriString,
-                                    folderUuid = folderUuid,
+                                    folderUuid = targetFolderUuid,
                                     createdAt = System.currentTimeMillis(),
                                     lat = captureLat,
                                     lon = captureLon
                                 )
                                 photoRepository.insert(photo)
-                                Log.wtf("CameraVM", "Photo record created: ${photo.uuid} in folder $folderUuid at $captureLat,$captureLon")
+                                Log.wtf("CameraVM", "Photo record created: ${photo.uuid} in folder $targetFolderUuid at $captureLat,$captureLon")
                             }
                         }
                         Toast.makeText(context, "Фото сохранено в галерею", Toast.LENGTH_SHORT)
@@ -117,6 +129,7 @@ class CameraViewModel @Inject constructor(
     }
 
     private suspend fun findOrCreateGeoFolder(lat: Double, lon: Double): String {
+        Log.wtf("CameraVM", "findOrCreateGeoFolder(рез=$lat,$lon): начинаю поиск")
         val folders = masterFolderRepository.getAll().first()
         folders.forEach { folder ->
             val folderLat = folder.lat
@@ -125,10 +138,12 @@ class CameraViewModel @Inject constructor(
                 val results = FloatArray(1)
                 Location.distanceBetween(lat, lon, folderLat, folderLon, results)
                 if (results[0] <= GEO_RADIUS_METERS) {
+                    Log.wtf("CameraVM", "findOrCreateGeoFolder: найдена ${folder.uuid} dist=${results[0]}м")
                     return folder.uuid
                 }
             }
         }
+        Log.wtf("CameraVM", "findOrCreateGeoFolder: подходящей нет (папок всего ${folders.size}), создаю новую")
         val folder = MasterFolder(
             uuid = UUID.randomUUID().toString(),
             name = String.format(Locale.ROOT, "%.4f, %.4f", lat, lon),
@@ -138,6 +153,7 @@ class CameraViewModel @Inject constructor(
             lon = lon
         )
         masterFolderRepository.insert(folder)
+        Log.wtf("CameraVM", "findOrCreateGeoFolder: создана ${folder.uuid} name=${folder.name}")
         return folder.uuid
     }
 
