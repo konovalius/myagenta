@@ -39,11 +39,15 @@ fun PhotoViewerScreen(
     onUsePhoto: (() -> Unit)? = null,
     onSavePhoto: (() -> Unit)? = null
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
+        val contentAreaCenterY = 680.dp
+        val useCenterY = contentAreaCenterY + 12.dp
+        val useCenterX = 187.dp
+        val useToDelete = 94.dp
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Spacer(
                 modifier = Modifier
@@ -95,57 +99,57 @@ fun PhotoViewerScreen(
                         }
                     }
                     onUsePhoto?.let { usePhoto ->
-                        Column(
-                            modifier = Modifier.offset(y = (-18).dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .border(4.dp, Color.White, CircleShape)
+                                .clickable(onClick = usePhoto),
+                            contentAlignment = Alignment.Center
                         ) {
-                            onSavePhoto?.let { savePhoto ->
-                                Text(
-                                    text = "save",
-                                    color = Color(0xFF1B5E20),
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.clickable(onClick = savePhoto)
-                                )
-                            }
                             Box(
                                 modifier = Modifier
-                                    .size(72.dp)
+                                    .size(54.dp)
                                     .clip(CircleShape)
-                                    .border(4.dp, Color.White, CircleShape)
-                                    .clickable(onClick = usePhoto),
+                                    .background(Color.White, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(54.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.White, CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "use",
-                                        color = Color.Black,
-                                        fontSize = 12.sp,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
+                                Text(
+                                    text = "use",
+                                    color = Color.Black,
+                                    fontSize = 12.sp,
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
                     }
                     Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFFF3B30), CircleShape)
-                            .clickable(onClick = onDelete),
+                        modifier = Modifier.clickable(onClick = onDelete),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "delete",
-                            color = Color.White,
-                            fontSize = 10.sp,
+                            color = Color(0xFFB3261E),
+                            fontSize = 12.sp,
                             textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                onSavePhoto?.let { savePhoto ->
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "save",
+                            color = Color(0xFF1B5E20),
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .offset(
+                                    x = useCenterX - 180.dp,
+                                    y = useCenterY - useToDelete - contentAreaCenterY
+                                )
+                                .clickable(onClick = savePhoto)
                         )
                     }
                 }
