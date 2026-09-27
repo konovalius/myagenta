@@ -96,7 +96,8 @@ fun CameraScreen(
     initialFolderUuid: String? = null,
     onNavigateToMasterFolders: () -> Unit = {},
     onNavigateToMap: () -> Unit = {},
-    onNavigateToOnboarding: () -> Unit = {}
+    onNavigateToOnboarding: () -> Unit = {},
+    onPhotoCapturedFromFolder: (Uri, String) -> Unit = { _, _ -> }
 ) {
     val viewModel: CameraViewModel = hiltViewModel()
     val context = LocalContext.current
@@ -133,6 +134,7 @@ fun CameraScreen(
     var isVideoMode by remember { mutableStateOf(false) }
     var isRecording by remember { mutableStateOf(false) }
     val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
+    val savedPhotoEvent by viewModel.savedPhotoEvent.collectAsState()
     var viewerUri by remember { mutableStateOf<Uri?>(null) }
     var referencePhotoUri by remember(initialReferenceUri) { mutableStateOf(initialReferenceUri) }
     var overlayAlpha by remember { mutableStateOf(0.5f) }
@@ -147,6 +149,14 @@ fun CameraScreen(
 
     LaunchedEffect(initialFolderUuid) {
         viewModel.setFolderUuid(initialFolderUuid)
+    }
+
+    LaunchedEffect(savedPhotoEvent) {
+        val event = savedPhotoEvent
+        if (event != null) {
+            onPhotoCapturedFromFolder(event.uri, event.folderUuid)
+            viewModel.consumeSavedPhotoEvent()
+        }
     }
 
     val pickReferenceLauncher = rememberLauncherForActivityResult(

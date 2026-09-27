@@ -38,6 +38,9 @@ class CameraViewModel @Inject constructor(
     private val _lastPhotoUri = MutableStateFlow<Uri?>(null)
     val lastPhotoUri: StateFlow<Uri?> = _lastPhotoUri.asStateFlow()
 
+    private val _savedPhotoEvent = MutableStateFlow<SavedPhotoEvent?>(null)
+    val savedPhotoEvent: StateFlow<SavedPhotoEvent?> = _savedPhotoEvent.asStateFlow()
+
     var lat: Double? = null
         private set
     var lon: Double? = null
@@ -100,6 +103,9 @@ class CameraViewModel @Inject constructor(
                                 )
                                 photoRepository.insert(photo)
                                 Log.wtf("CameraVM", "Photo record created: ${photo.uuid} in folder $targetFolderUuid at $captureLat,$captureLon")
+                                if (captureFolderUuid != null) {
+                                    _savedPhotoEvent.value = SavedPhotoEvent(savedUri, captureFolderUuid)
+                                }
                             }
                         }
                         Toast.makeText(context, "Фото сохранено в галерею", Toast.LENGTH_SHORT)
@@ -117,6 +123,10 @@ class CameraViewModel @Inject constructor(
                 }
             }
         )
+    }
+
+    fun consumeSavedPhotoEvent() {
+        _savedPhotoEvent.value = null
     }
 
     fun deleteLastPhoto(): Boolean {
@@ -161,3 +171,5 @@ class CameraViewModel @Inject constructor(
         private const val GEO_RADIUS_METERS = 20f
     }
 }
+
+data class SavedPhotoEvent(val uri: Uri, val folderUuid: String)

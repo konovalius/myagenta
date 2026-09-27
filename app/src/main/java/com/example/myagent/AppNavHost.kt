@@ -108,7 +108,14 @@ fun AppNavHost() {
                 initialFolderUuid = folderUuid,
                 onNavigateToMasterFolders = { navController.navigate(AppRoutes.MASTER_FOLDERS) },
                 onNavigateToMap = { navController.navigate(AppRoutes.MAP) },
-                onNavigateToOnboarding = { navController.navigate(AppRoutes.ONBOARDING) }
+                onNavigateToOnboarding = { navController.navigate(AppRoutes.ONBOARDING) },
+                onPhotoCapturedFromFolder = { savedUri, folderUuid ->
+                    navController.navigate(
+                        AppRoutes.photoViewer(savedUri, folderUuid, showUseButton = true)
+                    ) {
+                        popUpTo(AppRoutes.MASTER_FOLDER_CONTENT)
+                    }
+                }
             )
         }
         composable(AppRoutes.ONBOARDING) {
