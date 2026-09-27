@@ -79,8 +79,8 @@ fun PhotoViewerScreen(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .offset(x = 90.dp)
-                .padding(bottom = 24.dp)
+                .offset(x = 108.dp)
+                .padding(bottom = 38.dp)
                 .size(44.dp)
                 .clip(CircleShape)
                 .background(Color(0xFFFF3B30), CircleShape)
