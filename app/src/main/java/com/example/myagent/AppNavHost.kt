@@ -132,6 +132,9 @@ fun AppNavHost() {
                 onBack = { navController.popBackStack() },
                 onOpenCamera = { lat, lon ->
                     navController.navigate(AppRoutes.camera(lat = lat, lon = lon))
+                },
+                onOpenFolder = { folderUuid ->
+                    navController.navigate("master-folder/$folderUuid")
                 }
             )
         }

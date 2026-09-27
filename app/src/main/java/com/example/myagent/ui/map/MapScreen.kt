@@ -2,6 +2,13 @@ package com.example.myagent.ui.map
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -24,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,6 +44,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.ImageLoader
+import coil.request.ImageRequest
+import coil.size.Scale
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -55,9 +68,16 @@ private const val DEFAULT_LAT = 55.7558
 private const val DEFAULT_LON = 37.6173
 private const val DEFAULT_ZOOM = 15.0
 private const val LOCATION_ZOOM = 17.0
+private const val GEO_FOLDER_ZOOM = 14.0
+private const val PIN_SIZE_DP = 48
 
 @Composable
-fun MapScreen(onBack: () -> Unit, onOpenCamera: (lat: Double, lon: Double) -> Unit) {
+fun MapScreen(
+    onBack: () -> Unit,
+    onOpenCamera: (lat: Double, lon: Double) -> Unit,
+    onOpenFolder: (String) -> Unit,
+    viewModel: MapViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     val myTiles = remember {
         XYTileSource(
@@ -87,9 +107,14 @@ fun MapScreen(onBack: () -> Unit, onOpenCamera: (lat: Double, lon: Double) -> Un
     val cancellationToken = remember { CancellationTokenSource() }
     var currentLocation by remember { mutableStateOf<GeoPoint?>(null) }
 
+    val imageLoader = remember { ImageLoader(context) }
+    val geoPins by viewModel.geoFolders.collectAsStateWithLifecycle()
+    var locatedMarker by remember { mutableStateOf<Marker?>(null) }
+    val geoMarkers = remember { mutableStateListOf<Marker>() }
+
     fun centerMap(lat: Double, lon: Double) {
         currentLocation = GeoPoint(lat, lon)
-        mapView.overlays.removeAll { it is Marker }
+        locatedMarker?.let { mapView.overlays.remove(it) }
         mapView.controller.setZoom(LOCATION_ZOOM)
         mapView.controller.setCenter(GeoPoint(lat, lon))
         val marker = Marker(mapView).apply {
@@ -99,6 +124,7 @@ fun MapScreen(onBack: () -> Unit, onOpenCamera: (lat: Double, lon: Double) -> Un
             title = "Я здесь"
         }
         mapView.overlays.add(marker)
+        locatedMarker = marker
         mapView.invalidate()
     }
 
@@ -142,6 +168,37 @@ fun MapScreen(onBack: () -> Unit, onOpenCamera: (lat: Double, lon: Double) -> Un
             cancellationToken.cancel()
             mapView.onDetach()
         }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
+
+    LaunchedEffect(geoPins, mapView, imageLoader) {
+        geoMarkers.forEach { mapView.overlays.remove(it) }
+        geoMarkers.clear()
+        geoPins.forEach { pin ->
+            val lat = pin.folder.lat ?: return@forEach
+            val lon = pin.folder.lon ?: return@forEach
+            val marker = Marker(mapView).apply {
+                position = GeoPoint(lat, lon)
+                icon = createPinIcon(context, imageLoader, pin.photoUri)
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                title = pin.folder.name
+                setOnMarkerClickListener { _, _ ->
+                    onOpenFolder(pin.folder.uuid)
+                    true
+                }
+            }
+            mapView.overlays.add(marker)
+            geoMarkers += marker
+        }
+        if (currentLocation == null && geoPins.isNotEmpty()) {
+            val first = geoPins.first()
+            mapView.controller.setZoom(GEO_FOLDER_ZOOM)
+            mapView.controller.setCenter(GeoPoint(first.folder.lat ?: 0.0, first.folder.lon ?: 0.0))
+        }
+        mapView.invalidate()
     }
     Box(
         modifier = Modifier
@@ -194,4 +251,67 @@ onClick = {
             )
         }
     }
+}
+
+private suspend fun createPinIcon(
+    context: android.content.Context,
+    imageLoader: ImageLoader,
+    photoUri: String?
+): Drawable {
+    val density = context.resources.displayMetrics.density
+    val size = (PIN_SIZE_DP * density).toInt()
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val center = size / 2f
+    val radius = size / 2f
+    val border = (2 * density).toInt()
+    canvas.drawCircle(
+        center,
+        center,
+        radius,
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
+    )
+    val innerR = radius - border
+    val clipPath = Path().apply { addCircle(center, center, innerR, Path.Direction.CW) }
+    canvas.save()
+    canvas.clipPath(clipPath)
+    canvas.drawRect(
+        0f,
+        0f,
+        size.toFloat(),
+        size.toFloat(),
+        Paint().apply { color = android.graphics.Color.rgb(170, 170, 170) }
+    )
+    if (photoUri != null) {
+        val drawable = try {
+            imageLoader.execute(
+                ImageRequest.Builder(context)
+                    .data(photoUri)
+                    .size((innerR * 2).toInt())
+                    .scale(Scale.FILL)
+                    .build()
+            ).drawable
+        } catch (e: Exception) {
+            null
+        }
+        val bmp = (drawable as? BitmapDrawable)?.bitmap
+        val software = bmp?.copy(Bitmap.Config.ARGB_8888, false)
+        if (software != null) {
+            canvas.drawBitmap(
+                software,
+                null,
+                RectF(center - innerR, center - innerR, center + innerR, center + innerR),
+                Paint(Paint.FILTER_BITMAP_FLAG)
+            )
+        }
+    } else {
+        canvas.drawCircle(
+            center,
+            center,
+            innerR * 0.35f,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.rgb(80, 80, 80) }
+        )
+    }
+    canvas.restore()
+    return BitmapDrawable(context.resources, bitmap)
 }
