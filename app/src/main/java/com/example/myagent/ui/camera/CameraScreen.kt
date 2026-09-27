@@ -400,6 +400,7 @@ fun CameraScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .offset(y = (-20).dp)
                                 .padding(bottom = 24.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -419,7 +420,7 @@ fun CameraScreen(
                                 LastPhotoThumbnail(
                                     uri = uri,
                                     onClick = { viewerUri = uri },
-                                    modifier = Modifier.offset(x = 68.dp)
+                                    modifier = Modifier.offset(x = 90.dp)
                                 )
                             }
                         }
