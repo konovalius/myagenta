@@ -1,4 +1,4 @@
-package com.example.myagent.ui.camera
+﻿package com.example.myagent.ui.camera
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -50,11 +49,11 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-        // Настройки
+        // РќР°СЃС‚СЂРѕР№РєРё
         val settingsInteraction = remember { MutableInteractionSource() }
         Icon(
             imageVector = Icons.Outlined.Settings,
-            contentDescription = "Настройки",
+            contentDescription = "РќР°СЃС‚СЂРѕР№РєРё",
             tint = if (isSettingsActive.value) Color(0xFFFF3B30) else Color.White,
             modifier = Modifier
                 .size(20.dp)
@@ -69,14 +68,13 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
                     interactionSource = settingsInteraction,
                     indication = null
                 ) { isSettingsActive.value = !isSettingsActive.value }
-                .alpha(if (isSettingsActive.value) 1.0f else 0.85f)
         )
 
-        // Вспышка
+        // Р’СЃРїС‹С€РєР°
         val flashInteraction = remember { MutableInteractionSource() }
         Icon(
             imageVector = Icons.Outlined.FlashOn,
-            contentDescription = "Вспышка",
+            contentDescription = "Р’СЃРїС‹С€РєР°",
             tint = if (isFlashActive.value) Color(0xFFFF3B30) else Color.White,
             modifier = Modifier
                 .size(24.dp)
@@ -91,16 +89,15 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
                     interactionSource = flashInteraction,
                     indication = null
                 ) { isFlashActive.value = !isFlashActive.value }
-                .alpha(if (isFlashActive.value) 1.0f else 0.85f)
         )
 
-        // Разрешение
+        // Р Р°Р·СЂРµС€РµРЅРёРµ
         val resolutionInteraction = remember { MutableInteractionSource() }
         Text(
             text = "1080",
             fontSize = 12.sp,
             fontFamily = GoshaSans,
-            color = if (isResolutionActive.value) Color(0xFFFF3B30) else Color.White.copy(alpha = 0.85f),
+            color = if (isResolutionActive.value) Color(0xFFFF3B30) else Color.White,
             fontWeight = FontWeight.Medium,
             modifier = Modifier
                 .pressScale(resolutionInteraction)
@@ -110,13 +107,13 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
                 ) { isResolutionActive.value = !isResolutionActive.value }
         )
 
-        // Ручной режим
+        // Р СѓС‡РЅРѕР№ СЂРµР¶РёРј
         val proInteraction = remember { MutableInteractionSource() }
         Text(
             text = "PRO",
             fontSize = 12.sp,
             fontFamily = GoshaSans,
-            color = if (isProModeActive.value) Color(0xFFFF3B30) else Color.White.copy(alpha = 0.85f),
+            color = if (isProModeActive.value) Color(0xFFFF3B30) else Color.White,
             fontWeight = FontWeight.Medium,
             modifier = Modifier
                 .pressScale(proInteraction)
@@ -126,13 +123,13 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
                 ) { isProModeActive.value = !isProModeActive.value }
         )
 
-        // Формат
+        // Р¤РѕСЂРјР°С‚
         val formatInteraction = remember { MutableInteractionSource() }
         Text(
             text = "4:3",
             fontSize = 12.sp,
             fontFamily = GoshaSans,
-            color = Color.White.copy(alpha = 0.85f),
+            color = Color.White,
             fontWeight = FontWeight.Medium,
             modifier = Modifier
                 .pressScale(formatInteraction)
@@ -142,11 +139,11 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
                 ) { isFormatMenuOpen = true }
         )
 
-        // Помощь ИИ
+        // РџРѕРјРѕС‰СЊ РР
         val aiHelpInteraction = remember { MutableInteractionSource() }
         Icon(
             imageVector = Icons.Outlined.Star,
-            contentDescription = "Помощь ИИ",
+            contentDescription = "РџРѕРјРѕС‰СЊ РР",
             tint = if (isAiHelpActive.value) Color(0xFFFF3B30) else Color.White,
             modifier = Modifier
                 .size(24.dp)
@@ -161,7 +158,6 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
                     interactionSource = aiHelpInteraction,
                     indication = null
                 ) { isAiHelpActive.value = !isAiHelpActive.value }
-                .alpha(if (isAiHelpActive.value) 1.0f else 0.85f)
         )
         }
     }
@@ -183,7 +179,7 @@ private fun FormatMenuRow(modifier: Modifier = Modifier, onSelect: () -> Unit) {
                 text = format,
                 fontSize = 12.sp,
                 fontFamily = SmoochSans,
-                color = Color.White.copy(alpha = 0.85f),
+                color = Color.White,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .pressScale(interactionSource)
