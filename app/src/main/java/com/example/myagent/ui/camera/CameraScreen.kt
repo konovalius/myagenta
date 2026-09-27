@@ -415,6 +415,13 @@ fun CameraScreen(
                                 onClick = { capturePhoto() },
                                 onLongPress = {}
                             )
+                            lastPhotoUri?.let { uri ->
+                                LastPhotoThumbnail(
+                                    uri = uri,
+                                    onClick = { viewerUri = uri },
+                                    modifier = Modifier.offset(x = 68.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -491,6 +498,28 @@ fun CameraPreview(
             .fillMaxSize()
             .clipToBounds()
     )
+}
+
+@Composable
+private fun LastPhotoThumbnail(
+    uri: Uri,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .border(1.dp, Color.White, CircleShape)
+            .clickable(onClick = onClick)
+    ) {
+        AsyncImage(
+            model = uri,
+            contentDescription = "Последнее фото",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+    }
 }
 
 @Composable
