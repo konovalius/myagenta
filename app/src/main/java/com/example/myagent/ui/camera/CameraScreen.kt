@@ -282,7 +282,7 @@ fun CameraScreen(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(16.dp)
-                                .size(21.33.dp)
+                                .size(20.dp)
                                 .background(Color.Black.copy(alpha = 0.6f), CircleShape)
                         ) {
                             Icon(
@@ -301,7 +301,7 @@ fun CameraScreen(
                             IconButton(
                                 onClick = { isEditingOverlay = !isEditingOverlay },
                                 modifier = Modifier
-                                    .size(26.67.dp)
+                                    .size(20.dp)
                                     .background(
                                         if (isEditingOverlay) Color.White
                                         else Color.Black.copy(alpha = 0.6f),
@@ -327,7 +327,7 @@ fun CameraScreen(
                                     overlayAlpha = 0.5f
                                 },
                                 modifier = Modifier
-                                    .size(26.67.dp)
+                                    .size(20.dp)
                                     .background(Color.Black.copy(alpha = 0.6f), CircleShape)
                             ) {
                                 Icon(
@@ -351,7 +351,7 @@ fun CameraScreen(
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .width(12.dp)
-                                .fillMaxSize()
+                                .height(220.dp)
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.Black.copy(alpha = 0.3f))
                         ) {
@@ -398,7 +398,7 @@ fun CameraScreen(
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .padding(top = 6.dp)
-                                .size(18.dp)
+                                .size(10.dp)
                         )
                     }
                 }
