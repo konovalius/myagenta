@@ -284,7 +284,7 @@ fun CameraScreen(
                                 .padding(16.dp)
                                 .size(35.2.dp)
                                 .clip(CircleShape)
-                                .background(Color.Black.copy(alpha = 0.7f))
+                                .background(Color.Black.copy(alpha = 0.56f))
                                 .clickable(
                                     interactionSource = closeInteraction,
                                     indication = null,
@@ -296,7 +296,7 @@ fun CameraScreen(
                             Icon(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = "Убрать ориентир",
-                                tint = Color.White.copy(alpha = 0.7f),
+                                tint = Color.White.copy(alpha = 0.56f),
                                 modifier = Modifier.size(28.6.dp)
                             )
                         }
@@ -312,8 +312,8 @@ val editInteraction = remember { MutableInteractionSource() }
                                     .size(35.2.dp)
                                     .clip(CircleShape)
                                     .background(
-                                        if (isEditingOverlay) Color.White.copy(alpha = 0.7f)
-                                        else Color.Black.copy(alpha = 0.7f)
+                                        if (isEditingOverlay) Color.White.copy(alpha = 0.56f)
+                                        else Color.Black.copy(alpha = 0.56f)
                                     )
                                     .clickable(
                                         interactionSource = editInteraction,
@@ -331,9 +331,9 @@ val editInteraction = remember { MutableInteractionSource() }
                                         "Редактировать"
                                     },
                                     tint = if (isEditingOverlay) {
-                                        Color.Black.copy(alpha = 0.7f)
+                                        Color.Black.copy(alpha = 0.56f)
                                     } else {
-                                        Color.White.copy(alpha = 0.7f)
+                                        Color.White.copy(alpha = 0.56f)
                                     },
                                     modifier = Modifier.size(28.6.dp)
                                 )
@@ -343,7 +343,7 @@ val editInteraction = remember { MutableInteractionSource() }
                                 modifier = Modifier
                                     .size(35.2.dp)
                                     .clip(CircleShape)
-                                    .background(Color.Black.copy(alpha = 0.7f))
+                                    .background(Color.Black.copy(alpha = 0.56f))
                                     .clickable(
                                         interactionSource = flipInteraction,
                                         indication = null,
@@ -360,7 +360,7 @@ val editInteraction = remember { MutableInteractionSource() }
                                 Icon(
                                     imageVector = Icons.Filled.Refresh,
                                     contentDescription = "Сбросить ориентир",
-                                    tint = Color.White.copy(alpha = 0.7f),
+                                    tint = Color.White.copy(alpha = 0.56f),
                                     modifier = Modifier.size(28.6.dp)
                                 )
                             }
@@ -380,7 +380,7 @@ val editInteraction = remember { MutableInteractionSource() }
                                 .width(24.dp)
                                 .height(220.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.Black.copy(alpha = 0.35f))
+                                .background(Color.Black.copy(alpha = 0.28f))
                         ) {
                             Box(
                                 modifier = Modifier
@@ -421,7 +421,7 @@ val editInteraction = remember { MutableInteractionSource() }
                         Icon(
                             imageVector = Icons.Filled.Opacity,
                             contentDescription = "Прозрачность ориентира",
-                            tint = Color.White.copy(alpha = 0.7f),
+                            tint = Color.White.copy(alpha = 0.56f),
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .padding(top = 6.dp)
