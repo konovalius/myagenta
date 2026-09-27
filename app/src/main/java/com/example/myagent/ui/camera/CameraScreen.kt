@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -75,7 +76,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -349,27 +349,28 @@ fun CameraScreen(
                             .background(Color.Black.copy(alpha = 0.3f))
                     ) {
                         BoxWithConstraints(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(top = 8.dp, bottom = 16.dp)
+                            modifier = Modifier.fillMaxSize()
                         ) {
-                            val light = Color.White.copy(alpha = 0.45f)
-                            val dark = Color.Black.copy(alpha = 0.45f)
-                            val soft = 0.08f
-                            val stop0 = (overlayAlpha - soft).coerceIn(0f, 1f)
-                            val stop1 = (overlayAlpha + soft).coerceIn(0f, 1f)
+                            val barHeight = maxHeight
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(
-                                        Brush.verticalGradient(
-                                            0f to light,
-                                            stop0 to light,
-                                            stop1 to dark,
-                                            1f to dark
-                                        )
-                                    )
+                                    .background(Color.Black.copy(alpha = 0.45f))
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(overlayAlpha)
+                                    .align(Alignment.BottomCenter)
+                                    .background(Color.White.copy(alpha = 0.45f))
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(2.dp)
+                                    .align(Alignment.BottomCenter)
+                                    .offset(y = -barHeight * overlayAlpha)
+                                    .background(Color.White)
                             )
                             Icon(
                                 imageVector = Icons.Filled.Opacity,
