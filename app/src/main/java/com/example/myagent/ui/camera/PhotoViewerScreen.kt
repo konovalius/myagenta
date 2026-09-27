@@ -36,7 +36,8 @@ fun PhotoViewerScreen(
     uri: Uri,
     onBack: () -> Unit,
     onDelete: () -> Unit,
-    onUsePhoto: (() -> Unit)? = null
+    onUsePhoto: (() -> Unit)? = null,
+    onSavePhoto: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
@@ -94,27 +95,41 @@ fun PhotoViewerScreen(
                         }
                     }
                     onUsePhoto?.let { usePhoto ->
-                        Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape)
-                                .border(4.dp, Color.White, CircleShape)
-                                .clickable(onClick = usePhoto),
-                            contentAlignment = Alignment.Center
+                        Column(
+                            modifier = Modifier.offset(y = (-18).dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            onSavePhoto?.let { savePhoto ->
+                                Text(
+                                    text = "save",
+                                    color = Color(0xFF1B5E20),
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.clickable(onClick = savePhoto)
+                                )
+                            }
                             Box(
                                 modifier = Modifier
-                                    .size(54.dp)
+                                    .size(72.dp)
                                     .clip(CircleShape)
-                                    .background(Color.White, CircleShape),
+                                    .border(4.dp, Color.White, CircleShape)
+                                    .clickable(onClick = usePhoto),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "use",
-                                    color = Color.Black,
-                                    fontSize = 12.sp,
-                                    textAlign = TextAlign.Center
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(54.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "use",
+                                        color = Color.Black,
+                                        fontSize = 12.sp,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                         }
                     }

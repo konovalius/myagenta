@@ -32,6 +32,16 @@ class PhotoViewerViewModel @Inject constructor(
         return rowDeleted || fileDeleted
     }
 
+    suspend fun attachPhotoToFolder(uri: Uri, folderUuid: String): Boolean {
+        val photo = photoRepository.getAll().first()
+            .firstOrNull { it.uri == uri.toString() }
+            ?: return false
+        if (photo.folderUuid != folderUuid) {
+            photoRepository.updateFolder(photo.uuid, folderUuid)
+        }
+        return true
+    }
+
     private suspend fun deleteFolderIfEmpty(folderUuid: String) {
         if (photoRepository.getByFolder(folderUuid).first().isEmpty()) {
             masterFolderRepository.getAll().first()

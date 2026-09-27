@@ -205,6 +205,21 @@ fun AppNavHost() {
                     } else {
                         null
                     },
+                    onSavePhoto = if (showUseButton && folderUuid != null) {
+                        {
+                            val uriToSave = uri
+                            val targetFolder = folderUuid
+                            scope.launch(Dispatchers.IO) {
+                                viewerViewModel.attachPhotoToFolder(uriToSave, targetFolder)
+                                withContext(Dispatchers.Main) {
+                                    navController.popBackStack()
+                                    navController.navigate("master-folder/$targetFolder")
+                                }
+                            }
+                        }
+                    } else {
+                        null
+                    },
                     onBack = { navController.popBackStack() },
                     onDelete = {
                         val uriToDelete = uri
