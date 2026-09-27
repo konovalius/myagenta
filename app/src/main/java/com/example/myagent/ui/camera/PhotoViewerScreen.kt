@@ -2,20 +2,25 @@ package com.example.myagent.ui.camera
 
 import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 
 @Composable
@@ -36,25 +41,58 @@ fun PhotoViewerScreen(
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize()
         )
-        Row(
+        TextButton(
+            onClick = onBack,
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+                .align(Alignment.BottomStart)
+                .padding(24.dp)
         ) {
-            TextButton(onClick = onBack) {
-                Text("Назад", color = Color.White)
-            }
-            onUsePhoto?.let { usePhoto ->
-                TextButton(onClick = usePhoto) {
-                    Text("Использовать", color = Color.White)
+            Text("Назад", color = Color.White)
+        }
+        onUsePhoto?.let { usePhoto ->
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 24.dp)
+                    .size(72.dp)
+                    .clip(CircleShape)
+                    .border(4.dp, Color.White, CircleShape)
+                    .clickable(onClick = usePhoto),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(CircleShape)
+                        .background(Color.White, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "use",
+                        color = Color.Black,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
-            TextButton(onClick = onDelete) {
-                Text("Удалить", color = Color.White)
-            }
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .offset(x = 90.dp)
+                .padding(bottom = 24.dp)
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFFF3B30), CircleShape)
+                .clickable(onClick = onDelete),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "delete",
+                color = Color.White,
+                fontSize = 10.sp,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
