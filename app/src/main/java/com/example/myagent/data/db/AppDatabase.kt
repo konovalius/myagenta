@@ -5,15 +5,19 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.myagent.data.db.dao.MasterFolderDao
+import com.example.myagent.data.db.dao.PhotoDao
 import com.example.myagent.data.db.entity.MasterFolder
+import com.example.myagent.data.db.entity.Photo
 
 @Database(
-    entities = [MasterFolder::class],
-    version = 1,
+    entities = [MasterFolder::class, Photo::class],
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun masterFolderDao(): MasterFolderDao
+
+    abstract fun photoDao(): PhotoDao
 
     companion object {
         const val DB_NAME = "myagent.db"

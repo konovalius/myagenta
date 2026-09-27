@@ -20,3 +20,20 @@ data class MasterFolder(
     @ColumnInfo(name = "lon")
     val lon: Double? = null
 )
+
+@Entity(tableName = "photos")
+data class Photo(
+    @PrimaryKey
+    @ColumnInfo(name = "uuid")
+    val uuid: String,
+    @ColumnInfo(name = "uri")
+    val uri: String,
+    @ColumnInfo(name = "folder_uuid")
+    val folderUuid: String? = null,
+    @ColumnInfo(name = "created_at")
+    val createdAt: Long,
+    @ColumnInfo(name = "lat")
+    val lat: Double? = null,
+    @ColumnInfo(name = "lon")
+    val lon: Double? = null
+)
