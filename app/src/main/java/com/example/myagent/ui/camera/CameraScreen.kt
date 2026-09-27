@@ -277,13 +277,21 @@ fun CameraScreen(
                                     }
                                 )
                         )
-                        IconButton(
-                            onClick = { referencePhotoUri = null },
+                        val closeInteraction = remember { MutableInteractionSource() }
+                        Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(16.dp)
                                 .size(20.dp)
-                                .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                .clip(CircleShape)
+                                .background(Color.Black.copy(alpha = 0.6f))
+                                .clickable(
+                                    interactionSource = closeInteraction,
+                                    indication = null,
+                                    role = Role.Button,
+                                    onClick = { referencePhotoUri = null }
+                                ),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Close,
@@ -298,44 +306,59 @@ fun CameraScreen(
                                 .padding(16.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            IconButton(
-                                onClick = { isEditingOverlay = !isEditingOverlay },
+val editInteraction = remember { MutableInteractionSource() }
+                            Box(
                                 modifier = Modifier
                                     .size(15.dp)
+                                    .clip(CircleShape)
                                     .background(
                                         if (isEditingOverlay) Color.White
-                                        else Color.Black.copy(alpha = 0.6f),
-                                        CircleShape
+                                        else Color.Black.copy(alpha = 0.6f)
                                     )
+                                    .clickable(
+                                        interactionSource = editInteraction,
+                                        indication = null,
+                                        role = Role.Button,
+                                        onClick = { isEditingOverlay = !isEditingOverlay }
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-Icon(
-                                imageVector = Icons.Filled.Edit,
-                                contentDescription = if (isEditingOverlay) {
-                                    "Выключить редактирование"
-                                } else {
-                                    "Редактировать"
-                                },
-                                tint = if (isEditingOverlay) Color.Black else Color.White,
-                                modifier = Modifier.size(12.dp)
-                            )
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = if (isEditingOverlay) {
+                                        "Выключить редактирование"
+                                    } else {
+                                        "Редактировать"
+                                    },
+                                    tint = if (isEditingOverlay) Color.Black else Color.White,
+                                    modifier = Modifier.size(12.dp)
+                                )
                             }
-                            IconButton(
-                                onClick = {
-                                    overlayOffset = Offset.Zero
-                                    overlayScale = 1f
-                                    overlayRotation = 0f
-                                    overlayAlpha = 0.5f
-                                },
+                            val flipInteraction = remember { MutableInteractionSource() }
+                            Box(
                                 modifier = Modifier
                                     .size(15.dp)
-                                    .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                    .clip(CircleShape)
+                                    .background(Color.Black.copy(alpha = 0.6f))
+                                    .clickable(
+                                        interactionSource = flipInteraction,
+                                        indication = null,
+                                        role = Role.Button,
+                                        onClick = {
+                                            overlayOffset = Offset.Zero
+                                            overlayScale = 1f
+                                            overlayRotation = 0f
+                                            overlayAlpha = 0.5f
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-Icon(
-                                imageVector = Icons.Filled.Refresh,
-                                contentDescription = "Сбросить ориентир",
-                                tint = Color.White,
-                                modifier = Modifier.size(12.dp)
-                            )
+                                Icon(
+                                    imageVector = Icons.Filled.Refresh,
+                                    contentDescription = "Сбросить ориентир",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(12.dp)
+                                )
                             }
                         }
                     }
