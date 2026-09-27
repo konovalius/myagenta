@@ -391,7 +391,7 @@ fun CameraScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .offset(y = (-20).dp)
+                                .offset(y = (-48).dp)
                                 .padding(bottom = 24.dp),
                             contentAlignment = Alignment.Center
                         ) {
