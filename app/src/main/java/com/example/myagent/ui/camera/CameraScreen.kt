@@ -351,7 +351,6 @@ fun CameraScreen(
                         BoxWithConstraints(
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            val barHeight = maxHeight
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -363,14 +362,6 @@ fun CameraScreen(
                                     .fillMaxHeight(overlayAlpha)
                                     .align(Alignment.BottomCenter)
                                     .background(Color.White.copy(alpha = 0.45f))
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(2.dp)
-                                    .align(Alignment.BottomCenter)
-                                    .offset(y = -barHeight * overlayAlpha)
-                                    .background(Color.White)
                             )
                             Icon(
                                 imageVector = Icons.Filled.Opacity,
