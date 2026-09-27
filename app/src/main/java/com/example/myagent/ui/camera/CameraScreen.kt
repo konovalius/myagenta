@@ -282,7 +282,7 @@ fun CameraScreen(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(16.dp)
-                                .size(32.dp)
+                                .size(35.2.dp)
                                 .clip(CircleShape)
                                 .background(Color.Black.copy(alpha = 0.7f))
                                 .clickable(
@@ -297,7 +297,7 @@ fun CameraScreen(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = "Убрать ориентир",
                                 tint = Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(26.dp)
+                                modifier = Modifier.size(28.6.dp)
                             )
                         }
                         Row(
@@ -309,7 +309,7 @@ fun CameraScreen(
 val editInteraction = remember { MutableInteractionSource() }
                             Box(
                                 modifier = Modifier
-                                    .size(32.dp)
+                                    .size(35.2.dp)
                                     .clip(CircleShape)
                                     .background(
                                         if (isEditingOverlay) Color.White.copy(alpha = 0.7f)
@@ -335,13 +335,13 @@ val editInteraction = remember { MutableInteractionSource() }
                                     } else {
                                         Color.White.copy(alpha = 0.7f)
                                     },
-                                    modifier = Modifier.size(26.dp)
+                                    modifier = Modifier.size(28.6.dp)
                                 )
                             }
                             val flipInteraction = remember { MutableInteractionSource() }
                             Box(
                                 modifier = Modifier
-                                    .size(32.dp)
+                                    .size(35.2.dp)
                                     .clip(CircleShape)
                                     .background(Color.Black.copy(alpha = 0.7f))
                                     .clickable(
@@ -361,7 +361,7 @@ val editInteraction = remember { MutableInteractionSource() }
                                     imageVector = Icons.Filled.Refresh,
                                     contentDescription = "Сбросить ориентир",
                                     tint = Color.White.copy(alpha = 0.7f),
-                                    modifier = Modifier.size(26.dp)
+                                    modifier = Modifier.size(28.6.dp)
                                 )
                             }
                         }
@@ -371,7 +371,7 @@ val editInteraction = remember { MutableInteractionSource() }
                     Box(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
-                            .padding(end = 24.dp)
+                            .padding(end = 21.6.dp)
                             .height(300.dp)
                     ) {
                         Box(
@@ -380,7 +380,7 @@ val editInteraction = remember { MutableInteractionSource() }
                                 .width(24.dp)
                                 .height(220.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.Black.copy(alpha = 0.7f))
+                                .background(Color.Black.copy(alpha = 0.5f))
                         ) {
                             Box(
                                 modifier = Modifier
