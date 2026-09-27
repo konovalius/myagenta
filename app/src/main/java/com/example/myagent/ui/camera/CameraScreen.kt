@@ -340,7 +340,7 @@ fun CameraScreen(
                             .align(Alignment.CenterEnd)
                             .padding(end = 12.dp)
                             .width(56.dp)
-                            .height(220.dp)
+                            .height(440.dp)
                             .clip(RoundedCornerShape(28.dp))
                             .background(Color.Black.copy(alpha = 0.3f)),
                         contentAlignment = Alignment.Center
@@ -359,7 +359,7 @@ fun CameraScreen(
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .padding(4.dp)
-                                .size(20.dp)
+                                .size(10.dp)
                         )
                     }
                 }
