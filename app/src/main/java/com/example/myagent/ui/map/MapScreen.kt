@@ -10,11 +10,15 @@ import android.graphics.RectF
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Log
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewConfiguration
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,11 +26,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +60,10 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.example.myagent.ui.theme.GoshaSans
+import java.util.Locale
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.util.MapTileIndex
@@ -70,11 +81,19 @@ private const val DEFAULT_ZOOM = 15.0
 private const val LOCATION_ZOOM = 17.0
 private const val GEO_FOLDER_ZOOM = 14.0
 private const val PIN_SIZE_DP = 48
+private const val LONG_PRESS_MILLIS = 3000L
+
+private data class GeoPickState(
+    val lat: Double,
+    val lon: Double,
+    val folders: List<GeoPickFolder>
+)
 
 @Composable
 fun MapScreen(
     onBack: () -> Unit,
     onOpenCamera: (lat: Double, lon: Double) -> Unit,
+    onOpenCameraToFolder: (lat: Double, lon: Double, folderUuid: String) -> Unit,
     onOpenFolder: (String) -> Unit,
     viewModel: MapViewModel = hiltViewModel()
 ) {
@@ -99,6 +118,62 @@ fun MapScreen(
             setMultiTouchControls(true)
             controller.setZoom(DEFAULT_ZOOM)
             controller.setCenter(GeoPoint(DEFAULT_LAT, DEFAULT_LON))
+        }
+    }
+    val scope = rememberCoroutineScope()
+    val geoPickScope = rememberCoroutineScope()
+    var geoPick by remember { mutableStateOf<GeoPickState?>(null) }
+
+    fun openGeoCameraToFolder(lat: Double, lon: Double, folderUuid: String?) {
+        geoPickScope.launch {
+            val targetUuid = folderUuid ?: viewModel.createGeoFolder(lat, lon).uuid
+            onOpenCameraToFolder(lat, lon, targetUuid)
+        }
+    }
+
+    fun handleGeoLongPress(gp: GeoPoint) {
+        geoPickScope.launch {
+            val folders = viewModel.findGeoFoldersNear(gp.latitude, gp.longitude)
+            geoPick = GeoPickState(gp.latitude, gp.longitude, folders)
+        }
+    }
+
+    remember {
+        val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
+        var downX = 0f
+        var downY = 0f
+        var moved = false
+        var fired = false
+        var job: Job? = null
+        mapView.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downX = event.x
+                    downY = event.y
+                    moved = false
+                    fired = false
+                    job = scope.launch {
+                        delay(LONG_PRESS_MILLIS)
+                        if (!moved && !fired) {
+                            fired = true
+                            val point = mapView.projection.fromPixels(downX.toInt(), downY.toInt())
+                            handleGeoLongPress(GeoPoint(point.latitude, point.longitude))
+                        }
+                    }
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (kotlin.math.abs(event.x - downX) > touchSlop ||
+                        kotlin.math.abs(event.y - downY) > touchSlop
+                    ) {
+                        moved = true
+                        job?.cancel()
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    job?.cancel()
+                }
+            }
+            false
         }
     }
     val fusedLocationClient = remember {
@@ -249,6 +324,73 @@ onClick = {
                     )
                 }
             )
+        }
+        geoPick?.let { pick ->
+            if (pick.folders.isEmpty()) {
+                AlertDialog(
+                    onDismissRequest = { geoPick = null },
+                    title = { Text("Создать точку?", fontFamily = GoshaSans) },
+                    text = {
+                        Text("Рядом нет гео-папок. Создать новую точку для съёмки?")
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                geoPick = null
+                                openGeoCameraToFolder(pick.lat, pick.lon, null)
+                            }
+                        ) {
+                            Text("Да")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { geoPick = null }) {
+                            Text("Нет")
+                        }
+                    }
+                )
+            } else {
+                AlertDialog(
+                    onDismissRequest = { geoPick = null },
+                    title = { Text("Гео-папки рядом", fontFamily = GoshaSans) },
+                    text = {
+                        Column {
+                            pick.folders.forEach { folder ->
+                                TextButton(
+                                    onClick = {
+                                        geoPick = null
+                                        openGeoCameraToFolder(pick.lat, pick.lon, folder.uuid)
+                                    }
+                                ) {
+                                    Text(
+                                        String.format(
+                                            Locale.ROOT,
+                                            "%s — %.0f м",
+                                            folder.name,
+                                            folder.distanceMeters
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                geoPick = null
+                                openGeoCameraToFolder(pick.lat, pick.lon, null)
+                            }
+                        ) {
+                            Text("Создать новую точку")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { geoPick = null }) {
+                            Text("Отмена")
+                        }
+                    }
+                )
+            }
         }
     }
 }
