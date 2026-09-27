@@ -1,6 +1,7 @@
 package com.example.myagent.ui.camera
 
 import android.content.Context
+import android.location.Location
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
@@ -10,23 +11,28 @@ import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.db.entity.Photo
 import com.example.myagent.data.repository.FileRepository
+import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.PhotoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDateTime
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class CameraViewModel @Inject constructor(
     private val fileRepository: FileRepository,
-    private val photoRepository: PhotoRepository
+    private val photoRepository: PhotoRepository,
+    private val masterFolderRepository: MasterFolderRepository
 ) : ViewModel() {
 
     private val _lastPhotoUri = MutableStateFlow<Uri?>(null)
@@ -69,18 +75,20 @@ class CameraViewModel @Inject constructor(
                         fileRepository.setPending(savedUri, false)
                         _lastPhotoUri.value = savedUri
                         if (captureLat != null && captureLon != null) {
-                            val photo = Photo(
-                                uuid = UUID.randomUUID().toString(),
-                                uri = savedUri.toString(),
-                                folderUuid = null,
-                                createdAt = System.currentTimeMillis(),
-                                lat = captureLat,
-                                lon = captureLon
-                            )
+                            val savedUriString = savedUri.toString()
                             viewModelScope.launch(Dispatchers.IO) {
+                                val folderUuid = findOrCreateGeoFolder(captureLat, captureLon)
+                                val photo = Photo(
+                                    uuid = UUID.randomUUID().toString(),
+                                    uri = savedUriString,
+                                    folderUuid = folderUuid,
+                                    createdAt = System.currentTimeMillis(),
+                                    lat = captureLat,
+                                    lon = captureLon
+                                )
                                 photoRepository.insert(photo)
+                                Log.wtf("CameraVM", "Photo record created: ${photo.uuid} in folder $folderUuid at $captureLat,$captureLon")
                             }
-                            Log.wtf("CameraVM", "Photo record created: ${photo.uuid} at $captureLat,$captureLon")
                         }
                         Toast.makeText(context, "Фото сохранено в галерею", Toast.LENGTH_SHORT)
                             .show()
@@ -106,5 +114,34 @@ class CameraViewModel @Inject constructor(
             _lastPhotoUri.value = null
         }
         return deleted
+    }
+
+    private suspend fun findOrCreateGeoFolder(lat: Double, lon: Double): String {
+        val folders = masterFolderRepository.getAll().first()
+        folders.forEach { folder ->
+            val folderLat = folder.lat
+            val folderLon = folder.lon
+            if (folderLat != null && folderLon != null) {
+                val results = FloatArray(1)
+                Location.distanceBetween(lat, lon, folderLat, folderLon, results)
+                if (results[0] <= GEO_RADIUS_METERS) {
+                    return folder.uuid
+                }
+            }
+        }
+        val folder = MasterFolder(
+            uuid = UUID.randomUUID().toString(),
+            name = String.format(Locale.ROOT, "%.4f, %.4f", lat, lon),
+            type = "geo",
+            createdAt = System.currentTimeMillis(),
+            lat = lat,
+            lon = lon
+        )
+        masterFolderRepository.insert(folder)
+        return folder.uuid
+    }
+
+    companion object {
+        private const val GEO_RADIUS_METERS = 20f
     }
 }
