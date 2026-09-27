@@ -5,13 +5,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,13 +44,23 @@ fun PhotoViewerScreen(
             contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize()
         )
-        TextButton(
-            onClick = onBack,
+        Box(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(24.dp)
+                .padding(start = 24.dp, bottom = 38.dp)
+                .size(width = 72.dp, height = 44.dp)
+                .clickable(onClick = onBack),
+            contentAlignment = Alignment.Center
         ) {
-            Text("Назад", color = Color.White)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("back", color = Color.White, fontSize = 11.sp)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "back",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
         onUsePhoto?.let { usePhoto ->
             Box(
