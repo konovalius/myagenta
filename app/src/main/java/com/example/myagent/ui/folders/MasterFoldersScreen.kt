@@ -111,7 +111,14 @@ fun MasterFoldersScreen(
                                 }
                             }
                         },
-                        singleLine = true
+                        singleLine = true,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFFFF3B30),
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
+                        )
                     )
                 }
             val filteredFolders by viewModel.filteredFolders.collectAsStateWithLifecycle()
