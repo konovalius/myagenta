@@ -370,17 +370,24 @@ val editInteraction = remember { MutableInteractionSource() }
                     }
                 }
                 if (referencePhotoUri != null) {
-                    Box(
+                    Row(
                         modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 21.6.dp)
-                            .height(300.dp)
+                            .align(Alignment.TopCenter)
+                            .padding(top = 68.dp)
+                            .fillMaxWidth(0.62f),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Icon(
+                            imageVector = Icons.Filled.Opacity,
+                            contentDescription = "Прозрачность ориентира",
+                            tint = Color.White.copy(alpha = 0.56f),
+                            modifier = Modifier.size(20.dp)
+                        )
                         Box(
                             modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .width(24.dp)
-                                .height(220.dp)
+                                .weight(1f)
+                                .padding(start = 8.dp)
+                                .height(24.dp)
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.Black.copy(alpha = 0.28f))
                         ) {
@@ -391,9 +398,9 @@ val editInteraction = remember { MutableInteractionSource() }
                             )
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .fillMaxHeight(overlayAlpha)
-                                    .align(Alignment.BottomCenter)
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(overlayAlpha)
+                                    .align(Alignment.CenterStart)
                                     .background(Color.White.copy(alpha = 0.45f))
                             )
                             Box(
@@ -402,33 +409,24 @@ val editInteraction = remember { MutableInteractionSource() }
                                     .pointerInput(Unit) {
                                         awaitEachGesture {
                                             val down = awaitFirstDown(requireUnconsumed = false)
-                                            val pillHeight = size.height.toFloat()
+                                            val pillWidth = size.width.toFloat()
                                             var dragged = false
                                             drag(down.id) { change ->
                                                 dragged = true
                                                 change.consume()
                                                 overlayAlpha =
-                                                    (1f - change.position.y / pillHeight)
+                                                    (change.position.x / pillWidth)
                                                         .coerceIn(0f, 1f)
                                             }
                                             if (!dragged) {
                                                 overlayAlpha =
-                                                    (1f - down.position.y / pillHeight)
+                                                    (down.position.x / pillWidth)
                                                         .coerceIn(0f, 1f)
                                             }
                                         }
                                     }
                             )
                         }
-                        Icon(
-                            imageVector = Icons.Filled.Opacity,
-                            contentDescription = "Прозрачность ориентира",
-                            tint = Color.White.copy(alpha = 0.56f),
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = 6.dp)
-                                .size(20.dp)
-                        )
                     }
                 }
                 if (isRecording) {
