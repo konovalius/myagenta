@@ -45,6 +45,25 @@ private val DisketteShape = GenericShape { size, _ ->
     close()
 }
 
+private val TrashShape = GenericShape { size, _ ->
+    val w = size.width
+    val h = size.height
+    val rimY = h * 0.28f
+    val handleW = w * 0.4f
+    val handleH = h * 0.12f
+    val bodyInset = w * 0.1f
+    moveTo(0f, rimY)
+    lineTo(w, rimY)
+    lineTo(w - bodyInset, h)
+    lineTo(bodyInset, h)
+    close()
+    moveTo((w - handleW) / 2f, 0f)
+    lineTo((w + handleW) / 2f, 0f)
+    lineTo((w + handleW) / 2f, rimY)
+    lineTo((w - handleW) / 2f, rimY)
+    close()
+}
+
 @Composable
 fun PhotoViewerScreen(
     uri: Uri,
@@ -160,7 +179,7 @@ fun PhotoViewerScreen(
                         Box(
                             modifier = Modifier
                                 .size(72.dp)
-                                .offset(x = (-7.33).dp),
+                                .offset(x = (-4).dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
@@ -189,7 +208,10 @@ fun PhotoViewerScreen(
                         }
                     }
                     Box(
-                        modifier = Modifier.clickable { onDelete(currentUri) },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .border(1.dp, Color(0xFFB3261E), TrashShape)
+                            .clickable { onDelete(currentUri) },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -207,7 +229,7 @@ fun PhotoViewerScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(52.dp)
+                                .size(40.dp)
                                 .offset(y = useCenterY - useToDelete - contentAreaCenterY)
                                 .border(1.dp, Color(0xFF1B5E20), DisketteShape)
                                 .clickable(onClick = savePhoto),
