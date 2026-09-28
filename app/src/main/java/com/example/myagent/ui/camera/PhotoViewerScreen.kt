@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
@@ -34,6 +34,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.Photo
+
+private val DisketteShape = GenericShape { size, _ ->
+    val cut = size.width * 0.25f
+    moveTo(0f, 0f)
+    lineTo(size.width - cut, 0f)
+    lineTo(size.width, cut)
+    lineTo(size.width, size.height)
+    lineTo(0f, size.height)
+    close()
+}
 
 @Composable
 fun PhotoViewerScreen(
@@ -199,7 +209,7 @@ fun PhotoViewerScreen(
                             modifier = Modifier
                                 .size(52.dp)
                                 .offset(y = useCenterY - useToDelete - contentAreaCenterY)
-                                .border(1.dp, Color(0xFF1B5E20), RoundedCornerShape(8.dp))
+                                .border(1.dp, Color(0xFF1B5E20), DisketteShape)
                                 .clickable(onClick = savePhoto),
                             contentAlignment = Alignment.Center
                         ) {
