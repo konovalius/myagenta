@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
@@ -26,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
@@ -157,16 +159,32 @@ fun PhotoViewerScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(54.dp)
+                                    .size(60.dp)
                                     .clip(CircleShape)
-                                    .background(Color.White, CircleShape),
+                                    .background(Color.Black, CircleShape)
+                                    .drawBehind {
+                                        val step = 6.dp.toPx()
+                                        val stroke = 1.5.dp.toPx()
+                                        val diag = size.width + size.height
+                                        var offset = -size.height
+                                        while (offset < diag) {
+                                            drawLine(
+                                                color = Color.White,
+                                                start = androidx.compose.ui.geometry.Offset(offset, 0f),
+                                                end = androidx.compose.ui.geometry.Offset(offset + size.height, size.height),
+                                                strokeWidth = stroke
+                                            )
+                                            offset += step
+                                        }
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = "use",
-                                    color = Color.Black,
+                                    color = Color.White,
                                     fontSize = 12.sp,
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.background(Color.Black, RoundedCornerShape(3.dp))
                                 )
                             }
                         }
