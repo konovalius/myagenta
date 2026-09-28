@@ -48,20 +48,30 @@ private val DisketteShape = GenericShape { size, _ ->
 private val TrashShape = GenericShape { size, _ ->
     val w = size.width
     val h = size.height
-    val rimY = h * 0.28f
-    val handleW = w * 0.4f
-    val handleH = h * 0.12f
-    val bodyInset = w * 0.1f
-    moveTo(0f, rimY)
-    lineTo(w, rimY)
-    lineTo(w - bodyInset, h)
-    lineTo(bodyInset, h)
+    val rimBottom = h * 0.16f
+    val bodyBottom = h
+    val bodyInset = w * 0.13f
+
+    moveTo(0f, 0f)
+    lineTo(w, 0f)
+    lineTo(w, rimBottom)
+    lineTo(0f, rimBottom)
     close()
-    moveTo((w - handleW) / 2f, 0f)
-    lineTo((w + handleW) / 2f, 0f)
-    lineTo((w + handleW) / 2f, rimY)
-    lineTo((w - handleW) / 2f, rimY)
+
+    moveTo(0f, rimBottom)
+    lineTo(w, rimBottom)
+    lineTo(w - bodyInset, bodyBottom)
+    lineTo(bodyInset, bodyBottom)
     close()
+
+    val ribTop = rimBottom + h * 0.06f
+    val ribBottom = ribTop + h * 0.13f
+    for (fraction in listOf(0.25f, 0.5f, 0.75f)) {
+        val topX = w * fraction
+        val bottomX = bodyInset + (w - 2 * bodyInset) * fraction
+        moveTo(topX, ribTop)
+        lineTo(bottomX, ribBottom)
+    }
 }
 
 @Composable
