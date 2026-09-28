@@ -19,6 +19,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,7 +67,6 @@ fun PhotoViewerScreen(
 
     val contentAreaCenterY = 680.dp
     val useCenterY = contentAreaCenterY + 12.dp
-    val useCenterX = 187.dp
     val useToDelete = 94.dp
     Box(
         modifier = Modifier
@@ -195,17 +195,26 @@ fun PhotoViewerScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "save",
-                            color = Color(0xFF1B5E20),
-                            fontSize = 12.sp,
+                        Box(
                             modifier = Modifier
-                                .offset(
-                                    x = useCenterX - 180.dp,
-                                    y = useCenterY - useToDelete - contentAreaCenterY
-                                )
-                                .clickable(onClick = savePhoto)
-                        )
+                                .size(52.dp)
+                                .offset(y = useCenterY - useToDelete - contentAreaCenterY)
+                                .clickable(onClick = savePhoto),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Save,
+                                contentDescription = "save",
+                                tint = Color(0xFF1B5E20),
+                                modifier = Modifier.size(52.dp)
+                            )
+                            Text(
+                                text = "save",
+                                color = Color(0xFF1B5E20),
+                                fontSize = 9.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }
