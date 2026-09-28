@@ -199,6 +199,8 @@ fun CameraScreen(
         if (viewerPhotoUri != null) {
             PhotoViewerScreen(
                 uri = viewerPhotoUri,
+                photos = emptyList(),
+                startIndex = 0,
                 onBack = { viewerUri = null },
                 onDelete = {
                     val deleted = viewModel.deleteLastPhoto()

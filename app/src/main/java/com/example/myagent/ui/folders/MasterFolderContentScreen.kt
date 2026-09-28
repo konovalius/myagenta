@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -39,7 +39,7 @@ import com.example.myagent.ui.theme.GradientBackground
 @Composable
 fun MasterFolderContentScreen(
     onBack: () -> Unit,
-    onOpenPhoto: (Uri, String) -> Unit,
+    onOpenPhoto: (Uri, String, Int) -> Unit,
     viewModel: MasterFolderContentViewModel = hiltViewModel()
 ) {
     val folder by viewModel.folder.collectAsStateWithLifecycle()
@@ -85,7 +85,7 @@ fun MasterFolderContentScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(photos, key = { it.uuid }) { photo ->
+                itemsIndexed(photos, key = { _, photo -> photo.uuid }) { index, photo ->
                     AsyncImage(
                         model = Uri.parse(photo.uri),
                         contentDescription = "Фото",
@@ -96,7 +96,7 @@ fun MasterFolderContentScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .clickable {
                                 val folderUuid = folder?.uuid ?: return@clickable
-                                onOpenPhoto(Uri.parse(photo.uri), folderUuid)
+                                onOpenPhoto(Uri.parse(photo.uri), folderUuid, index)
                             }
                     )
                 }

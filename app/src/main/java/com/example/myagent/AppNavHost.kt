@@ -3,7 +3,9 @@ package com.example.myagent
 import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -29,12 +31,18 @@ object AppRoutes {
     const val MAP = "map"
     const val MASTER_FOLDERS = "master-folders"
     const val MASTER_FOLDER_CONTENT = "master-folder/{folderUuid}"
-    const val PHOTO_VIEWER = "photo-viewer?uri={uri}&folderUuid={folderUuid}&showUseButton={showUseButton}"
+    const val PHOTO_VIEWER = "photo-viewer?uri={uri}&folderUuid={folderUuid}&showUseButton={showUseButton}&startIndex={startIndex}"
 
-    fun photoViewer(uri: Uri, folderUuid: String, showUseButton: Boolean = true): String =
+    fun photoViewer(
+        uri: Uri,
+        folderUuid: String,
+        showUseButton: Boolean = true,
+        startIndex: Int = 0
+    ): String =
         "photo-viewer?uri=" + Uri.encode(uri.toString()) +
             "&folderUuid=" + folderUuid +
-            "&showUseButton=" + showUseButton
+            "&showUseButton=" + showUseButton +
+            "&startIndex=" + startIndex
 
     fun camera(
         uri: Uri? = null,
@@ -161,8 +169,8 @@ fun AppNavHost() {
         ) {
             MasterFolderContentScreen(
                 onBack = { navController.popBackStack() },
-                onOpenPhoto = { uri, folderUuid ->
-                    navController.navigate(AppRoutes.photoViewer(uri, folderUuid))
+                onOpenPhoto = { uri, folderUuid, index ->
+                    navController.navigate(AppRoutes.photoViewer(uri, folderUuid, startIndex = index))
                 }
             )
         }
@@ -183,6 +191,11 @@ fun AppNavHost() {
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                navArgument("startIndex") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
@@ -191,15 +204,19 @@ fun AppNavHost() {
                 ?.let { Uri.parse(it) }
             val folderUuid = backStackEntry.arguments?.getString("folderUuid")
             val showUseButton = backStackEntry.arguments?.getString("showUseButton")?.toBoolean() ?: false
+            val startIndex = backStackEntry.arguments?.getString("startIndex")?.toIntOrNull() ?: 0
             val viewerViewModel: PhotoViewerViewModel = hiltViewModel()
+            val photos by viewerViewModel.photos.collectAsStateWithLifecycle()
             val scope = rememberCoroutineScope()
             if (uri != null) {
                 PhotoViewerScreen(
                     uri = uri,
+                    photos = photos,
+                    startIndex = startIndex,
                     onUsePhoto = if (showUseButton && folderUuid != null) {
-                        {
+                        { currentUri ->
                             navController.navigate(
-                                AppRoutes.camera(uri = uri, folderUuid = folderUuid)
+                                AppRoutes.camera(uri = currentUri, folderUuid = folderUuid)
                             )
                         }
                     } else {
@@ -217,8 +234,7 @@ fun AppNavHost() {
                         null
                     },
                     onBack = { navController.popBackStack() },
-                    onDelete = {
-                        val uriToDelete = uri
+                    onDelete = { uriToDelete ->
                         scope.launch(Dispatchers.IO) {
                             viewerViewModel.deletePhoto(uriToDelete)
                             withContext(Dispatchers.Main) {

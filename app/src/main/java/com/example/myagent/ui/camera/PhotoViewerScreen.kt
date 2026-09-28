@@ -8,19 +8,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,42 +32,88 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.myagent.data.db.entity.Photo
 
 @Composable
 fun PhotoViewerScreen(
     uri: Uri,
+    photos: List<Photo>,
+    startIndex: Int,
     onBack: () -> Unit,
-    onDelete: () -> Unit,
-    onUsePhoto: (() -> Unit)? = null,
+    onDelete: (Uri) -> Unit,
+    onUsePhoto: ((Uri) -> Unit)? = null,
     onSavePhoto: (() -> Unit)? = null
 ) {
-        val contentAreaCenterY = 680.dp
-        val useCenterY = contentAreaCenterY + 12.dp
-        val useCenterX = 187.dp
-        val useToDelete = 94.dp
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-        ) {
+    val uris = remember(photos, uri) {
+        if (photos.isEmpty()) listOf(uri) else photos.map { Uri.parse(it.uri) }
+    }
+    val total = uris.size
+    val initialIndex = startIndex.coerceIn(0, total - 1)
+    val looping = total > 1
+    val startPage = if (looping) {
+        val half = Int.MAX_VALUE / 2
+        half - (half % total) + initialIndex
+    } else {
+        0
+    }
+
+    val pagerState = rememberPagerState(
+        initialPage = startPage,
+        pageCount = { if (looping) Int.MAX_VALUE else 1 }
+    )
+    val currentIndex = if (looping) pagerState.currentPage % total else 0
+    val currentUri = uris[currentIndex]
+
+    val contentAreaCenterY = 680.dp
+    val useCenterY = contentAreaCenterY + 12.dp
+    val useCenterX = 187.dp
+    val useToDelete = 94.dp
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
-            )
+                    .height(80.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (total > 1) {
+                    Text(
+                        text = "${currentIndex + 1} из $total",
+                        color = Color.White,
+                        fontSize = 15.sp
+                    )
+                }
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(3f / 4f)
                     .background(Color.Black)
             ) {
-                AsyncImage(
-                    model = uri,
-                    contentDescription = "Снимок",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
+                if (looping) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        AsyncImage(
+                            model = uris[page % total],
+                            contentDescription = "Снимок",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                } else {
+                    AsyncImage(
+                        model = currentUri,
+                        contentDescription = "Снимок",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
             Box(
                 modifier = Modifier
@@ -104,7 +152,7 @@ fun PhotoViewerScreen(
                                 .size(72.dp)
                                 .clip(CircleShape)
                                 .border(4.dp, Color.White, CircleShape)
-                                .clickable(onClick = usePhoto),
+                                .clickable { usePhoto(currentUri) },
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
@@ -124,7 +172,7 @@ fun PhotoViewerScreen(
                         }
                     }
                     Box(
-                        modifier = Modifier.clickable(onClick = onDelete),
+                        modifier = Modifier.clickable { onDelete(currentUri) },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
