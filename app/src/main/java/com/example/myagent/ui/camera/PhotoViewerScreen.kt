@@ -27,13 +27,43 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.Photo
+
+private fun Modifier.gradientStroke(shape: Shape, brush: Brush, width: Dp) = this.drawBehind {
+    val stroke = Stroke(width = width.toPx())
+    val outline = shape.createOutline(this.size, this.layoutDirection, this)
+    if (outline is Outline.Generic) {
+        drawPath(outline.path, brush, style = stroke)
+    } else {
+        drawRect(brush, style = stroke)
+    }
+}
+
+private val SaveGradient = Brush.linearGradient(
+    colors = listOf(Color(0xFF0D3B14), Color(0xFF66BB6A)),
+    start = Offset.Zero,
+    end = Offset.Infinite
+)
+
+private val DeleteGradient = Brush.linearGradient(
+    colors = listOf(Color(0xFF8C1D18), Color(0xFFFFC107)),
+    start = Offset.Zero,
+    end = Offset.Infinite
+)
 
 private val DisketteShape = GenericShape { size, _ ->
     val cut = size.width * 0.25f
@@ -220,15 +250,17 @@ fun PhotoViewerScreen(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .border(1.dp, Color(0xFFB3261E), TrashShape)
+                            .gradientStroke(TrashShape, DeleteGradient, 1.dp)
                             .clickable { onDelete(currentUri) },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "delete",
-                            color = Color(0xFFB3261E),
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center
+                            style = TextStyle(
+                                brush = DeleteGradient,
+                                fontSize = 12.sp,
+                                textAlign = TextAlign.Center
+                            )
                         )
                     }
                 }
@@ -241,15 +273,17 @@ fun PhotoViewerScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .offset(y = useCenterY - useToDelete - contentAreaCenterY)
-                                .border(1.dp, Color(0xFF1B5E20), DisketteShape)
+                                .gradientStroke(DisketteShape, SaveGradient, 1.dp)
                                 .clickable(onClick = savePhoto),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "save",
-                                color = Color(0xFF1B5E20),
-                                fontSize = 12.sp,
-                                textAlign = TextAlign.Center
+                                style = TextStyle(
+                                    brush = SaveGradient,
+                                    fontSize = 12.sp,
+                                    textAlign = TextAlign.Center
+                                )
                             )
                         }
                     }
