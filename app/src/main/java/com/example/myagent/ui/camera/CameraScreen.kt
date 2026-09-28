@@ -657,7 +657,7 @@ private fun ShutterButton(
     ) {
         Box(
             modifier = Modifier
-                .size(54.dp)
+                .size(60.dp)
                 .clip(CircleShape)
                 .background(shutterColor, CircleShape)
         )
