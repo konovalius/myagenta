@@ -17,9 +17,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -199,19 +199,14 @@ fun PhotoViewerScreen(
                             modifier = Modifier
                                 .size(52.dp)
                                 .offset(y = useCenterY - useToDelete - contentAreaCenterY)
+                                .border(1.dp, Color(0xFF1B5E20), RoundedCornerShape(8.dp))
                                 .clickable(onClick = savePhoto),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Save,
-                                contentDescription = "save",
-                                tint = Color(0xFF1B5E20),
-                                modifier = Modifier.size(52.dp)
-                            )
                             Text(
                                 text = "save",
                                 color = Color(0xFF1B5E20),
-                                fontSize = 9.sp,
+                                fontSize = 12.sp,
                                 textAlign = TextAlign.Center
                             )
                         }
