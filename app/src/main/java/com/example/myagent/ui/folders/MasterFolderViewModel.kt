@@ -25,6 +25,7 @@ class MasterFolderViewModel @Inject constructor(
     val searchQuery = MutableStateFlow("")
 
     private val _allFolders = MutableStateFlow<List<MasterFolder>>(emptyList())
+    val allFolders: StateFlow<List<MasterFolder>> = _allFolders.asStateFlow()
     val filteredFolders: StateFlow<List<MasterFolder>> =
         combine(_allFolders, searchQuery) { folders, query ->
             if (query.isBlank()) folders else folders.filter { it.name.contains(query, ignoreCase = true) }
@@ -52,5 +53,9 @@ class MasterFolderViewModel @Inject constructor(
 
     fun deleteFolder(folder: MasterFolder) {
         viewModelScope.launch { repository.delete(folder) }
+    }
+
+    fun renameFolder(folder: MasterFolder, name: String) {
+        viewModelScope.launch { repository.rename(folder.uuid, name.trim()) }
     }
 }

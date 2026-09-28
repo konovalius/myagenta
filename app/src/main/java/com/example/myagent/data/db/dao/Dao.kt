@@ -18,6 +18,9 @@ interface MasterFolderDao {
 
     @Delete
     suspend fun delete(folder: MasterFolder)
+
+    @Query("UPDATE master_folders SET name = :name WHERE uuid = :uuid")
+    suspend fun rename(uuid: String, name: String)
 }
 
 @Dao

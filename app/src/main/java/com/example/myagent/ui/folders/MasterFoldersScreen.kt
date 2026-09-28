@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
@@ -64,6 +65,9 @@ fun MasterFoldersScreen(
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
     var folderToDelete by remember { mutableStateOf<MasterFolder?>(null) }
+    var showPickFolderDialog by remember { mutableStateOf(false) }
+    var folderToRename by remember { mutableStateOf<MasterFolder?>(null) }
+    val allFolders by viewModel.allFolders.collectAsStateWithLifecycle()
 
     GradientBackground {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -122,50 +126,61 @@ fun MasterFoldersScreen(
                     )
                 }
             val filteredFolders by viewModel.filteredFolders.collectAsStateWithLifecycle()
-            if (filteredFolders.isEmpty()) {
+            Box(modifier = Modifier.weight(1f)) {
+                if (filteredFolders.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 72.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (viewModel.searchQuery.value.isBlank()) "Мастер-папок пока нет" else "Ничего не найдено",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 15.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 72.dp)
+                            .padding(horizontal = 20.dp)
+                            .padding(bottom = 160.dp),
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(filteredFolders, key = { it.uuid }) { folder ->
+                            MasterFolderCard(
+                                folder = folder,
+                                onClick = { onOpenFolder(folder.uuid) },
+                                onLongClick = { folderToDelete = folder }
+                            )
+                        }
+                    }
+                }
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 88.dp),
-                    contentAlignment = Alignment.Center
+                        .align(Alignment.BottomEnd)
+                        .padding(24.dp)
                 ) {
-                    Text(
-                        text = if (viewModel.searchQuery.value.isBlank()) "Мастер-папок пока нет" else "Ничего не найдено",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 15.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 88.dp)
-                        .padding(horizontal = 20.dp),
-                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
-                ) {
-                    items(filteredFolders, key = { it.uuid }) { folder ->
-                        MasterFolderCard(
-                            folder = folder,
-                            onClick = { onOpenFolder(folder.uuid) },
-                            onLongClick = { folderToDelete = folder }
-                        )
+                        Column(horizontalAlignment = Alignment.End) {
+                            FloatingActionButton(
+                                onClick = { showPickFolderDialog = true }
+                            ) {
+                                Icon(Icons.Filled.Edit, contentDescription = "Переименовать папку")
+                            }
+                            Spacer(Modifier.size(16.dp))
+                            FloatingActionButton(
+                                onClick = { showCreateDialog = true }
+                            ) {
+                                Icon(Icons.Filled.Add, contentDescription = "Создать папку")
+                            }
+                        }
                     }
                 }
             }
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                FloatingActionButton(
-                    onClick = { showCreateDialog = true },
-                    modifier = Modifier.padding(24.dp)
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Создать папку")
-                }
-            }
         }
-    }
 
         if (showCreateDialog) {
             CreateFolderDialog(
@@ -195,6 +210,28 @@ fun MasterFoldersScreen(
                         Text("Нет")
                     }
                 }
+            )
+        }
+
+        if (showPickFolderDialog) {
+            PickFolderDialog(
+                folders = allFolders,
+                onPick = { picked ->
+                    showPickFolderDialog = false
+                    folderToRename = picked
+                },
+                onDismiss = { showPickFolderDialog = false }
+            )
+        }
+
+        folderToRename?.let { target ->
+            RenameFolderDialog(
+                currentName = target.name,
+                onConfirm = { name ->
+                    viewModel.renameFolder(target, name)
+                    folderToRename = null
+                },
+                onDismiss = { folderToRename = null }
             )
         }
 }

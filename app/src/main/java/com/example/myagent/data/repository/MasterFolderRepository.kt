@@ -15,4 +15,6 @@ class MasterFolderRepository @Inject constructor(
     suspend fun insert(folder: MasterFolder) = masterFolderDao.insert(folder)
 
     suspend fun delete(folder: MasterFolder) = masterFolderDao.delete(folder)
+
+    suspend fun rename(uuid: String, name: String) = masterFolderDao.rename(uuid, name)
 }
