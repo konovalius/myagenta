@@ -324,7 +324,7 @@ fun CameraScreen(
         } else {
             val capture = videoCapture
             if (capture == null) {
-                Toast.makeText(context, "Камера ещё не готова для видео", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Подготовка камеры...", Toast.LENGTH_SHORT).show()
             } else if (hasVideoPermissions) {
                 val started = viewModel.startVideoRecording(capture, context)
                 if (started) {
@@ -390,6 +390,7 @@ fun CameraScreen(
                         onCameraReady = { imgCapture, vidCapture ->
                             imageCapture = imgCapture
                             videoCapture = vidCapture
+                            Log.wtf("CameraPreview", "onCameraReady called: videoCapture=${vidCapture != null}")
                         }
                     )
                 
@@ -623,6 +624,7 @@ if (isRecording) {
                             ShutterButton(
                                 isVideoMode = isVideoMode,
                                 isRecording = isRecording,
+                                enabled = !isVideoMode || videoCapture != null,
                                 onClick = {
                                     activeMode = CameraMode.entries[centeredModeIndex]
                                     isSlowMotionActive =
@@ -679,6 +681,18 @@ fun CameraPreview(
     }
     val imageCapture = remember { ImageCapture.Builder().build() }
     var videoCapture by remember { mutableStateOf<VideoCapture<Recorder>?>(null) }
+    var recorder by remember { mutableStateOf<Recorder?>(null) }
+
+    LaunchedEffect(Unit) {
+        val qualitySelector = QualitySelector.fromOrderedList(
+            listOf(Quality.UHD, Quality.FHD, Quality.HD)
+        )
+        recorder = Recorder.Builder()
+            .setQualitySelector(qualitySelector)
+            .build()
+        videoCapture = VideoCapture.withOutput(recorder!!)
+        Log.wtf("CameraPreview", "VideoCapture created and ready: ${videoCapture != null}")
+    }
 
     LaunchedEffect(cameraSelector, isVideoMode) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -696,34 +710,19 @@ fun CameraPreview(
                         previewView.display.rotation
                     ).build()
                     
-                    val useCaseGroup = if (isVideoMode) {
-                        // Для видео создаём Recorder и VideoCapture
-                        val qualitySelector = QualitySelector.fromOrderedList(
-                            listOf(Quality.UHD, Quality.FHD, Quality.HD)
-                        )
-                        val recorder = Recorder.Builder()
-                            .setQualitySelector(qualitySelector)
-                            .build()
-                        val newVideoCapture = VideoCapture.withOutput(recorder)
-                        
+                    val useCaseGroup = if (isVideoMode && videoCapture != null) {
                         UseCaseGroup.Builder()
                             .setViewPort(viewPort)
                             .addUseCase(preview)
                             .addUseCase(imageCapture)
-                            .addUseCase(newVideoCapture)
+                            .addUseCase(videoCapture!!)
                             .build()
-                            .also {
-                                videoCapture = newVideoCapture
-                            }
                     } else {
                         UseCaseGroup.Builder()
                             .setViewPort(viewPort)
                             .addUseCase(preview)
                             .addUseCase(imageCapture)
                             .build()
-                            .also {
-                                videoCapture = null
-                            }
                     }
                     
                     cameraProvider.unbindAll()
@@ -808,6 +807,7 @@ private fun CircularIconButton(
 private fun ShutterButton(
     isVideoMode: Boolean,
     isRecording: Boolean,
+    enabled: Boolean = true,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier
@@ -824,10 +824,12 @@ private fun ShutterButton(
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = null,
+                enabled = enabled,
                 role = Role.Button,
                 onClick = onClick,
                 onLongClick = onLongPress
-            ),
+            )
+            .alpha(if (enabled) 1f else 0.5f),
         contentAlignment = Alignment.Center
     ) {
         if (isVideoMode && isRecording) {
