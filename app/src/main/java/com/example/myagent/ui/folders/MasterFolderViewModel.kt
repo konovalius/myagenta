@@ -3,7 +3,9 @@ package com.example.myagent.ui.folders
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myagent.data.db.entity.MasterFolder
+import com.example.myagent.data.db.entity.Photo
 import com.example.myagent.data.repository.MasterFolderRepository
+import com.example.myagent.data.repository.PhotoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
 import javax.inject.Inject
@@ -19,7 +21,8 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class MasterFolderViewModel @Inject constructor(
-    private val repository: MasterFolderRepository
+    private val repository: MasterFolderRepository,
+    private val photoRepository: PhotoRepository
 ) : ViewModel() {
 
     val searchQuery = MutableStateFlow("")
@@ -32,10 +35,21 @@ class MasterFolderViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(), emptyList())
 
+    private val _previewsByFolder = MutableStateFlow<Map<String, List<Photo>>>(emptyMap())
+    val previewsByFolder: StateFlow<Map<String, List<Photo>>> = _previewsByFolder.asStateFlow()
+
     init {
         viewModelScope.launch {
             val source: Flow<List<MasterFolder>> = repository.getAll()
             source.collect { list -> _allFolders.value = list }
+        }
+        viewModelScope.launch {
+            photoRepository.getAll().collect { photos ->
+                _previewsByFolder.value = photos
+                    .mapNotNull { photo -> photo.folderUuid?.let { uuid -> uuid to photo } }
+                    .groupBy({ it.first }, { it.second })
+                    .mapValues { (_, list) -> list.sortedByDescending { it.createdAt }.take(PREVIEW_LIMIT) }
+            }
         }
     }
 
@@ -57,5 +71,9 @@ class MasterFolderViewModel @Inject constructor(
 
     fun renameFolder(folder: MasterFolder, name: String) {
         viewModelScope.launch { repository.rename(folder.uuid, name.trim()) }
+    }
+
+    companion object {
+        const val PREVIEW_LIMIT = 4
     }
 }

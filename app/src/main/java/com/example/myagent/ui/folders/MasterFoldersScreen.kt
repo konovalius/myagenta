@@ -44,14 +44,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.MasterFolder
+import com.example.myagent.data.db.entity.Photo
 import com.example.myagent.ui.theme.GradientBackground
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -126,6 +131,7 @@ fun MasterFoldersScreen(
                     )
                 }
             val filteredFolders by viewModel.filteredFolders.collectAsStateWithLifecycle()
+    val previewsByFolder by viewModel.previewsByFolder.collectAsStateWithLifecycle()
             Box(modifier = Modifier.weight(1f)) {
                 if (filteredFolders.isEmpty()) {
                     Box(
@@ -153,6 +159,7 @@ fun MasterFoldersScreen(
                         items(filteredFolders, key = { it.uuid }) { folder ->
                             MasterFolderCard(
                                 folder = folder,
+                                previews = previewsByFolder[folder.uuid].orEmpty(),
                                 onClick = { onOpenFolder(folder.uuid) },
                                 onLongClick = { folderToDelete = folder }
                             )
@@ -275,6 +282,7 @@ private fun CreateFolderDialog(
 @Composable
 private fun MasterFolderCard(
     folder: MasterFolder,
+    previews: List<Photo>,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -310,10 +318,40 @@ private fun MasterFolderCard(
             Text(folder.name, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
             Spacer(Modifier.size(4.dp))
             Text(
-                text = "$typeLabel • $dateText",
+                text = "$typeLabel  $dateText",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp
             )
+        }
+        if (previews.isNotEmpty()) {
+            Spacer(Modifier.weight(1f))
+            FolderPhotoPreview(previews)
+        }
+    }
+}
+
+@Composable
+private fun FolderPhotoPreview(photos: List<Photo>) {
+    Column(
+        modifier = Modifier.testTag("folder_preview"),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        photos.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                row.forEach { photo ->
+                    AsyncImage(
+                        model = photo.uri,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                if (row.size == 1) {
+                    Spacer(Modifier.size(40.dp))
+                }
+            }
         }
     }
 }
