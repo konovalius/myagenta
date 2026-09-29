@@ -189,7 +189,7 @@ Spacer(Modifier.height(16.dp))
 Spacer(Modifier.height(8.dp))
             val filteredFolders by viewModel.filteredFolders.collectAsStateWithLifecycle()
     val previewsByFolder by viewModel.previewsByFolder.collectAsStateWithLifecycle()
-            Box(modifier = Modifier.weight(1f)) {
+            Box(modifier = Modifier.weight(1f).background(Color.Transparent)) {
                 if (filteredFolders.isEmpty()) {
                     Box(
                         modifier = Modifier
@@ -206,11 +206,13 @@ Spacer(Modifier.height(8.dp))
                     }
                 } else {
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 72.dp)
-                            .padding(horizontal = 20.dp)
-                            .padding(bottom = 160.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            top = 72.dp,
+                            start = 20.dp,
+                            end = 20.dp,
+                            bottom = 100.dp
+                        ),
                         verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
                     ) {
                         items(filteredFolders, key = { it.uuid }) { folder ->
@@ -226,7 +228,8 @@ Spacer(Modifier.height(8.dp))
 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(24.dp)
+                        .padding(bottom = 16.dp, end = 16.dp)
+                        .background(Color.Transparent)
                 ) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
