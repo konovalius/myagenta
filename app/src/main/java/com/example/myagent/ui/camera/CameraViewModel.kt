@@ -16,7 +16,7 @@ import com.example.myagent.data.db.entity.Photo
 import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.PhotoRepository
-import com.example.myagent.data.util.ReverseGeocoder
+import com.example.myagent.data.util.PlaceNameResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDateTime
 import java.util.Locale
@@ -248,9 +248,9 @@ class CameraViewModel @Inject constructor(
             }
         }
         Log.wtf("CameraVM", "findOrCreateGeoFolder: подходящей нет (папок всего ${folders.size}), создаю новую")
-        val placeName = ReverseGeocoder.getPlaceName(lat, lon)
-        val folderName = placeName ?: String.format(Locale.ROOT, "%.4f, %.4f", lat, lon)
-        Log.wtf("CameraVM", "findOrCreateGeoFolder: геокодирование вернуло '$placeName'")
+        val placeName = PlaceNameResolver.resolve(lat, lon)
+        val folderName = placeName.ifEmpty { String.format(Locale.ROOT, "%.4f, %.4f", lat, lon) }
+        Log.wtf("CameraVM", "findOrCreateGeoFolder: имя папки '$folderName'")
         val folder = MasterFolder(
             uuid = UUID.randomUUID().toString(),
             name = folderName,

@@ -9,9 +9,8 @@ import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.PhotoRepository
-import com.example.myagent.data.util.ReverseGeocoder
+import com.example.myagent.data.util.PlaceNameResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -83,11 +82,11 @@ class MapViewModel @Inject constructor(
     }
 
     suspend fun createGeoFolder(lat: Double, lon: Double): MasterFolder {
-        val placeName = ReverseGeocoder.getPlaceName(lat, lon)
-        Log.wtf("MapVM", "createGeoFolder($lat,$lon): геокодирование вернуло '$placeName'")
+        val folderName = PlaceNameResolver.resolve(lat, lon)
+        Log.wtf("MapVM", "createGeoFolder($lat,$lon): имя папки '$folderName'")
         val folder = MasterFolder(
             uuid = UUID.randomUUID().toString(),
-            name = placeName ?: String.format(Locale.ROOT, "%.4f, %.4f", lat, lon),
+            name = folderName,
             type = "geo",
             createdAt = System.currentTimeMillis(),
             lat = lat,
