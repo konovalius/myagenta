@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -80,94 +81,112 @@ fun MasterFoldersScreen(
     var folderToRename by remember { mutableStateOf<MasterFolder?>(null) }
     val allFolders by viewModel.allFolders.collectAsStateWithLifecycle()
 
-    GradientBackground {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
+GradientBackground {
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Назад",
-                            tint = Color.White
-                        )
-                    }
-                    Spacer(Modifier.width(8.dp))
-Text(
-                         text = "Мастер-папки",
-                         color = Color.White,
-                         fontSize = 24.sp,
-                         fontFamily = GoshaSans
-                     )
-                }
-            }
-            Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = viewModel.searchQuery.value,
-                        onValueChange = { viewModel.searchQuery.value = it },
-                        label = null,
-                        placeholder = { Text("Поиск по названию", color = Color.White.copy(alpha = 0.5f)) },
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Поиск", tint = Color.White.copy(alpha = 0.7f)) },
-                        trailingIcon = {
-                            if (viewModel.searchQuery.value.isNotBlank()) {
-                                IconButton(onClick = { viewModel.searchQuery.value = "" }) {
-                                    Icon(Icons.Filled.Clear, contentDescription = "Очистить", tint = Color.White.copy(alpha = 0.7f))
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFFF3B30),
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent
-                        )
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Назад",
+                        tint = Color.White
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 8.dp)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Мастер-папки",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontFamily = GoshaSans,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = viewModel.searchQuery.value,
+                onValueChange = { viewModel.searchQuery.value = it },
+                label = null,
+                placeholder = { Text("Поиск по названию", color = Color.White.copy(alpha = 0.5f)) },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Поиск", tint = Color.White.copy(alpha = 0.7f)) },
+                trailingIcon = {
+                    if (viewModel.searchQuery.value.isNotBlank()) {
+                        IconButton(onClick = { viewModel.searchQuery.value = "" }) {
+                            Icon(Icons.Filled.Clear, contentDescription = "Очистить", tint = Color.White.copy(alpha = 0.7f))
+                        }
+                    }
+                },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFFFF3B30),
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent
+                )
+            )
+Spacer(Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    val filterActive by viewModel.filterGeo.collectAsStateWithLifecycle()
-                    TextButton(
+                    val filterGeoActive by viewModel.filterGeo.collectAsStateWithLifecycle()
+                    val filterObjectActive by viewModel.filterObject.collectAsStateWithLifecycle()
+                    
+                    androidx.compose.material3.TextButton(
                         onClick = { viewModel.toggleFilterGeo() },
                         modifier = Modifier
                             .height(36.dp)
+                            .weight(1f)
                             .border(
                                 width = 1.dp,
-                                color = if (filterActive) Color(0xFFFF3B30) else Color.Transparent,
+                                color = if (filterGeoActive) Color(0xFFFF3B30) else Color.Transparent,
                                 shape = RoundedCornerShape(8.dp)
                             ),
                         shape = RoundedCornerShape(8.dp),
                         colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
                             containerColor = Color.Transparent,
-                            contentColor = if (filterActive) Color(0xFFFF3B30) else Color.White
+                            contentColor = if (filterGeoActive) Color(0xFFFF3B30) else Color.White
                         ),
                         contentPadding = PaddingValues(horizontal = 12.dp)
                     ) {
                         Text(
                             text = "По гео",
                             fontSize = 14.sp,
-                            fontFamily = GoshaSans
+                            fontFamily = GoshaSans,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    
+                    androidx.compose.material3.TextButton(
+                        onClick = { viewModel.toggleFilterObject() },
+                        modifier = Modifier
+                            .height(36.dp)
+                            .weight(1f)
+                            .border(
+                                width = 1.dp,
+                                color = if (filterObjectActive) Color(0xFFFF3B30) else Color.Transparent,
+                                shape = RoundedCornerShape(8.dp)
+                            ),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = if (filterObjectActive) Color(0xFFFF3B30) else Color.White
+                        ),
+                        contentPadding = PaddingValues(horizontal = 12.dp)
+                    ) {
+                        Text(
+                            text = "По селфи/объекту",
+                            fontSize = 14.sp,
+                            fontFamily = GoshaSans,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
+                Spacer(Modifier.height(16.dp))
             val filteredFolders by viewModel.filteredFolders.collectAsStateWithLifecycle()
     val previewsByFolder by viewModel.previewsByFolder.collectAsStateWithLifecycle()
             Box(modifier = Modifier.weight(1f)) {
@@ -220,9 +239,9 @@ Text(
                                 onClick = { showCreateDialog = true }
                             ) {
                                 Icon(Icons.Filled.Add, contentDescription = "Создать папку")
-                            }
-                        }
-                    }
+}
+    }
+}
                 }
             }
         }

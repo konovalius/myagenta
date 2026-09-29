@@ -27,14 +27,17 @@ class MasterFolderViewModel @Inject constructor(
 
     val searchQuery = MutableStateFlow("")
     val filterGeo = MutableStateFlow(false)
+    val filterObject = MutableStateFlow(false)
 
     private val _allFolders = MutableStateFlow<List<MasterFolder>>(emptyList())
     val allFolders: StateFlow<List<MasterFolder>> = _allFolders.asStateFlow()
     val filteredFolders: StateFlow<List<MasterFolder>> =
-        combine(_allFolders, searchQuery, filterGeo) { folders, query, geoFilter ->
+        combine(_allFolders, searchQuery, filterGeo, filterObject) { folders, query, geoFilter, objectFilter ->
             var result = folders
             if (geoFilter) {
                 result = result.filter { it.type == "geo" }
+            } else if (objectFilter) {
+                result = result.filter { it.type == "object" }
             }
             if (query.isNotBlank()) {
                 result = result.filter { it.name.contains(query, ignoreCase = true) }
@@ -82,7 +85,15 @@ class MasterFolderViewModel @Inject constructor(
     }
 
     fun toggleFilterGeo() {
-        filterGeo.value = !filterGeo.value
+        val newValue = !filterGeo.value
+        filterGeo.value = newValue
+        if (newValue) filterObject.value = false
+    }
+
+    fun toggleFilterObject() {
+        val newValue = !filterObject.value
+        filterObject.value = newValue
+        if (newValue) filterGeo.value = false
     }
 
     companion object {
