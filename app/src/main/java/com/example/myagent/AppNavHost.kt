@@ -19,7 +19,7 @@ import com.example.myagent.ui.folders.PhotoViewerViewModel
 import com.example.myagent.ui.map.MapScreen
 import com.example.myagent.ui.onboarding.OnboardingScreen
 import com.example.myagent.ui.splash.SplashScreen
-import com.example.myagent.ui.camera.PhotoViewerScreen
+import com.example.myagent.ui.camera.MediaViewerScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,15 +31,15 @@ object AppRoutes {
     const val MAP = "map"
     const val MASTER_FOLDERS = "master-folders"
     const val MASTER_FOLDER_CONTENT = "master-folder/{folderUuid}"
-    const val PHOTO_VIEWER = "photo-viewer?uri={uri}&folderUuid={folderUuid}&showUseButton={showUseButton}&startIndex={startIndex}"
+    const val MEDIA_VIEWER = "media-viewer?uri={uri}&folderUuid={folderUuid}&showUseButton={showUseButton}&startIndex={startIndex}"
 
-    fun photoViewer(
+    fun mediaViewer(
         uri: Uri,
         folderUuid: String,
         showUseButton: Boolean = true,
         startIndex: Int = 0
     ): String =
-        "photo-viewer?uri=" + Uri.encode(uri.toString()) +
+        "media-viewer?uri=" + Uri.encode(uri.toString()) +
             "&folderUuid=" + folderUuid +
             "&showUseButton=" + showUseButton +
             "&startIndex=" + startIndex
@@ -119,7 +119,7 @@ fun AppNavHost() {
                 onNavigateToOnboarding = { navController.navigate(AppRoutes.ONBOARDING) },
                 onPhotoCapturedFromFolder = { savedUri, folderUuid ->
                     navController.navigate(
-                        AppRoutes.photoViewer(savedUri, folderUuid, showUseButton = true)
+                        AppRoutes.mediaViewer(savedUri, folderUuid, showUseButton = true)
                     ) {
                         popUpTo(AppRoutes.MASTER_FOLDER_CONTENT)
                     }
@@ -138,15 +138,15 @@ fun AppNavHost() {
         composable(AppRoutes.MAP) {
             MapScreen(
                 onBack = { navController.popBackStack() },
-                onOpenCamera = { lat, lon ->
+                onOpenCamera = { lat: Double?, lon: Double? ->
                     navController.navigate(AppRoutes.camera(lat = lat, lon = lon))
                 },
-                onOpenCameraToFolder = { lat, lon, folderUuid ->
+                onOpenCameraToFolder = { lat: Double?, lon: Double?, folderUuid: String? ->
                     navController.navigate(
                         AppRoutes.camera(lat = lat, lon = lon, folderUuid = folderUuid)
                     )
                 },
-                onOpenFolder = { folderUuid ->
+                onOpenFolder = { folderUuid: String ->
                     navController.navigate("master-folder/$folderUuid")
                 }
             )
@@ -169,13 +169,13 @@ fun AppNavHost() {
         ) {
             MasterFolderContentScreen(
                 onBack = { navController.popBackStack() },
-                onOpenPhoto = { uri, folderUuid, index ->
-                    navController.navigate(AppRoutes.photoViewer(uri, folderUuid, startIndex = index))
+                onOpenMedia = { uri, folderUuid, index ->
+                    navController.navigate(AppRoutes.mediaViewer(uri, folderUuid, startIndex = index))
                 }
             )
         }
         composable(
-            route = AppRoutes.PHOTO_VIEWER,
+            route = AppRoutes.MEDIA_VIEWER,
             arguments = listOf(
                 navArgument("uri") {
                     type = NavType.StringType
@@ -206,14 +206,14 @@ fun AppNavHost() {
             val showUseButton = backStackEntry.arguments?.getString("showUseButton")?.toBoolean() ?: false
             val startIndex = backStackEntry.arguments?.getString("startIndex")?.toIntOrNull() ?: 0
             val viewerViewModel: PhotoViewerViewModel = hiltViewModel()
-            val photos by viewerViewModel.photos.collectAsStateWithLifecycle()
+            val media by viewerViewModel.media.collectAsStateWithLifecycle()
             val scope = rememberCoroutineScope()
             if (uri != null) {
-                PhotoViewerScreen(
+                MediaViewerScreen(
                     uri = uri,
-                    photos = photos,
+                    media = media,
                     startIndex = startIndex,
-                    onUsePhoto = if (showUseButton && folderUuid != null) {
+                    onUseMedia = if (showUseButton && folderUuid != null) {
                         { currentUri ->
                             navController.navigate(
                                 AppRoutes.camera(uri = currentUri, folderUuid = folderUuid)
@@ -222,7 +222,7 @@ fun AppNavHost() {
                     } else {
                         null
                     },
-                    onSavePhoto = if (showUseButton && folderUuid != null) {
+                    onSaveMedia = if (showUseButton && folderUuid != null) {
                         {
                             scope.launch {
                                 navController.navigate(AppRoutes.camera()) {
@@ -236,7 +236,7 @@ fun AppNavHost() {
                     onBack = { navController.popBackStack() },
                     onDelete = { uriToDelete ->
                         scope.launch(Dispatchers.IO) {
-                            viewerViewModel.deletePhoto(uriToDelete)
+                            viewerViewModel.deleteMedia(uriToDelete)
                             withContext(Dispatchers.Main) {
                                 navController.popBackStack()
                             }

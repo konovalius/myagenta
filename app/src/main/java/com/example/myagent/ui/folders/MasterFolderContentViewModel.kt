@@ -5,10 +5,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myagent.data.db.entity.MasterFolder
-import com.example.myagent.data.db.entity.Photo
+import com.example.myagent.data.db.entity.Media
 import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
-import com.example.myagent.data.repository.PhotoRepository
+import com.example.myagent.data.repository.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class MasterFolderContentViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val photoRepository: PhotoRepository,
+    private val mediaRepository: MediaRepository,
     private val masterFolderRepository: MasterFolderRepository,
     private val fileRepository: FileRepository
 ) : ViewModel() {
@@ -30,8 +30,8 @@ class MasterFolderContentViewModel @Inject constructor(
     private val _folder = MutableStateFlow<MasterFolder?>(null)
     val folder: StateFlow<MasterFolder?> = _folder.asStateFlow()
 
-    private val _photos = MutableStateFlow<List<Photo>>(emptyList())
-    val photos: StateFlow<List<Photo>> = _photos.asStateFlow()
+    private val _media = MutableStateFlow<List<Media>>(emptyList())
+    val media: StateFlow<List<Media>> = _media.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -40,8 +40,8 @@ class MasterFolderContentViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            photoRepository.getByFolder(folderUuid).collect { list ->
-                _photos.value = list
+            mediaRepository.getByFolder(folderUuid).collect { list ->
+                _media.value = list
             }
         }
     }
@@ -50,11 +50,11 @@ class MasterFolderContentViewModel @Inject constructor(
         viewModelScope.launch { masterFolderRepository.rename(folder.uuid, name.trim()) }
     }
 
-    fun deleteFolderWithPhotos(folder: MasterFolder) {
+    fun deleteFolderWithMedia(folder: MasterFolder) {
         viewModelScope.launch {
-            photoRepository.getByFolder(folder.uuid).first().forEach { photo ->
-                fileRepository.delete(Uri.parse(photo.uri))
-                photoRepository.delete(photo)
+            mediaRepository.getByFolder(folder.uuid).first().forEach { media ->
+                fileRepository.delete(Uri.parse(media.uri))
+                mediaRepository.delete(media)
             }
             masterFolderRepository.delete(folder)
         }

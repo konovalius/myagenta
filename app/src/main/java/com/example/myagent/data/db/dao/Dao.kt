@@ -5,7 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import com.example.myagent.data.db.entity.MasterFolder
-import com.example.myagent.data.db.entity.Photo
+import com.example.myagent.data.db.entity.Media
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -24,22 +24,22 @@ interface MasterFolderDao {
 }
 
 @Dao
-interface PhotoDao {
-    @Query("SELECT * FROM photos ORDER BY created_at DESC")
-    fun getAll(): Flow<List<Photo>>
+interface MediaDao {
+    @Query("SELECT * FROM media ORDER BY created_at DESC")
+    fun getAll(): Flow<List<Media>>
 
-    @Query("SELECT * FROM photos WHERE folder_uuid = :folderUuid ORDER BY created_at DESC")
-    fun getByFolder(folderUuid: String): Flow<List<Photo>>
+    @Query("SELECT * FROM media WHERE folder_uuid = :folderUuid ORDER BY created_at DESC")
+    fun getByFolder(folderUuid: String): Flow<List<Media>>
 
-    @Query("SELECT * FROM photos WHERE folder_uuid = :folderUuid ORDER BY created_at DESC LIMIT 1")
-    suspend fun getLastPhotoInFolder(folderUuid: String): Photo?
+    @Query("SELECT * FROM media WHERE folder_uuid = :folderUuid ORDER BY created_at DESC LIMIT 1")
+    suspend fun getLastMediaInFolder(folderUuid: String): Media?
 
     @Insert
-    suspend fun insert(photo: Photo)
+    suspend fun insert(media: Media)
 
     @Delete
-    suspend fun delete(photo: Photo)
+    suspend fun delete(media: Media)
 
-    @Query("UPDATE photos SET folder_uuid = :folderUuid WHERE uuid = :photoUuid")
-    suspend fun updateFolder(photoUuid: String, folderUuid: String?)
+    @Query("UPDATE media SET folder_uuid = :folderUuid WHERE uuid = :mediaUuid")
+    suspend fun updateFolder(mediaUuid: String, folderUuid: String?)
 }

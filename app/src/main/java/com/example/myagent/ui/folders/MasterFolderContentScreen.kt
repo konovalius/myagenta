@@ -50,11 +50,11 @@ import com.example.myagent.ui.theme.GradientBackground
 @Composable
 fun MasterFolderContentScreen(
     onBack: () -> Unit,
-    onOpenPhoto: (Uri, String, Int) -> Unit,
+    onOpenMedia: (Uri, String, Int) -> Unit,
     viewModel: MasterFolderContentViewModel = hiltViewModel()
 ) {
     val folder by viewModel.folder.collectAsStateWithLifecycle()
-    val photos by viewModel.photos.collectAsStateWithLifecycle()
+    val media by viewModel.media.collectAsStateWithLifecycle()
     var menuExpanded by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -114,7 +114,7 @@ fun MasterFolderContentScreen(
             }
         }
 
-        if (photos.isEmpty()) {
+        if (media.isEmpty()) {
             Text(
                 text = "Фото пока нет",
                 color = Color.White.copy(alpha = 0.7f),
@@ -132,10 +132,10 @@ fun MasterFolderContentScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(photos, key = { _, photo -> photo.uuid }) { index, photo ->
+                itemsIndexed(media, key = { _, media -> media.uuid }) { index, media ->
                     AsyncImage(
-                        model = Uri.parse(photo.uri),
-                        contentDescription = "Фото",
+                        model = Uri.parse(media.uri),
+                        contentDescription = "Медиа",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -143,7 +143,7 @@ fun MasterFolderContentScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .clickable {
                                 val folderUuid = folder?.uuid ?: return@clickable
-                                onOpenPhoto(Uri.parse(photo.uri), folderUuid, index)
+                                onOpenMedia(Uri.parse(media.uri), folderUuid, index)
                             }
                     )
                 }
@@ -170,7 +170,7 @@ fun MasterFolderContentScreen(
                 text = { Text("Папка «${target.name}» и все фото в ней будут удалены.") },
                 confirmButton = {
                     TextButton(onClick = {
-                        viewModel.deleteFolderWithPhotos(target)
+                        viewModel.deleteFolderWithMedia(target)
                         showDeleteDialog = false
                         onBack()
                     }) {

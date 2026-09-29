@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.myagent.data.db.entity.Photo
+import com.example.myagent.data.db.entity.Media
 
 private fun Modifier.gradientStroke(shape: Shape, brush: Brush, width: Dp) = this.drawBehind {
     val stroke = Stroke(width = width.toPx())
@@ -106,17 +106,17 @@ private val TrashShape = GenericShape { size, _ ->
 }
 
 @Composable
-fun PhotoViewerScreen(
+fun MediaViewerScreen(
     uri: Uri,
-    photos: List<Photo>,
+    media: List<Media>,
     startIndex: Int,
     onBack: () -> Unit,
     onDelete: (Uri) -> Unit,
-    onUsePhoto: ((Uri) -> Unit)? = null,
-    onSavePhoto: (() -> Unit)? = null
+    onUseMedia: ((Uri) -> Unit)? = null,
+    onSaveMedia: (() -> Unit)? = null
 ) {
-    val uris = remember(photos, uri) {
-        if (photos.isEmpty()) listOf(uri) else photos.map { Uri.parse(it.uri) }
+    val uris = remember(media, uri) {
+        if (media.isEmpty()) listOf(uri) else media.map { Uri.parse(it.uri) }
     }
     val total = uris.size
     val initialIndex = startIndex.coerceIn(0, total - 1)
@@ -192,7 +192,7 @@ fun PhotoViewerScreen(
                     .weight(1f)
                     .background(Color.Black)
             ) {
-                onUsePhoto?.let { usePhoto ->
+                onUseMedia?.let { useMedia ->
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
@@ -205,7 +205,7 @@ fun PhotoViewerScreen(
                                 .size(72.dp)
                                 .clip(CircleShape)
                                 .border(4.dp, Color.White, CircleShape)
-                                .clickable { usePhoto(currentUri) },
+                                .clickable { useMedia(currentUri) },
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
@@ -278,7 +278,7 @@ fun PhotoViewerScreen(
                         )
                     }
                 }
-                onSavePhoto?.let { savePhoto ->
+                onSaveMedia?.let { saveMedia ->
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
@@ -286,7 +286,7 @@ fun PhotoViewerScreen(
                             .offset(y = -useToSave)
                             .size(40.dp)
                             .gradientStroke(DisketteShape, SaveGradient, 1.dp)
-                            .clickable(onClick = savePhoto),
+                            .clickable(onClick = saveMedia),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(

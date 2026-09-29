@@ -21,8 +21,8 @@ data class MasterFolder(
     val lon: Double? = null
 )
 
-@Entity(tableName = "photos")
-data class Photo(
+@Entity(tableName = "media")
+data class Media(
     @PrimaryKey
     @ColumnInfo(name = "uuid")
     val uuid: String,
@@ -30,6 +30,8 @@ data class Photo(
     val uri: String,
     @ColumnInfo(name = "folder_uuid")
     val folderUuid: String? = null,
+    @ColumnInfo(name = "type")
+    val type: String,
     @ColumnInfo(name = "created_at")
     val createdAt: Long,
     @ColumnInfo(name = "lat")

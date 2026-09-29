@@ -42,6 +42,11 @@ class FileRepository @Inject constructor(
         return "$timestamp.jpg"
     }
 
+    fun newVideoName(capturedAt: LocalDateTime = LocalDateTime.now()): String {
+        val timestamp = capturedAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))
+        return "$timestamp.mp4"
+    }
+
     fun newPhotoContentValues(capturedAt: LocalDateTime): ContentValues {
         return ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, newPhotoName(capturedAt))
@@ -51,8 +56,46 @@ class FileRepository @Inject constructor(
         }
     }
 
+    fun newVideoContentValues(capturedAt: LocalDateTime): ContentValues {
+        return ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, newVideoName(capturedAt))
+            put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+            put(MediaStore.Video.Media.RELATIVE_PATH, "${Environment.DIRECTORY_MOVIES}/MyAgent")
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+    }
+
     fun photosCollection(): Uri {
         return MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+    }
+
+    fun videosCollection(): Uri {
+        return MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+    }
+
+    fun saveVideoToMediaStore(file: File, capturedAt: LocalDateTime): Uri? {
+        return try {
+            val contentValues = newVideoContentValues(capturedAt)
+            val resolver = context.contentResolver
+            val collectionUri = videosCollection()
+            val uri = resolver.insert(collectionUri, contentValues)
+            
+            if (uri != null) {
+                resolver.openOutputStream(uri)?.use { output ->
+                    file.inputStream().use { input ->
+                        input.copyTo(output)
+                    }
+                }
+                // Устанавливаем флаг, что файл сохранен
+                setPending(uri, false)
+            }
+            
+            file.delete() // Удаляем временный файл
+            uri
+        } catch (e: Exception) {
+            Log.w("FileRepository", "Не удалось сохранить видео в MediaStore", e)
+            null
+        }
     }
 
     fun setPending(uri: Uri, pending: Boolean) {

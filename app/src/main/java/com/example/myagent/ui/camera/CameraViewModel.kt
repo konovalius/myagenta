@@ -8,14 +8,19 @@ import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myagent.data.db.entity.MasterFolder
-import com.example.myagent.data.db.entity.Photo
+import com.example.myagent.data.db.entity.Media
 import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
-import com.example.myagent.data.repository.PhotoRepository
+import com.example.myagent.data.repository.MediaRepository
 import com.example.myagent.data.util.PlaceNameResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDateTime
@@ -32,7 +37,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class CameraViewModel @Inject constructor(
     private val fileRepository: FileRepository,
-    private val photoRepository: PhotoRepository,
+    private val mediaRepository: MediaRepository,
     private val masterFolderRepository: MasterFolderRepository
 ) : ViewModel() {
 
@@ -41,6 +46,8 @@ class CameraViewModel @Inject constructor(
 
     private val _savedPhotoEvent = MutableStateFlow<SavedPhotoEvent?>(null)
     val savedPhotoEvent: StateFlow<SavedPhotoEvent?> = _savedPhotoEvent.asStateFlow()
+
+    private var activeRecording: Recording? = null
 
     var lat: Double? = null
         private set
@@ -144,16 +151,17 @@ class CameraViewModel @Inject constructor(
                                 val targetFolderUuid = captureFolderUuid
                                     ?: findOrCreateGeoFolder(captureLat!!, captureLon!!)
                                 Log.wtf("CameraVM", "folderUuid=$targetFolderUuid (привязка)")
-                                val photo = Photo(
+                                val media = Media(
                                     uuid = UUID.randomUUID().toString(),
                                     uri = savedUriString,
                                     folderUuid = targetFolderUuid,
+                                    type = "photo",
                                     createdAt = System.currentTimeMillis(),
                                     lat = captureLat,
                                     lon = captureLon
                                 )
-                                photoRepository.insert(photo)
-                                Log.wtf("CameraVM", "Photo record created: ${photo.uuid} in folder $targetFolderUuid at $captureLat,$captureLon")
+                                mediaRepository.insert(media)
+                                Log.wtf("CameraVM", "Media record created: ${media.uuid} in folder $targetFolderUuid at $captureLat,$captureLon")
                                 if (captureFolderUuid != null) {
                                     _savedPhotoEvent.value = SavedPhotoEvent(savedUri, captureFolderUuid)
                                 }
@@ -192,16 +200,17 @@ class CameraViewModel @Inject constructor(
             } else {
                 null
             }
-            val photo = Photo(
+            val media = Media(
                 uuid = UUID.randomUUID().toString(),
                 uri = prompt.uri.toString(),
                 folderUuid = targetFolderUuid,
+                type = "photo",
                 createdAt = System.currentTimeMillis(),
                 lat = prompt.lat,
                 lon = prompt.lon
             )
-            photoRepository.insert(photo)
-            Log.wtf("CameraVM", "GeoPrompt ответ=$saveToFolder, folder=$targetFolderUuid, photo=${photo.uuid}")
+            mediaRepository.insert(media)
+            Log.wtf("CameraVM", "GeoPrompt ответ=$saveToFolder, folder=$targetFolderUuid, media=${media.uuid}")
         }
     }
 
@@ -213,6 +222,95 @@ class CameraViewModel @Inject constructor(
         }
         return deleted
     }
+
+    fun startVideoRecording(videoCapture: VideoCapture<Recorder>, context: Context): Boolean {
+        if (activeRecording != null) {
+            return false
+        }
+
+        val captureTime = LocalDateTime.now()
+        val captureLat = lat
+        val captureLon = lon
+        val captureFolderUuid = folderUuid
+        val captureFromMap = locationFromMap
+        val captureDeviceLat = deviceLat
+        val captureDeviceLon = deviceLon
+
+        val videoFile = fileRepository.newMediaFile("mp4")
+        val outputOptions = FileOutputOptions.Builder(videoFile).build()
+
+        activeRecording = videoCapture.output
+            .prepareRecording(context, outputOptions)
+            .withAudioEnabled()
+            .start(ContextCompat.getMainExecutor(context)) { event ->
+                when (event) {
+                    is VideoRecordEvent.Finalize -> {
+                        activeRecording = null
+                        val outputUri = fileRepository.saveVideoToMediaStore(videoFile, captureTime)
+                        if (outputUri != null) {
+                            
+                            val geoPromptEligible = captureFolderUuid == null &&
+                                !captureFromMap &&
+                                !geoPromptShown &&
+                                captureDeviceLat != null &&
+                                captureDeviceLon != null
+
+                            if (geoPromptEligible) {
+                                geoPromptShown = true
+                                val promptLat = captureDeviceLat!!
+                                val promptLon = captureDeviceLon!!
+                                viewModelScope.launch(Dispatchers.IO) {
+                                    val existing = findGeoFolderNear(promptLat, promptLon)
+                                    _geoPrompt.value = if (existing != null) {
+                                        GeoPrompt.ExistingFolder(
+                                            uri = outputUri,
+                                            lat = promptLat,
+                                            lon = promptLon,
+                                            folderUuid = existing.uuid,
+                                            folderName = existing.name
+                                        )
+                                    } else {
+                                        GeoPrompt.NewFolder(
+                                            uri = outputUri,
+                                            lat = promptLat,
+                                            lon = promptLon
+                                        )
+                                    }
+                                }
+                            } else if (captureFolderUuid != null || (captureLat != null && captureLon != null)) {
+                                val outputUriString = outputUri.toString()
+                                viewModelScope.launch(Dispatchers.IO) {
+                                    val targetFolderUuid = captureFolderUuid
+                                        ?: findOrCreateGeoFolder(captureLat!!, captureLon!!)
+                                    val media = Media(
+                                        uuid = UUID.randomUUID().toString(),
+                                        uri = outputUriString,
+                                        folderUuid = targetFolderUuid,
+                                        type = "video",
+                                        createdAt = System.currentTimeMillis(),
+                                        lat = captureLat,
+                                        lon = captureLon
+                                    )
+                                    mediaRepository.insert(media)
+                                    if (captureFolderUuid != null) {
+                                        _savedPhotoEvent.value = SavedPhotoEvent(outputUri, captureFolderUuid)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        return true
+    }
+
+    fun stopVideoRecording() {
+        activeRecording?.stop()
+        activeRecording = null
+    }
+
+    fun isRecording(): Boolean = activeRecording != null
 
     private suspend fun findGeoFolderNear(lat: Double, lon: Double): MasterFolder? {
         val folders = masterFolderRepository.getAll().first()

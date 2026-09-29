@@ -484,7 +484,7 @@ onClick = {
                     TextButton(
                         onClick = {
                             folderToDelete = null
-                            geoPickScope.launch { viewModel.deleteFolderWithPhotos(folder) }
+                            geoPickScope.launch { viewModel.deleteFolderWithMedia(folder) }
                         }
                     ) {
                         Text("Да")

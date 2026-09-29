@@ -3,9 +3,9 @@ package com.example.myagent.ui.folders
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myagent.data.db.entity.MasterFolder
-import com.example.myagent.data.db.entity.Photo
+import com.example.myagent.data.db.entity.Media
 import com.example.myagent.data.repository.MasterFolderRepository
-import com.example.myagent.data.repository.PhotoRepository
+import com.example.myagent.data.repository.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
 import javax.inject.Inject
@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class MasterFolderViewModel @Inject constructor(
     private val repository: MasterFolderRepository,
-    private val photoRepository: PhotoRepository
+    private val mediaRepository: MediaRepository
 ) : ViewModel() {
 
     val searchQuery = MutableStateFlow("")
@@ -46,8 +46,8 @@ class MasterFolderViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(), emptyList())
 
-    private val _previewsByFolder = MutableStateFlow<Map<String, List<Photo>>>(emptyMap())
-    val previewsByFolder: StateFlow<Map<String, List<Photo>>> = _previewsByFolder.asStateFlow()
+    private val _previewsByFolder = MutableStateFlow<Map<String, List<Media>>>(emptyMap())
+    val previewsByFolder: StateFlow<Map<String, List<Media>>> = _previewsByFolder.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -55,9 +55,9 @@ class MasterFolderViewModel @Inject constructor(
             source.collect { list -> _allFolders.value = list }
         }
         viewModelScope.launch {
-            photoRepository.getAll().collect { photos ->
-                _previewsByFolder.value = photos
-                    .mapNotNull { photo -> photo.folderUuid?.let { uuid -> uuid to photo } }
+            mediaRepository.getAll().collect { mediaList ->
+                _previewsByFolder.value = mediaList
+                    .mapNotNull { media -> media.folderUuid?.let { uuid -> uuid to media } }
                     .groupBy({ it.first }, { it.second })
                     .mapValues { (_, list) -> list.sortedByDescending { it.createdAt }.take(PREVIEW_LIMIT) }
             }

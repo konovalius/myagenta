@@ -62,7 +62,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.MasterFolder
-import com.example.myagent.data.db.entity.Photo
+import com.example.myagent.data.db.entity.Media
 import com.example.myagent.ui.theme.BelozerovSP
 import com.example.myagent.ui.theme.GoshaSans
 import com.example.myagent.ui.theme.GradientBackground
@@ -362,7 +362,7 @@ private fun CreateFolderDialog(
 @Composable
 private fun MasterFolderCard(
     folder: MasterFolder,
-    previews: List<Photo>,
+    previews: List<Media>,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -420,15 +420,15 @@ private fun MasterFolderCard(
 }
 
 @Composable
-private fun FolderPhotoPreview(photos: List<Photo>) {
-    val hasPhotos = photos.isNotEmpty()
-    if (!hasPhotos) return
+private fun FolderPhotoPreview(media: List<Media>) {
+    val hasMedia = media.isNotEmpty()
+    if (!hasMedia) return
     
-    val lastPhoto = photos.last()
-    val smallPhotos = when {
-        photos.size <= 1 -> emptyList()
-        photos.size <= 4 -> photos.dropLast(1).take(3)
-        else -> photos.dropLast(1).take(3)
+    val lastMedia = media.last()
+    val smallMedia = when {
+        media.size <= 1 -> emptyList()
+        media.size <= 4 -> media.dropLast(1).take(3)
+        else -> media.dropLast(1).take(3)
     }
     
     Row(
@@ -437,7 +437,7 @@ private fun FolderPhotoPreview(photos: List<Photo>) {
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         AsyncImage(
-            model = lastPhoto.uri,
+            model = lastMedia.uri,
             contentDescription = null,
             modifier = Modifier
                 .size(40.dp)
@@ -445,13 +445,13 @@ private fun FolderPhotoPreview(photos: List<Photo>) {
             contentScale = ContentScale.Crop
         )
         
-        if (smallPhotos.isNotEmpty()) {
+        if (smallMedia.isNotEmpty()) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                smallPhotos.forEach { photo ->
+                smallMedia.forEach { media ->
                     AsyncImage(
-                        model = photo.uri,
+                        model = media.uri,
                         contentDescription = null,
                         modifier = Modifier
                             .size(20.dp)

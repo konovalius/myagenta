@@ -20,6 +20,13 @@ import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -112,11 +119,27 @@ fun CameraScreen(
     val viewModel: CameraViewModel = hiltViewModel()
     val context = LocalContext.current
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
+    var videoCapture by remember { mutableStateOf<VideoCapture<Recorder>?>(null) }
 
     val requiredPermissions = remember {
         buildList {
             add(Manifest.permission.CAMERA)
         }
+    }
+
+    val videoPermissions = remember {
+        buildList {
+            add(Manifest.permission.CAMERA)
+            add(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    val hasVideoPermissions by remember {
+        mutableStateOf(
+            videoPermissions.all {
+                ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+            }
+        )
     }
     var allPermissionsGranted by remember {
         mutableStateOf(
@@ -274,6 +297,46 @@ fun CameraScreen(
         }
     }
 
+    val videoPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        val granted = videoPermissions.all { result[it] == true }
+        if (granted) {
+            // Повторяем попытку записи после получения разрешений
+            val capture = videoCapture
+            if (capture != null) {
+                val started = viewModel.startVideoRecording(capture, context)
+                if (started) {
+                    isRecording = true
+                    Toast.makeText(context, "Начата запись видео", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            Toast.makeText(context, "Для записи видео требуются разрешения камеры и микрофона", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val toggleVideoRecording = {
+        if (isRecording) {
+            viewModel.stopVideoRecording()
+            isRecording = false
+            Toast.makeText(context, "Запись видео остановлена", Toast.LENGTH_SHORT).show()
+        } else {
+            val capture = videoCapture
+            if (capture == null) {
+                Toast.makeText(context, "Камера ещё не готова для видео", Toast.LENGTH_SHORT).show()
+            } else if (hasVideoPermissions) {
+                val started = viewModel.startVideoRecording(capture, context)
+                if (started) {
+                    isRecording = true
+                    Toast.makeText(context, "Начата запись видео", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                videoPermissionLauncher.launch(videoPermissions.toTypedArray())
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -281,9 +344,9 @@ fun CameraScreen(
     ) {
         val viewerPhotoUri = viewerUri
         if (viewerPhotoUri != null) {
-            PhotoViewerScreen(
+            MediaViewerScreen(
                 uri = viewerPhotoUri,
-                photos = emptyList(),
+                media = emptyList(),
                 startIndex = 0,
                 onBack = { viewerUri = null },
                 onDelete = {
@@ -323,7 +386,11 @@ fun CameraScreen(
                 ) {
                     CameraPreview(
                         cameraSelector = cameraSelector,
-                        onCameraReady = { imageCapture = it }
+                        isVideoMode = isVideoMode,
+                        onCameraReady = { imgCapture, vidCapture ->
+                            imageCapture = imgCapture
+                            videoCapture = vidCapture
+                        }
                     )
                 
                 referencePhotoUri?.let { uri ->
@@ -496,13 +563,13 @@ val editInteraction = remember { MutableInteractionSource() }
                         }
                     }
                 }
-                if (isRecording) {
-                    RecordingIndicator(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(start = 16.dp, top = 140.dp)
-                    )
-                }
+if (isRecording) {
+    VideoRecordingIndicator(
+        modifier = Modifier
+            .align(Alignment.TopStart)
+            .padding(start = 16.dp, top = 140.dp)
+    )
+}
                 }
                 // Зона 3: нижняя полоса
                 Box(
@@ -554,7 +621,8 @@ val editInteraction = remember { MutableInteractionSource() }
                                 modifier = Modifier.offset(x = (-68).dp)
                             )
                             ShutterButton(
-                                isVideoMode = false,
+                                isVideoMode = isVideoMode,
+                                isRecording = isRecording,
                                 onClick = {
                                     activeMode = CameraMode.entries[centeredModeIndex]
                                     isSlowMotionActive =
@@ -562,7 +630,12 @@ val editInteraction = remember { MutableInteractionSource() }
                                     isTimelapseActive =
                                         activeMode == CameraMode.TIMELAPSE
                                     isVideoMode = activeMode == CameraMode.VIDEO
-                                    capturePhoto()
+                                    
+                                    if (isVideoMode) {
+                                        toggleVideoRecording()
+                                    } else {
+                                        capturePhoto()
+                                    }
                                 },
                                 onLongPress = {}
                             )
@@ -593,7 +666,8 @@ val editInteraction = remember { MutableInteractionSource() }
 @Composable
 fun CameraPreview(
     cameraSelector: CameraSelector,
-    onCameraReady: (ImageCapture) -> Unit = {}
+    isVideoMode: Boolean,
+    onCameraReady: (ImageCapture, VideoCapture<Recorder>?) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -604,8 +678,9 @@ fun CameraPreview(
         }
     }
     val imageCapture = remember { ImageCapture.Builder().build() }
+    var videoCapture by remember { mutableStateOf<VideoCapture<Recorder>?>(null) }
 
-    LaunchedEffect(cameraSelector) {
+    LaunchedEffect(cameraSelector, isVideoMode) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener(
             {
@@ -621,12 +696,35 @@ fun CameraPreview(
                         previewView.display.rotation
                     ).build()
                     
-                    // Используем UseCaseGroup с ViewPort
-                    val useCaseGroup = UseCaseGroup.Builder()
-                        .setViewPort(viewPort)
-                        .addUseCase(preview)
-                        .addUseCase(imageCapture)
-                        .build()
+                    val useCaseGroup = if (isVideoMode) {
+                        // Для видео создаём Recorder и VideoCapture
+                        val qualitySelector = QualitySelector.fromOrderedList(
+                            listOf(Quality.UHD, Quality.FHD, Quality.HD)
+                        )
+                        val recorder = Recorder.Builder()
+                            .setQualitySelector(qualitySelector)
+                            .build()
+                        val newVideoCapture = VideoCapture.withOutput(recorder)
+                        
+                        UseCaseGroup.Builder()
+                            .setViewPort(viewPort)
+                            .addUseCase(preview)
+                            .addUseCase(imageCapture)
+                            .addUseCase(newVideoCapture)
+                            .build()
+                            .also {
+                                videoCapture = newVideoCapture
+                            }
+                    } else {
+                        UseCaseGroup.Builder()
+                            .setViewPort(viewPort)
+                            .addUseCase(preview)
+                            .addUseCase(imageCapture)
+                            .build()
+                            .also {
+                                videoCapture = null
+                            }
+                    }
                     
                     cameraProvider.unbindAll()
                     cameraProvider.bindToLifecycle(
@@ -634,7 +732,7 @@ fun CameraPreview(
                         cameraSelector,
                         useCaseGroup
                     )
-                    onCameraReady(imageCapture)
+                    onCameraReady(imageCapture, videoCapture)
                 } catch (e: Exception) {
                     Log.e("CameraPreview", "Не удалось открыть камеру", e)
                 }
@@ -709,6 +807,7 @@ private fun CircularIconButton(
 @Composable
 private fun ShutterButton(
     isVideoMode: Boolean,
+    isRecording: Boolean,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier
@@ -731,12 +830,31 @@ private fun ShutterButton(
             ),
         contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape)
-                .background(shutterColor, CircleShape)
-        )
+        if (isVideoMode && isRecording) {
+            // Красный квадрат внутри при записи
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFFFF3B30))
+            )
+        } else if (isVideoMode) {
+            // Красный кружок с треугольником для старта записи
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFFF3B30), CircleShape)
+            )
+        } else {
+            // Белый кружок для фото
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .background(Color.White, CircleShape)
+            )
+        }
     }
 }
 
@@ -757,6 +875,16 @@ private fun RecordingIndicator(modifier: Modifier = Modifier) {
         modifier = modifier
             .size(12.dp)
             .alpha(blinkAlpha)
+            .clip(CircleShape)
+            .background(Color(0xFFFF3B30), CircleShape)
+    )
+}
+
+@Composable
+private fun VideoRecordingIndicator(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(12.dp)
             .clip(CircleShape)
             .background(Color(0xFFFF3B30), CircleShape)
     )

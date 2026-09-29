@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
-import com.example.myagent.data.repository.PhotoRepository
+import com.example.myagent.data.repository.MediaRepository
 import com.example.myagent.data.util.PlaceNameResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
@@ -33,7 +33,7 @@ data class GeoPickFolder(
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val masterFolderRepository: MasterFolderRepository,
-    private val photoRepository: PhotoRepository,
+    private val mediaRepository: MediaRepository,
     private val fileRepository: FileRepository
 ) : ViewModel() {
 
@@ -51,7 +51,7 @@ class MapViewModel @Inject constructor(
             _geoFolders.value = geo.map { folder ->
                 GeoFolderPin(
                     folder = folder,
-                    photoUri = photoRepository.getLastPhotoInFolder(folder.uuid)?.uri
+                    photoUri = mediaRepository.getLastMediaInFolder(folder.uuid)?.uri
                 )
             }
         }
@@ -108,11 +108,11 @@ class MapViewModel @Inject constructor(
         }
     }
 
-    suspend fun deleteFolderWithPhotos(folder: MasterFolder) {
-        val photos = photoRepository.getByFolder(folder.uuid).first()
-        photos.forEach { photo ->
-            fileRepository.delete(Uri.parse(photo.uri))
-            photoRepository.delete(photo)
+    suspend fun deleteFolderWithMedia(folder: MasterFolder) {
+        val mediaList = mediaRepository.getByFolder(folder.uuid).first()
+        mediaList.forEach { media ->
+            fileRepository.delete(Uri.parse(media.uri))
+            mediaRepository.delete(media)
         }
         masterFolderRepository.delete(folder)
         refresh()
