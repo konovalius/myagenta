@@ -59,6 +59,7 @@ private val CarouselItemWidth = 84.dp
 private val CarouselItemSpacing = 0.dp
 private val NavIconSize = 35.2.dp
 private val NavIconGlyph = 28.6.dp
+private val NavIconSpacing = 12.dp
 
 @Composable
 fun CameraToolbar(
@@ -168,7 +169,7 @@ fun CameraNavIcons(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(NavIconSpacing, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
         CameraNavButton(Icons.Filled.Map, "Карта", onNavigateToMap)
