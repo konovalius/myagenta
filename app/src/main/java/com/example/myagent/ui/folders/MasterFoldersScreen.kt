@@ -59,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.db.entity.Photo
+import com.example.myagent.ui.theme.BelozerovSP
 import com.example.myagent.ui.theme.GoshaSans
 import com.example.myagent.ui.theme.GradientBackground
 import java.text.SimpleDateFormat
@@ -97,11 +98,12 @@ fun MasterFoldersScreen(
                         )
                     }
                     Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = "Мастер-папки",
-                        color = Color.White,
-                        style = MaterialTheme.typography.headlineMedium
-                    )
+Text(
+                         text = "Мастер-папки",
+                         color = Color.White,
+                         fontSize = 24.sp,
+                         fontFamily = BelozerovSP
+                     )
                 }
             }
             Box(
