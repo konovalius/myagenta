@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -279,153 +280,144 @@ fun CameraScreen(
                                     }
                                 )
                         )
-                        val closeInteraction = remember { MutableInteractionSource() }
                         Box(
                             modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(16.dp)
-                                .size(35.2.dp)
-                                .clip(CircleShape)
-                                .background(Color.Black.copy(alpha = 0.56f))
-                                .clickable(
-                                    interactionSource = closeInteraction,
-                                    indication = null,
-                                    role = Role.Button,
-                                    onClick = { referencePhotoUri = null }
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Close,
-                                contentDescription = "Убрать ориентир",
-                                tint = Color.White.copy(alpha = 0.56f),
-                                modifier = Modifier.size(28.6.dp)
-                            )
-                        }
-                        Row(
-                            modifier = Modifier
                                 .align(Alignment.TopStart)
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                .fillMaxWidth()
                         ) {
+                            Row(
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
 val editInteraction = remember { MutableInteractionSource() }
+                                Box(
+                                    modifier = Modifier
+                                        .size(35.2.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (isEditingOverlay) Color.White.copy(alpha = 0.56f)
+                                            else Color.Black.copy(alpha = 0.56f)
+                                        )
+                                        .clickable(
+                                            interactionSource = editInteraction,
+                                            indication = null,
+                                            role = Role.Button,
+                                            onClick = { isEditingOverlay = !isEditingOverlay }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Edit,
+                                        contentDescription = if (isEditingOverlay) {
+                                            "Выключить редактирование"
+                                        } else {
+                                            "Редактировать"
+                                        },
+                                        tint = if (isEditingOverlay) {
+                                            Color.Black.copy(alpha = 0.56f)
+                                        } else {
+                                            Color.White.copy(alpha = 0.56f)
+                                        },
+                                        modifier = Modifier.size(28.6.dp)
+                                    )
+                                }
+                                val flipInteraction = remember { MutableInteractionSource() }
+                                Box(
+                                    modifier = Modifier
+                                        .size(35.2.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.Black.copy(alpha = 0.56f))
+                                        .clickable(
+                                            interactionSource = flipInteraction,
+                                            indication = null,
+                                            role = Role.Button,
+                                            onClick = {
+                                                overlayOffset = Offset.Zero
+                                                overlayScale = 1f
+                                                overlayRotation = 0f
+                                                overlayAlpha = 0.5f
+                                            }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Refresh,
+                                        contentDescription = "Сбросить ориентир",
+                                        tint = Color.White.copy(alpha = 0.56f),
+                                        modifier = Modifier.size(28.6.dp)
+                                    )
+                                }
+                            }
                             Box(
                                 modifier = Modifier
-                                    .size(35.2.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (isEditingOverlay) Color.White.copy(alpha = 0.56f)
-                                        else Color.Black.copy(alpha = 0.56f)
-                                    )
-                                    .clickable(
-                                        interactionSource = editInteraction,
-                                        indication = null,
-                                        role = Role.Button,
-                                        onClick = { isEditingOverlay = !isEditingOverlay }
-                                    ),
-                                contentAlignment = Alignment.Center
+                                    .align(Alignment.TopCenter)
+                                    .padding(top = 16.dp)
+                                    .width(150.dp)
+                                    .height(35.2.dp)
+                                    .clip(RoundedCornerShape(percent = 50))
+                                    .background(Color.Black.copy(alpha = 0.28f))
                             ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Edit,
-                                    contentDescription = if (isEditingOverlay) {
-                                        "Выключить редактирование"
-                                    } else {
-                                        "Редактировать"
-                                    },
-                                    tint = if (isEditingOverlay) {
-                                        Color.Black.copy(alpha = 0.56f)
-                                    } else {
-                                        Color.White.copy(alpha = 0.56f)
-                                    },
-                                    modifier = Modifier.size(28.6.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.45f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .fillMaxWidth(overlayAlpha)
+                                        .align(Alignment.CenterStart)
+                                        .background(Color.White.copy(alpha = 0.45f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .pointerInput(Unit) {
+                                            awaitEachGesture {
+                                                val down = awaitFirstDown(requireUnconsumed = false)
+                                                val pillWidth = size.width.toFloat()
+                                                var dragged = false
+                                                drag(down.id) { change ->
+                                                    dragged = true
+                                                    change.consume()
+                                                    overlayAlpha =
+                                                        (change.position.x / pillWidth)
+                                                            .coerceIn(0f, 1f)
+                                                }
+                                                if (!dragged) {
+                                                    overlayAlpha =
+                                                        (down.position.x / pillWidth)
+                                                            .coerceIn(0f, 1f)
+                                                }
+                                            }
+                                        }
                                 )
                             }
-                            val flipInteraction = remember { MutableInteractionSource() }
+                            val closeInteraction = remember { MutableInteractionSource() }
                             Box(
                                 modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(16.dp)
                                     .size(35.2.dp)
                                     .clip(CircleShape)
                                     .background(Color.Black.copy(alpha = 0.56f))
                                     .clickable(
-                                        interactionSource = flipInteraction,
+                                        interactionSource = closeInteraction,
                                         indication = null,
                                         role = Role.Button,
-                                        onClick = {
-                                            overlayOffset = Offset.Zero
-                                            overlayScale = 1f
-                                            overlayRotation = 0f
-                                            overlayAlpha = 0.5f
-                                        }
+                                        onClick = { referencePhotoUri = null }
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.Refresh,
-                                    contentDescription = "Сбросить ориентир",
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Убрать ориентир",
                                     tint = Color.White.copy(alpha = 0.56f),
                                     modifier = Modifier.size(28.6.dp)
                                 )
                             }
-                        }
-                    }
-                }
-                if (referencePhotoUri != null) {
-                    Row(
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 68.dp)
-                            .fillMaxWidth(0.62f),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Opacity,
-                            contentDescription = "Прозрачность ориентира",
-                            tint = Color.White.copy(alpha = 0.56f),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 8.dp)
-                                .height(24.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.Black.copy(alpha = 0.28f))
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Black.copy(alpha = 0.45f))
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .fillMaxWidth(overlayAlpha)
-                                    .align(Alignment.CenterStart)
-                                    .background(Color.White.copy(alpha = 0.45f))
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .pointerInput(Unit) {
-                                        awaitEachGesture {
-                                            val down = awaitFirstDown(requireUnconsumed = false)
-                                            val pillWidth = size.width.toFloat()
-                                            var dragged = false
-                                            drag(down.id) { change ->
-                                                dragged = true
-                                                change.consume()
-                                                overlayAlpha =
-                                                    (change.position.x / pillWidth)
-                                                        .coerceIn(0f, 1f)
-                                            }
-                                            if (!dragged) {
-                                                overlayAlpha =
-                                                    (down.position.x / pillWidth)
-                                                        .coerceIn(0f, 1f)
-                                            }
-                                        }
-                                    }
-                            )
                         }
                     }
                 }
