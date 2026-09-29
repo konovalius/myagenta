@@ -66,6 +66,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -136,6 +137,8 @@ fun CameraScreen(
     var isSlowMotionActive by remember { mutableStateOf(false) }
     var isTimelapseActive by remember { mutableStateOf(false) }
     var isVideoMode by remember { mutableStateOf(false) }
+    var centeredModeIndex by remember { mutableIntStateOf(0) }
+    var activeMode by remember { mutableStateOf(CameraMode.PHOTO) }
     var isRecording by remember { mutableStateOf(false) }
     val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
     val savedPhotoEvent by viewModel.savedPhotoEvent.collectAsState()
@@ -280,81 +283,75 @@ fun CameraScreen(
                                     }
                                 )
                         )
-                        Box(
+                        Row(
                             modifier = Modifier
                                 .align(Alignment.TopStart)
                                 .fillMaxWidth()
+                                .padding(start = 12.dp, top = 12.dp, end = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .align(Alignment.TopStart)
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
 val editInteraction = remember { MutableInteractionSource() }
-                                Box(
-                                    modifier = Modifier
-                                        .size(35.2.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            if (isEditingOverlay) Color.White.copy(alpha = 0.56f)
-                                            else Color.Black.copy(alpha = 0.56f)
-                                        )
-                                        .clickable(
-                                            interactionSource = editInteraction,
-                                            indication = null,
-                                            role = Role.Button,
-                                            onClick = { isEditingOverlay = !isEditingOverlay }
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Edit,
-                                        contentDescription = if (isEditingOverlay) {
-                                            "Выключить редактирование"
-                                        } else {
-                                            "Редактировать"
-                                        },
-                                        tint = if (isEditingOverlay) {
-                                            Color.Black.copy(alpha = 0.56f)
-                                        } else {
-                                            Color.White.copy(alpha = 0.56f)
-                                        },
-                                        modifier = Modifier.size(28.6.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(35.2.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isEditingOverlay) Color.White.copy(alpha = 0.56f)
+                                        else Color.Black.copy(alpha = 0.56f)
                                     )
-                                }
-                                val flipInteraction = remember { MutableInteractionSource() }
-                                Box(
-                                    modifier = Modifier
-                                        .size(35.2.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.Black.copy(alpha = 0.56f))
-                                        .clickable(
-                                            interactionSource = flipInteraction,
-                                            indication = null,
-                                            role = Role.Button,
-                                            onClick = {
-                                                overlayOffset = Offset.Zero
-                                                overlayScale = 1f
-                                                overlayRotation = 0f
-                                                overlayAlpha = 0.5f
-                                            }
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Refresh,
-                                        contentDescription = "Сбросить ориентир",
-                                        tint = Color.White.copy(alpha = 0.56f),
-                                        modifier = Modifier.size(28.6.dp)
-                                    )
-                                }
+                                    .clickable(
+                                        interactionSource = editInteraction,
+                                        indication = null,
+                                        role = Role.Button,
+                                        onClick = { isEditingOverlay = !isEditingOverlay }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = if (isEditingOverlay) {
+                                        "Выключить редактирование"
+                                    } else {
+                                        "Редактировать"
+                                    },
+                                    tint = if (isEditingOverlay) {
+                                        Color.Black.copy(alpha = 0.56f)
+                                    } else {
+                                        Color.White.copy(alpha = 0.56f)
+                                    },
+                                    modifier = Modifier.size(28.6.dp)
+                                )
+                            }
+                            val flipInteraction = remember { MutableInteractionSource() }
+                            Box(
+                                modifier = Modifier
+                                    .size(35.2.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Black.copy(alpha = 0.56f))
+                                    .clickable(
+                                        interactionSource = flipInteraction,
+                                        indication = null,
+                                        role = Role.Button,
+                                        onClick = {
+                                            overlayOffset = Offset.Zero
+                                            overlayScale = 1f
+                                            overlayRotation = 0f
+                                            overlayAlpha = 0.5f
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Refresh,
+                                    contentDescription = "Сбросить ориентир",
+                                    tint = Color.White.copy(alpha = 0.56f),
+                                    modifier = Modifier.size(28.6.dp)
+                                )
                             }
                             Box(
                                 modifier = Modifier
-                                    .align(Alignment.TopCenter)
-                                    .padding(top = 16.dp)
-                                    .width(150.dp)
+                                    .weight(1f)
                                     .height(35.2.dp)
                                     .clip(RoundedCornerShape(percent = 50))
                                     .background(Color.Black.copy(alpha = 0.28f))
@@ -398,8 +395,6 @@ val editInteraction = remember { MutableInteractionSource() }
                             val closeInteraction = remember { MutableInteractionSource() }
                             Box(
                                 modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(16.dp)
                                     .size(35.2.dp)
                                     .clip(CircleShape)
                                     .background(Color.Black.copy(alpha = 0.56f))
@@ -437,26 +432,12 @@ val editInteraction = remember { MutableInteractionSource() }
                         .background(Color.Black)
                 ) {
                     Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         CameraToolbar(
-                            isSlowMotionActive = isSlowMotionActive,
-                            onToggleSlowMotion = { isSlowMotionActive = !isSlowMotionActive },
-                            isTimelapseActive = isTimelapseActive,
-                            onToggleTimelapse = { isTimelapseActive = !isTimelapseActive },
-                            isVideoMode = isVideoMode,
-                            onToggleVideoMode = { isVideoMode = !isVideoMode },
-                            onNavigateToMasterFolders = onNavigateToMasterFolders,
-                            onNavigateToMap = onNavigateToMap,
-                            onOpenGallery = {
-                                pickReferenceLauncher.launch(
-                                    PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                                    )
-                                )
-                            },
-                            onNavigateToOnboarding = onNavigateToOnboarding,
+                            centeredModeIndex = centeredModeIndex,
+                            onCenteredModeChange = { centeredModeIndex = it },
+                            onModeTapped = {},
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp)
@@ -464,7 +445,24 @@ val editInteraction = remember { MutableInteractionSource() }
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .offset(y = (-48).dp)
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CameraNavIcons(
+                                onNavigateToMap = onNavigateToMap,
+                                onNavigateToMasterFolders = onNavigateToMasterFolders,
+                                onOpenGallery = {
+                                    pickReferenceLauncher.launch(
+                                        PickVisualMediaRequest(
+                                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                                        )
+                                    )
+                                }
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .padding(bottom = 24.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -477,7 +475,15 @@ val editInteraction = remember { MutableInteractionSource() }
                             )
                             ShutterButton(
                                 isVideoMode = false,
-                                onClick = { capturePhoto() },
+                                onClick = {
+                                    activeMode = CameraMode.entries[centeredModeIndex]
+                                    isSlowMotionActive =
+                                        activeMode == CameraMode.SLOW_MO
+                                    isTimelapseActive =
+                                        activeMode == CameraMode.TIMELAPSE
+                                    isVideoMode = activeMode == CameraMode.VIDEO
+                                    capturePhoto()
+                                },
                                 onLongPress = {}
                             )
                             lastPhotoUri?.let { uri ->
