@@ -26,12 +26,20 @@ class MasterFolderViewModel @Inject constructor(
 ) : ViewModel() {
 
     val searchQuery = MutableStateFlow("")
+    val filterGeo = MutableStateFlow(false)
 
     private val _allFolders = MutableStateFlow<List<MasterFolder>>(emptyList())
     val allFolders: StateFlow<List<MasterFolder>> = _allFolders.asStateFlow()
     val filteredFolders: StateFlow<List<MasterFolder>> =
-        combine(_allFolders, searchQuery) { folders, query ->
-            if (query.isBlank()) folders else folders.filter { it.name.contains(query, ignoreCase = true) }
+        combine(_allFolders, searchQuery, filterGeo) { folders, query, geoFilter ->
+            var result = folders
+            if (geoFilter) {
+                result = result.filter { it.type == "geo" }
+            }
+            if (query.isNotBlank()) {
+                result = result.filter { it.name.contains(query, ignoreCase = true) }
+            }
+            result
         }
         .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(), emptyList())
 
@@ -71,6 +79,10 @@ class MasterFolderViewModel @Inject constructor(
 
     fun renameFolder(folder: MasterFolder, name: String) {
         viewModelScope.launch { repository.rename(folder.uuid, name.trim()) }
+    }
+
+    fun toggleFilterGeo() {
+        filterGeo.value = !filterGeo.value
     }
 
     companion object {

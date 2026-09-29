@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -54,6 +55,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -135,6 +137,36 @@ Text(
                             unfocusedContainerColor = Color.Transparent
                         )
                     )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 8.dp)
+                ) {
+                    val filterActive by viewModel.filterGeo.collectAsStateWithLifecycle()
+                    TextButton(
+                        onClick = { viewModel.toggleFilterGeo() },
+                        modifier = Modifier
+                            .height(36.dp)
+                            .border(
+                                width = 1.dp,
+                                color = if (filterActive) Color(0xFFFF3B30) else Color.Transparent,
+                                shape = RoundedCornerShape(8.dp)
+                            ),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = if (filterActive) Color(0xFFFF3B30) else Color.White
+                        ),
+                        contentPadding = PaddingValues(horizontal = 12.dp)
+                    ) {
+                        Text(
+                            text = "По гео",
+                            fontSize = 14.sp,
+                            fontFamily = GoshaSans
+                        )
+                    }
                 }
             val filteredFolders by viewModel.filteredFolders.collectAsStateWithLifecycle()
     val previewsByFolder by viewModel.previewsByFolder.collectAsStateWithLifecycle()
