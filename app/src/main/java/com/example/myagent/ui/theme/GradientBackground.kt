@@ -20,13 +20,14 @@ fun GradientBackground(
             .fillMaxSize()
             .background(
                 Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF0A1428),
-                        Color(0xFF000000),
-                        Color(0xFF280A0A)
+                    colorStops = arrayOf(
+                        0.0f to Color(0xFF0A1428),
+                        0.15f to Color(0xFF000000),
+                        0.85f to Color(0xFF000000),
+                        1.0f to Color(0xFF280A0A)
                     ),
-                    start = Offset(0f, 0f),
-                    end = Offset(1000f, 1000f)
+                    start = Offset.Zero,
+                    end = Offset.Infinite
                 )
             )
     ) {
