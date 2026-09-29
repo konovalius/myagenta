@@ -2,6 +2,7 @@ package com.example.myagent.ui.camera
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.location.Location
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -58,6 +59,7 @@ import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -90,6 +92,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import coil.compose.AsyncImage
 import com.example.myagent.ui.common.pressScale
 
@@ -132,6 +137,52 @@ fun CameraScreen(
         }
     }
 
+    val locationPermissions = remember {
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    }
+    var deviceLocation by remember { mutableStateOf<Location?>(null) }
+    val fusedLocationClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+    val cancellationToken = remember { CancellationTokenSource() }
+
+    fun refreshDeviceLocation() {
+        val granted = locationPermissions.any {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+        if (!granted) {
+            deviceLocation = null
+            viewModel.setDeviceLocation(null, null)
+            return
+        }
+        fusedLocationClient
+            .getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationToken.token)
+            .addOnSuccessListener { location ->
+                deviceLocation = location
+                viewModel.setDeviceLocation(location?.latitude, location?.longitude)
+            }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        refreshDeviceLocation()
+    }
+
+    LaunchedEffect(Unit) {
+        val alreadyGranted = locationPermissions.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+        if (alreadyGranted) {
+            refreshDeviceLocation()
+        } else {
+            locationPermissionLauncher.launch(locationPermissions)
+        }
+    }
+
     var isFrontCamera by remember { mutableStateOf(false) }
     var hasFrontCamera by remember { mutableStateOf(true) }
     var isSlowMotionActive by remember { mutableStateOf(false) }
@@ -164,6 +215,35 @@ fun CameraScreen(
             onPhotoCapturedFromFolder(event.uri, event.folderUuid)
             viewModel.consumeSavedPhotoEvent()
         }
+    }
+
+    val geoPrompt by viewModel.geoPrompt.collectAsState()
+
+    geoPrompt?.let { prompt ->
+        AlertDialog(
+            onDismissRequest = { viewModel.answerGeoPrompt(false) },
+            title = { Text("Записать в папку?") },
+            text = {
+                Text(
+                    when (prompt) {
+                        is GeoPrompt.ExistingFolder ->
+                            "Записать в существующую папку «${prompt.folderName}»?"
+                        is GeoPrompt.NewFolder ->
+                            "Записать в новую папку в этой точке?"
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.answerGeoPrompt(true) }) {
+                    Text("Да")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.answerGeoPrompt(false) }) {
+                    Text("Нет")
+                }
+            }
+        )
     }
 
     val pickReferenceLauncher = rememberLauncherForActivityResult(

@@ -49,6 +49,16 @@ class CameraViewModel @Inject constructor(
     var folderUuid: String? = null
         private set
 
+    private val _geoPrompt = MutableStateFlow<GeoPrompt?>(null)
+    val geoPrompt: StateFlow<GeoPrompt?> = _geoPrompt.asStateFlow()
+
+    var geoPromptShown = false
+        private set
+
+    private var locationFromMap = false
+    private var deviceLat: Double? = null
+    private var deviceLon: Double? = null
+
     init {
         Log.wtf("CameraVM", "ViewModel initialized")
     }
@@ -56,7 +66,14 @@ class CameraViewModel @Inject constructor(
     fun setLocation(lat: Double?, lon: Double?) {
         this.lat = lat
         this.lon = lon
-        Log.wtf("CameraVM", "lat=$lat, lon=$lon")
+        locationFromMap = lat != null && lon != null
+        Log.wtf("CameraVM", "lat=$lat, lon=$lon, fromMap=$locationFromMap")
+    }
+
+    fun setDeviceLocation(lat: Double?, lon: Double?) {
+        deviceLat = lat
+        deviceLon = lon
+        Log.wtf("CameraVM", "deviceLat=$lat, deviceLon=$lon")
     }
 
     fun setFolderUuid(folderUuid: String?) {
@@ -69,7 +86,10 @@ class CameraViewModel @Inject constructor(
         val captureLat = lat
         val captureLon = lon
         val captureFolderUuid = folderUuid
-        Log.wtf("CameraVM", "captureLat=$captureLat, captureLon=$captureLon, captureFolderUuid=$captureFolderUuid")
+        val captureFromMap = locationFromMap
+        val captureDeviceLat = deviceLat
+        val captureDeviceLon = deviceLon
+        Log.wtf("CameraVM", "captureLat=$captureLat, captureLon=$captureLon, captureFolderUuid=$captureFolderUuid, fromMap=$captureFromMap")
         val contentValues = fileRepository.newPhotoContentValues(captureTime)
         val pendingName = contentValues.getAsString(MediaStore.MediaColumns.DISPLAY_NAME)
         val outputOptions = ImageCapture.OutputFileOptions.Builder(
@@ -87,7 +107,37 @@ class CameraViewModel @Inject constructor(
                         fileRepository.writeDateExif(savedUri, captureTime)
                         fileRepository.setPending(savedUri, false)
                         _lastPhotoUri.value = savedUri
-                        if (captureFolderUuid != null || (captureLat != null && captureLon != null)) {
+
+                        val geoPromptEligible = captureFolderUuid == null &&
+                            !captureFromMap &&
+                            !geoPromptShown &&
+                            captureDeviceLat != null &&
+                            captureDeviceLon != null
+
+                        if (geoPromptEligible) {
+                            geoPromptShown = true
+                            val promptLat = captureDeviceLat!!
+                            val promptLon = captureDeviceLon!!
+                            viewModelScope.launch(Dispatchers.IO) {
+                                val existing = findGeoFolderNear(promptLat, promptLon)
+                                _geoPrompt.value = if (existing != null) {
+                                    GeoPrompt.ExistingFolder(
+                                        uri = savedUri,
+                                        lat = promptLat,
+                                        lon = promptLon,
+                                        folderUuid = existing.uuid,
+                                        folderName = existing.name
+                                    )
+                                } else {
+                                    GeoPrompt.NewFolder(
+                                        uri = savedUri,
+                                        lat = promptLat,
+                                        lon = promptLon
+                                    )
+                                }
+                                Log.wtf("CameraVM", "geoPrompt показан: ${_geoPrompt.value}")
+                            }
+                        } else if (captureFolderUuid != null || (captureLat != null && captureLon != null)) {
                             val savedUriString = savedUri.toString()
                             viewModelScope.launch(Dispatchers.IO) {
                                 val targetFolderUuid = captureFolderUuid
@@ -129,6 +179,31 @@ class CameraViewModel @Inject constructor(
         _savedPhotoEvent.value = null
     }
 
+    fun answerGeoPrompt(saveToFolder: Boolean) {
+        val prompt = _geoPrompt.value ?: return
+        _geoPrompt.value = null
+        viewModelScope.launch(Dispatchers.IO) {
+            val targetFolderUuid = if (saveToFolder) {
+                when (prompt) {
+                    is GeoPrompt.ExistingFolder -> prompt.folderUuid
+                    is GeoPrompt.NewFolder -> findOrCreateGeoFolder(prompt.lat, prompt.lon)
+                }
+            } else {
+                null
+            }
+            val photo = Photo(
+                uuid = UUID.randomUUID().toString(),
+                uri = prompt.uri.toString(),
+                folderUuid = targetFolderUuid,
+                createdAt = System.currentTimeMillis(),
+                lat = prompt.lat,
+                lon = prompt.lon
+            )
+            photoRepository.insert(photo)
+            Log.wtf("CameraVM", "GeoPrompt ответ=$saveToFolder, folder=$targetFolderUuid, photo=${photo.uuid}")
+        }
+    }
+
     fun deleteLastPhoto(): Boolean {
         val uri = _lastPhotoUri.value ?: return false
         val deleted = fileRepository.delete(uri)
@@ -136,6 +211,24 @@ class CameraViewModel @Inject constructor(
             _lastPhotoUri.value = null
         }
         return deleted
+    }
+
+    private suspend fun findGeoFolderNear(lat: Double, lon: Double): MasterFolder? {
+        val folders = masterFolderRepository.getAll().first()
+        folders.forEach { folder ->
+            val folderLat = folder.lat
+            val folderLon = folder.lon
+            if (folderLat != null && folderLon != null) {
+                val results = FloatArray(1)
+                Location.distanceBetween(lat, lon, folderLat, folderLon, results)
+                if (results[0] <= GEO_RADIUS_METERS) {
+                    Log.wtf("CameraVM", "findGeoFolderNear: найдена ${folder.uuid} (${folder.name}) dist=${results[0]}м")
+                    return folder
+                }
+            }
+        }
+        Log.wtf("CameraVM", "findGeoFolderNear: подходящей папки нет")
+        return null
     }
 
     private suspend fun findOrCreateGeoFolder(lat: Double, lon: Double): String {
@@ -173,3 +266,23 @@ class CameraViewModel @Inject constructor(
 }
 
 data class SavedPhotoEvent(val uri: Uri, val folderUuid: String)
+
+sealed interface GeoPrompt {
+    val uri: Uri
+    val lat: Double
+    val lon: Double
+
+    data class ExistingFolder(
+        override val uri: Uri,
+        override val lat: Double,
+        override val lon: Double,
+        val folderUuid: String,
+        val folderName: String
+    ) : GeoPrompt
+
+    data class NewFolder(
+        override val uri: Uri,
+        override val lat: Double,
+        override val lon: Double
+    ) : GeoPrompt
+}
