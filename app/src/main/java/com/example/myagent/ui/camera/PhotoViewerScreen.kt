@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -134,9 +135,10 @@ fun PhotoViewerScreen(
     val currentIndex = if (looping) pagerState.currentPage % total else 0
     val currentUri = uris[currentIndex]
 
-    val contentAreaCenterY = 680.dp
-    val useCenterY = contentAreaCenterY + 12.dp
-    val useToDelete = 94.dp
+    val useToBack = 68.dp
+    val useToDelete = 96.dp
+    val useToSave = 94.dp
+    val shutterBottomInset = 24.dp
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -188,16 +190,51 @@ fun PhotoViewerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(Color.Black),
-                contentAlignment = Alignment.Center
+                    .background(Color.Black)
             ) {
-                Row(
-                    modifier = Modifier.offset(y = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(40.dp)
+                onUsePhoto?.let { usePhoto ->
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = shutterBottomInset)
+                            .size(72.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .border(4.dp, Color.White, CircleShape)
+                                .clickable { usePhoto(currentUri) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "use",
+                                    color = Color.Black,
+                                    fontSize = 12.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = shutterBottomInset)
+                        .size(72.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier = Modifier
+                            .offset(x = -useToBack)
                             .height(44.dp)
                             .clickable(onClick = onBack),
                         contentAlignment = Alignment.Center
@@ -215,40 +252,17 @@ fun PhotoViewerScreen(
                             Text("back", color = Color.White, fontSize = 12.sp)
                         }
                     }
-                    onUsePhoto?.let { usePhoto ->
-                        Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .offset(x = (-4).dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(72.dp)
-                                    .clip(CircleShape)
-                                    .border(4.dp, Color.White, CircleShape)
-                                    .clickable { usePhoto(currentUri) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(60.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.White, CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "use",
-                                        color = Color.Black,
-                                        fontSize = 12.sp,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
-                        }
-                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = shutterBottomInset)
+                        .size(72.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Box(
                         modifier = Modifier
+                            .offset(x = useToDelete)
                             .size(40.dp)
                             .gradientStroke(TrashShape, DeleteGradient, 1.dp)
                             .clickable { onDelete(currentUri) },
@@ -266,26 +280,23 @@ fun PhotoViewerScreen(
                 }
                 onSavePhoto?.let { savePhoto ->
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = shutterBottomInset)
+                            .offset(y = -useToSave)
+                            .size(40.dp)
+                            .gradientStroke(DisketteShape, SaveGradient, 1.dp)
+                            .clickable(onClick = savePhoto),
                         contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .offset(y = useCenterY - useToDelete - contentAreaCenterY)
-                                .gradientStroke(DisketteShape, SaveGradient, 1.dp)
-                                .clickable(onClick = savePhoto),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "save",
-                                style = TextStyle(
-                                    brush = SaveGradient,
-                                    fontSize = 12.sp,
-                                    textAlign = TextAlign.Center
-                                )
+                        Text(
+                            text = "save",
+                            style = TextStyle(
+                                brush = SaveGradient,
+                                fontSize = 12.sp,
+                                textAlign = TextAlign.Center
                             )
-                        }
+                        )
                     }
                 }
             }
