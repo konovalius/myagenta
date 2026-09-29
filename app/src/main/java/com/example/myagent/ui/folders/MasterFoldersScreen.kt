@@ -102,7 +102,7 @@ Text(
                          text = "Мастер-папки",
                          color = Color.White,
                          fontSize = 24.sp,
-                         fontFamily = BelozerovSP
+                         fontFamily = GoshaSans
                      )
                 }
             }
@@ -126,6 +126,7 @@ Text(
                             }
                         },
                         singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFFFF3B30),
