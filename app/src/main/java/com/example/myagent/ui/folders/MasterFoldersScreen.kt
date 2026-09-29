@@ -3,6 +3,7 @@ package com.example.myagent.ui.folders
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.foundation.layout.Arrangement
@@ -234,19 +235,33 @@ Box(
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            FloatingActionButton(
-                                onClick = { showCreateDialog = true },
-                                containerColor = Color.Transparent,
-                                elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.White.copy(alpha = 0.15f))
+                                    .clickable { showPickFolderDialog = true },
+                                contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Filled.Add, contentDescription = "Создать папку", tint = Color.White)
+                                Icon(
+                                    Icons.Filled.Edit,
+                                    contentDescription = "Переименовать папку",
+                                    tint = Color.White
+                                )
                             }
-                            FloatingActionButton(
-                                onClick = { showPickFolderDialog = true },
-                                containerColor = Color.Transparent,
-                                elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.White.copy(alpha = 0.15f))
+                                    .clickable { showCreateDialog = true },
+                                contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Filled.Edit, contentDescription = "Переименовать папку", tint = Color.White)
+                                Icon(
+                                    Icons.Filled.Add,
+                                    contentDescription = "Создать папку",
+                                    tint = Color.White
+                                )
                             }
                         }
                 }
