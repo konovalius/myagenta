@@ -97,7 +97,7 @@ private const val DEFAULT_ZOOM = 15.0
 private const val LOCATION_ZOOM = 17.0
 private const val GEO_FOLDER_ZOOM = 14.0
 private const val PIN_SIZE_DP = 48
-private const val LONG_PRESS_MILLIS = 3000L
+private const val LONG_PRESS_MILLIS = 2000L
 
 private val DELETE_SWITCH_WIDTH = 56.dp
 private val DELETE_SWITCH_HEIGHT = 28.dp
