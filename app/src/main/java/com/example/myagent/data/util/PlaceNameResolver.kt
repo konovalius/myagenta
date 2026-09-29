@@ -36,6 +36,9 @@ object PlaceNameResolver {
         "тракт" to "тр."
     )
 
+    fun formatCoordinates(lat: Double, lon: Double): String =
+        String.format(Locale.ROOT, "%.4f, %.4f", lat, lon)
+
     suspend fun resolve(lat: Double, lon: Double): String {
         OverpassGeocoder.getNearestPlace(lat, lon)?.let { place ->
             Log.wtf("PlaceName", "Overpass: '${place.name}' (${place.category}, ${place.distanceMeters}м)")
@@ -46,7 +49,7 @@ object PlaceNameResolver {
             Log.wtf("PlaceName", "Nominatim: '$road'")
             return road
         }
-        return String.format(Locale.ROOT, "%.4f, %.4f", lat, lon)
+        return formatCoordinates(lat, lon)
     }
 
     private suspend fun requestRoad(lat: Double, lon: Double): String? {

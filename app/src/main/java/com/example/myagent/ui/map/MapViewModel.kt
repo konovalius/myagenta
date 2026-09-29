@@ -82,18 +82,30 @@ class MapViewModel @Inject constructor(
     }
 
     suspend fun createGeoFolder(lat: Double, lon: Double): MasterFolder {
-        val folderName = PlaceNameResolver.resolve(lat, lon)
-        Log.wtf("MapVM", "createGeoFolder($lat,$lon): имя папки '$folderName'")
         val folder = MasterFolder(
             uuid = UUID.randomUUID().toString(),
-            name = folderName,
+            name = PlaceNameResolver.formatCoordinates(lat, lon),
             type = "geo",
             createdAt = System.currentTimeMillis(),
             lat = lat,
             lon = lon
         )
         masterFolderRepository.insert(folder)
+        Log.wtf("MapVM", "createGeoFolder($lat,$lon): создана ${folder.uuid} с координатами, имя уточняется в фоне")
+        resolveNameInBackground(folder.uuid, lat, lon)
         return folder
+    }
+
+    private fun resolveNameInBackground(uuid: String, lat: Double, lon: Double) {
+        viewModelScope.launch {
+            val placeName = PlaceNameResolver.resolve(lat, lon)
+            if (placeName.isNotEmpty()) {
+                masterFolderRepository.rename(uuid, placeName)
+                Log.wtf("MapVM", "resolveNameInBackground: $uuid переименована в '$placeName'")
+            } else {
+                Log.wtf("MapVM", "resolveNameInBackground: $uuid остаётся с координатами")
+            }
+        }
     }
 
     suspend fun deleteFolderWithPhotos(folder: MasterFolder) {

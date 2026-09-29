@@ -248,20 +248,30 @@ class CameraViewModel @Inject constructor(
             }
         }
         Log.wtf("CameraVM", "findOrCreateGeoFolder: подходящей нет (папок всего ${folders.size}), создаю новую")
-        val placeName = PlaceNameResolver.resolve(lat, lon)
-        val folderName = placeName.ifEmpty { String.format(Locale.ROOT, "%.4f, %.4f", lat, lon) }
-        Log.wtf("CameraVM", "findOrCreateGeoFolder: имя папки '$folderName'")
         val folder = MasterFolder(
             uuid = UUID.randomUUID().toString(),
-            name = folderName,
+            name = PlaceNameResolver.formatCoordinates(lat, lon),
             type = "geo",
             createdAt = System.currentTimeMillis(),
             lat = lat,
             lon = lon
         )
         masterFolderRepository.insert(folder)
-        Log.wtf("CameraVM", "findOrCreateGeoFolder: создана ${folder.uuid} name=${folder.name}")
+        Log.wtf("CameraVM", "findOrCreateGeoFolder: создана ${folder.uuid} с координатами, имя уточняется в фоне")
+        resolveNameInBackground(folder.uuid, lat, lon)
         return folder.uuid
+    }
+
+    private fun resolveNameInBackground(uuid: String, lat: Double, lon: Double) {
+        viewModelScope.launch {
+            val placeName = PlaceNameResolver.resolve(lat, lon)
+            if (placeName.isNotEmpty()) {
+                masterFolderRepository.rename(uuid, placeName)
+                Log.wtf("CameraVM", "resolveNameInBackground: $uuid переименована в '$placeName'")
+            } else {
+                Log.wtf("CameraVM", "resolveNameInBackground: $uuid остаётся с координатами")
+            }
+        }
     }
 
     companion object {
