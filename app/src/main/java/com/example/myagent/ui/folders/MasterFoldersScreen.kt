@@ -186,7 +186,7 @@ Spacer(Modifier.height(16.dp))
                         )
                     }
                 }
-                Spacer(Modifier.height(16.dp))
+Spacer(Modifier.height(8.dp))
             val filteredFolders by viewModel.filteredFolders.collectAsStateWithLifecycle()
     val previewsByFolder by viewModel.previewsByFolder.collectAsStateWithLifecycle()
             Box(modifier = Modifier.weight(1f)) {
@@ -223,25 +223,30 @@ Spacer(Modifier.height(16.dp))
                         }
                     }
                 }
-                Box(
+Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(24.dp)
                 ) {
-                        Column(horizontalAlignment = Alignment.End) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
                             FloatingActionButton(
-                                onClick = { showPickFolderDialog = true }
+                                onClick = { showCreateDialog = true },
+                                containerColor = Color.Transparent,
+                                elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp)
                             ) {
-                                Icon(Icons.Filled.Edit, contentDescription = "Переименовать папку")
+                                Icon(Icons.Filled.Add, contentDescription = "Создать папку", tint = Color.White)
                             }
-                            Spacer(Modifier.size(16.dp))
                             FloatingActionButton(
-                                onClick = { showCreateDialog = true }
+                                onClick = { showPickFolderDialog = true },
+                                containerColor = Color.Transparent,
+                                elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp)
                             ) {
-                                Icon(Icons.Filled.Add, contentDescription = "Создать папку")
-}
-    }
-}
+                                Icon(Icons.Filled.Edit, contentDescription = "Переименовать папку", tint = Color.White)
+                            }
+                        }
+                }
                 }
             }
         }
