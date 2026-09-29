@@ -2,12 +2,14 @@ package com.example.myagent.ui.map
 
 import android.location.Location
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.PhotoRepository
+import com.example.myagent.data.util.ReverseGeocoder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Locale
 import java.util.UUID
@@ -81,9 +83,11 @@ class MapViewModel @Inject constructor(
     }
 
     suspend fun createGeoFolder(lat: Double, lon: Double): MasterFolder {
+        val placeName = ReverseGeocoder.getPlaceName(lat, lon)
+        Log.wtf("MapVM", "createGeoFolder($lat,$lon): геокодирование вернуло '$placeName'")
         val folder = MasterFolder(
             uuid = UUID.randomUUID().toString(),
-            name = String.format(Locale.ROOT, "%.4f, %.4f", lat, lon),
+            name = placeName ?: String.format(Locale.ROOT, "%.4f, %.4f", lat, lon),
             type = "geo",
             createdAt = System.currentTimeMillis(),
             lat = lat,
