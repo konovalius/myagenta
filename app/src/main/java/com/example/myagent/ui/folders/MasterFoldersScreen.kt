@@ -49,7 +49,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -57,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.db.entity.Photo
+import com.example.myagent.ui.theme.GoshaSans
 import com.example.myagent.ui.theme.GradientBackground
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -314,8 +317,17 @@ private fun MasterFolderCard(
             Icon(icon, contentDescription = typeLabel, tint = MaterialTheme.colorScheme.onSurface)
         }
         Spacer(Modifier.width(16.dp))
-        Column {
-            Text(folder.name, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = folder.name,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 16.sp,
+                fontFamily = GoshaSans,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
             Spacer(Modifier.size(4.dp))
             Text(
                 text = "$typeLabel  $dateText",
@@ -324,7 +336,7 @@ private fun MasterFolderCard(
             )
         }
         if (previews.isNotEmpty()) {
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.width(12.dp))
             FolderPhotoPreview(previews)
         }
     }
@@ -332,24 +344,43 @@ private fun MasterFolderCard(
 
 @Composable
 private fun FolderPhotoPreview(photos: List<Photo>) {
-    Column(
+    val hasPhotos = photos.isNotEmpty()
+    if (!hasPhotos) return
+    
+    val lastPhoto = photos.last()
+    val smallPhotos = when {
+        photos.size <= 1 -> emptyList()
+        photos.size <= 4 -> photos.dropLast(1).take(3)
+        else -> photos.dropLast(1).take(3)
+    }
+    
+    Row(
         modifier = Modifier.testTag("folder_preview"),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        photos.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                row.forEach { photo ->
+        AsyncImage(
+            model = lastPhoto.uri,
+            contentDescription = null,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(4.dp)),
+            contentScale = ContentScale.Crop
+        )
+        
+        if (smallPhotos.isNotEmpty()) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                smallPhotos.forEach { photo ->
                     AsyncImage(
                         model = photo.uri,
                         contentDescription = null,
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(20.dp)
                             .clip(RoundedCornerShape(4.dp)),
                         contentScale = ContentScale.Crop
                     )
-                }
-                if (row.size == 1) {
-                    Spacer(Modifier.size(40.dp))
                 }
             }
         }
