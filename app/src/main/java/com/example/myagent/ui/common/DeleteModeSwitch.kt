@@ -55,7 +55,7 @@ fun DeleteModeSwitch(
             .background(
                 if (checked) Color(0xFFFF3B30) else Color(0xFF8E8E93)
             )
-            .pointerInput(Unit) {
+            .pointerInput(checked) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     // Ждем отпускания пальца
