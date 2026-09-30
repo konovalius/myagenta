@@ -38,11 +38,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import android.widget.Toast
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.db.entity.Media
@@ -58,6 +60,7 @@ fun MasterFolderContentScreen(
     onOpenVideo: (Uri) -> Unit,
     viewModel: MasterFolderContentViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val folder by viewModel.folder.collectAsStateWithLifecycle()
     val media by viewModel.media.collectAsStateWithLifecycle()
     var menuExpanded by remember { mutableStateOf(false) }
@@ -176,8 +179,10 @@ fun MasterFolderContentScreen(
                                 .aspectRatio(1f),
                             onClickOverride = if (deleteMode) {
                                 {
-                                    mediaToDelete = media
-                                    showMediaDeleteDialog = true
+                                    // Удаление сразу без диалога
+                                    viewModel.deleteMedia(media)
+                                    // Показываем Toast
+                                    Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
                                 }
                             } else null
                         )

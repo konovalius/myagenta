@@ -58,12 +58,9 @@ fun DeleteModeSwitch(
             .pointerInput(Unit) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                        if (!change.pressed) break
-                        change.consume()
-                    }
+                    // Ждем отпускания пальца
+                    val up = awaitPointerEvent() 
+                    // Меняем состояние при любом касании и отпускании
                     onCheckedChange(!checked)
                 }
             },

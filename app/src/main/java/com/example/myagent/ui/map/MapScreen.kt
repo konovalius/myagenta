@@ -141,7 +141,6 @@ fun MapScreen(
     val geoPickScope = rememberCoroutineScope()
     var geoPick by remember { mutableStateOf<GeoPickState?>(null) }
     var deleteMode by remember { mutableStateOf(false) }
-    var folderToDelete by remember { mutableStateOf<MasterFolder?>(null) }
 
     fun openGeoCameraToFolder(lat: Double, lon: Double, folderUuid: String?) {
         geoPickScope.launch {
@@ -281,7 +280,13 @@ fun MapScreen(
                 title = pin.folder.name
                 setOnMarkerClickListener { _, _ ->
                     if (deleteMode) {
-                        folderToDelete = pin.folder
+                        // Удаление сразу без диалога
+                        geoPickScope.launch { 
+                            viewModel.deleteFolderWithMedia(pin.folder)
+                            // Используем context из замыкания
+                            val appContext = context
+                            Toast.makeText(appContext, "Папка удалена", Toast.LENGTH_SHORT).show()
+                        }
                     } else {
                         onOpenFolder(pin.folder.uuid)
                     }
@@ -423,30 +428,7 @@ onClick = {
                 )
             }
         }
-        folderToDelete?.let { folder ->
-            AlertDialog(
-                onDismissRequest = { folderToDelete = null },
-                title = { Text("Удалить папку?", fontFamily = GoshaSans) },
-                text = {
-                    Text("Папка «${folder.name}» и все её фото будут удалены безвозвратно.")
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            folderToDelete = null
-                            geoPickScope.launch { viewModel.deleteFolderWithMedia(folder) }
-                        }
-                    ) {
-                        Text("Да")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { folderToDelete = null }) {
-                        Text("Нет")
-                    }
-                }
-            )
-        }
+        
     }
 }
 

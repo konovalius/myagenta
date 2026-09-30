@@ -1,6 +1,7 @@
 package com.example.myagent.ui.media
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -153,8 +154,16 @@ fun AllMediaScreen(
                                 .combinedClickable(
                                     onClick = {
                                         if (deleteMode) {
-                                            setMediaToDelete(media)
-                                            setShowDeleteDialog(true)
+                                            // Удаление сразу без диалога
+                                            viewModel.deleteMedia(media)
+                                            try {
+                                                val uri = Uri.parse(media.uri)
+                                                context.contentResolver.delete(uri, null, null)
+                                            } catch (e: Exception) {
+                                                Log.e("AllMedia", "Ошибка удаления файла из галереи", e)
+                                            }
+                                            // Показываем Toast
+                                            Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
                                         } else {
                                             val uri = Uri.parse(media.uri)
                                             if (media.type == "video") {
@@ -165,6 +174,7 @@ fun AllMediaScreen(
                                         }
                                     },
                                     onLongClick = {
+                                        // Долгое нажатие всегда вызывает диалог
                                         setMediaToDelete(media)
                                         setShowDeleteDialog(true)
                                     }
