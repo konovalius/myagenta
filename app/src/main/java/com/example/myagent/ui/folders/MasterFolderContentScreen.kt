@@ -77,14 +77,15 @@ fun MasterFolderContentScreen(
                 )
             }
             Spacer(Modifier.width(8.dp))
-Text(
+            Text(
                 text = folder?.name ?: "Папка",
                 color = Color.White,
                 fontFamily = GoshaSans,
-                fontSize = 22.sp,
-                maxLines = 2,
+                fontSize = 18.sp,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
+                softWrap = true,
+                modifier = Modifier.fillMaxWidth()
             )
             Box {
                 IconButton(onClick = { menuExpanded = true }) {

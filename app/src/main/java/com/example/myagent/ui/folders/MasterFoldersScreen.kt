@@ -443,8 +443,9 @@ private fun MasterFolderCard(
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp,
                 fontFamily = GoshaSans,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = true
             )
             Spacer(Modifier.size(4.dp))
             Text(
