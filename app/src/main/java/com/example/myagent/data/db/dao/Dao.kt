@@ -45,4 +45,7 @@ interface MediaDao {
 
     @Query("SELECT * FROM media WHERE uri = :uri LIMIT 1")
     suspend fun getByUri(uri: String): Media?
+
+    @Query("SELECT * FROM media WHERE folder_uuid IS NULL ORDER BY created_at DESC")
+    fun getUnassigned(): Flow<List<Media>>
 }

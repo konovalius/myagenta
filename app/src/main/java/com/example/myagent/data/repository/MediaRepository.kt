@@ -25,4 +25,6 @@ class MediaRepository @Inject constructor(
         mediaDao.updateFolder(mediaUuid, folderUuid)
 
     suspend fun getByUri(uri: String): Media? = mediaDao.getByUri(uri)
+
+    fun getUnassigned(): Flow<List<Media>> = mediaDao.getUnassigned()
 }

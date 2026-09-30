@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Map
@@ -74,6 +75,7 @@ import java.util.Locale
 fun MasterFoldersScreen(
     onBack: () -> Unit,
     onOpenFolder: (String) -> Unit,
+    onOpenAllMedia: () -> Unit,
     viewModel: MasterFolderViewModel = hiltViewModel()
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -181,6 +183,44 @@ Spacer(Modifier.height(16.dp))
                     ) {
                         Text(
                             text = "По селфи/объекту",
+                            fontSize = 14.sp,
+                            fontFamily = GoshaSans,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+Spacer(Modifier.height(8.dp))
+                
+                androidx.compose.material3.TextButton(
+                    onClick = onOpenAllMedia,
+                    modifier = Modifier
+                        .height(36.dp)
+                        .fillMaxWidth()
+                        .border(
+                            width = 1.dp,
+                            color = Color.White.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(8.dp)
+                        ),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = Color.White
+                    ),
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Collections,
+                            contentDescription = "Все медиа",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "Все медиа",
                             fontSize = 14.sp,
                             fontFamily = GoshaSans,
                             fontWeight = FontWeight.Bold

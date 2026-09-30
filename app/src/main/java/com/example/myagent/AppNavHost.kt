@@ -20,6 +20,7 @@ import com.example.myagent.ui.map.MapScreen
 import com.example.myagent.ui.onboarding.OnboardingScreen
 import com.example.myagent.ui.splash.SplashScreen
 import com.example.myagent.ui.camera.MediaViewerScreen
+import com.example.myagent.ui.media.AllMediaScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,6 +32,7 @@ object AppRoutes {
     const val MAP = "map"
     const val MASTER_FOLDERS = "master-folders"
     const val MASTER_FOLDER_CONTENT = "master-folder/{folderUuid}"
+    const val ALL_MEDIA = "all-media"
     const val MEDIA_VIEWER = "media-viewer?uri={uri}&folderUuid={folderUuid}&showUseButton={showUseButton}&startIndex={startIndex}"
 
     fun mediaViewer(
@@ -156,7 +158,13 @@ fun AppNavHost() {
                 onBack = { navController.popBackStack() },
                 onOpenFolder = { folderUuid ->
                     navController.navigate("master-folder/$folderUuid")
-                }
+                },
+                onOpenAllMedia = { navController.navigate(AppRoutes.ALL_MEDIA) }
+            )
+        }
+        composable(AppRoutes.ALL_MEDIA) {
+            AllMediaScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
         composable(
