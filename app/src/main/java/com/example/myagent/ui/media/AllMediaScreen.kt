@@ -59,7 +59,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 @Composable
 fun AllMediaScreen(
     onBackClick: () -> Unit,
-    onOpenVideo: (Uri) -> Unit
+    onOpenVideo: (Uri) -> Unit,
+    onOpenPhoto: (Uri) -> Unit
 ) {
     val viewModel: AllMediaViewModel = hiltViewModel()
     val mediaList = viewModel.unassignedMedia.collectAsState().value
@@ -192,11 +193,7 @@ fun AllMediaScreen(
                                         if (media.type == "video") {
                                             onOpenVideo(uri)
                                         } else {
-                                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                                setDataAndType(uri, "image/*")
-                                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                            }
-                                            context.startActivity(intent)
+                                            onOpenPhoto(uri)
                                         }
                                     },
                                     onLongClick = {

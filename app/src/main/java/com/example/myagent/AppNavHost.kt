@@ -172,6 +172,9 @@ fun AppNavHost() {
                 onBackClick = { navController.popBackStack() },
                 onOpenVideo = { uri ->
                     navController.navigate(AppRoutes.videoPlayer(uri))
+                },
+                onOpenPhoto = { uri ->
+                    navController.navigate(AppRoutes.mediaViewer(uri, "", showUseButton = false))
                 }
             )
         }
