@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
@@ -37,14 +36,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.MasterFolder
+import com.example.myagent.ui.folders.components.MediaGridItem
 import com.example.myagent.ui.theme.GradientBackground
 
 @Composable
@@ -116,7 +114,7 @@ fun MasterFolderContentScreen(
 
         if (media.isEmpty()) {
             Text(
-                text = "Фото пока нет",
+                text = "Медиа пока нет",
                 color = Color.White.copy(alpha = 0.7f),
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center,
@@ -133,18 +131,16 @@ fun MasterFolderContentScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 itemsIndexed(media, key = { _, media -> media.uuid }) { index, media ->
-                    AsyncImage(
-                        model = Uri.parse(media.uri),
-                        contentDescription = "Медиа",
-                        contentScale = ContentScale.Crop,
+                    MediaGridItem(
+                        media = media,
+                        folderUuid = folder?.uuid ?: "",
+                        index = index,
+                        onOpenPhoto = { uri, folderUuid, idx ->
+                            onOpenMedia(uri, folderUuid, idx)
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable {
-                                val folderUuid = folder?.uuid ?: return@clickable
-                                onOpenMedia(Uri.parse(media.uri), folderUuid, index)
-                            }
                     )
                 }
             }

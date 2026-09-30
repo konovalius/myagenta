@@ -23,4 +23,6 @@ class MediaRepository @Inject constructor(
 
     suspend fun updateFolder(mediaUuid: String, folderUuid: String?) =
         mediaDao.updateFolder(mediaUuid, folderUuid)
+
+    suspend fun getByUri(uri: String): Media? = mediaDao.getByUri(uri)
 }

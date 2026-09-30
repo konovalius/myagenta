@@ -42,4 +42,7 @@ interface MediaDao {
 
     @Query("UPDATE media SET folder_uuid = :folderUuid WHERE uuid = :mediaUuid")
     suspend fun updateFolder(mediaUuid: String, folderUuid: String?)
+
+    @Query("SELECT * FROM media WHERE uri = :uri LIMIT 1")
+    suspend fun getByUri(uri: String): Media?
 }

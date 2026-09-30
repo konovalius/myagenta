@@ -2,13 +2,14 @@ package com.example.myagent.ui.camera
 
 import android.content.Context
 import android.location.Location
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
@@ -236,8 +237,16 @@ class CameraViewModel @Inject constructor(
         val captureDeviceLat = deviceLat
         val captureDeviceLon = deviceLon
 
-        val videoFile = fileRepository.newMediaFile("mp4")
-        val outputOptions = FileOutputOptions.Builder(videoFile).build()
+        // Добавляем логи для диагностики
+        Log.wtf("CameraVM", "Video recording START - captureTime=$captureTime, lat=$captureLat, lon=$captureLon, folderUuid=$captureFolderUuid")
+
+        // Используем MediaStoreOutputOptions вместо FileOutputOptions
+        val contentValues = fileRepository.newVideoContentValues(captureTime)
+        val pendingName = contentValues.getAsString(MediaStore.MediaColumns.DISPLAY_NAME)
+        val outputOptions = androidx.camera.video.MediaStoreOutputOptions.Builder(
+            context.contentResolver,
+            fileRepository.videosCollection()
+        ).setContentValues(contentValues).build()
 
         activeRecording = videoCapture.output
             .prepareRecording(context, outputOptions)
@@ -246,8 +255,34 @@ class CameraViewModel @Inject constructor(
                 when (event) {
                     is VideoRecordEvent.Finalize -> {
                         activeRecording = null
-                        val outputUri = fileRepository.saveVideoToMediaStore(videoFile, captureTime)
-                        if (outputUri != null) {
+                        val outputUri = event.outputResults.outputUri
+                        Log.wtf("CameraVM", "Video recording FINALIZE - uri=$outputUri, error=${event.error}, folderUuid=$captureFolderUuid, type=video")
+                        
+                        if (outputUri != null && event.error == null) {
+                            // Снимаем флаг IS_PENDING
+                            fileRepository.setPending(outputUri, false)
+                            
+                            // Принуждаем MediaStore просканировать файл
+                            val filePath = getFilePathFromUri(outputUri, context)
+                            filePath?.let {
+                                MediaScannerConnection.scanFile(context, arrayOf(it), arrayOf("video/mp4"), null)
+                                Log.wtf("CameraVM", "MediaScannerConnection.scanFile called for: $filePath")
+                            }
+                            
+                            // Всегда создаем запись Media с type="video"
+                            viewModelScope.launch(Dispatchers.IO) {
+                                val media = Media(
+                                    uuid = UUID.randomUUID().toString(),
+                                    uri = outputUri.toString(),
+                                    folderUuid = captureFolderUuid,
+                                    type = "video",
+                                    createdAt = System.currentTimeMillis(),
+                                    lat = captureLat,
+                                    lon = captureLon
+                                )
+                                mediaRepository.insert(media)
+                                Log.wtf("CameraVM", "Video Media ALWAYS created: ${media.uuid} folder=${captureFolderUuid ?: "null"}")
+                            }
                             
                             val geoPromptEligible = captureFolderUuid == null &&
                                 !captureFromMap &&
@@ -277,25 +312,15 @@ class CameraViewModel @Inject constructor(
                                         )
                                     }
                                 }
-                            } else if (captureFolderUuid != null || (captureLat != null && captureLon != null)) {
-                                val outputUriString = outputUri.toString()
-                                viewModelScope.launch(Dispatchers.IO) {
-                                    val targetFolderUuid = captureFolderUuid
-                                        ?: findOrCreateGeoFolder(captureLat!!, captureLon!!)
-                                    val media = Media(
-                                        uuid = UUID.randomUUID().toString(),
-                                        uri = outputUriString,
-                                        folderUuid = targetFolderUuid,
-                                        type = "video",
-                                        createdAt = System.currentTimeMillis(),
-                                        lat = captureLat,
-                                        lon = captureLon
-                                    )
-                                    mediaRepository.insert(media)
-                                    if (captureFolderUuid != null) {
-                                        _savedPhotoEvent.value = SavedPhotoEvent(outputUri, captureFolderUuid)
-                                    }
-                                }
+                            } else if (captureFolderUuid != null) {
+                                // Если запись связана с папкой - сохраняем событие
+                                _savedPhotoEvent.value = SavedPhotoEvent(outputUri, captureFolderUuid)
+                            }
+                        } else {
+                            // Ошибка записи - удаляем pending запись
+                            pendingName?.let { 
+                                // Нужно найти и удалить pending видео (по аналогии с фото)
+                                Log.wtf("CameraVM", "Video recording failed, error=${event.error}")
                             }
                         }
                     }
@@ -369,6 +394,26 @@ class CameraViewModel @Inject constructor(
             } else {
                 Log.wtf("CameraVM", "resolveNameInBackground: $uuid остаётся с координатами")
             }
+        }
+    }
+
+    private fun getFilePathFromUri(uri: Uri, context: Context): String? {
+        return try {
+            if (uri.scheme == "file") {
+                uri.path
+            } else {
+                val cursor = context.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.DATA), null, null, null)
+                cursor?.use {
+                    if (it.moveToFirst()) {
+                        it.getString(it.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA))
+                    } else {
+                        null
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.wtf("CameraVM", "Error getting file path from uri: $uri", e)
+            null
         }
     }
 
