@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.ui.folders.components.MediaGridItem
 import com.example.myagent.ui.theme.GradientBackground
+import com.example.myagent.ui.theme.GoshaSans
 
 @Composable
 fun MasterFolderContentScreen(
@@ -78,7 +79,8 @@ fun MasterFolderContentScreen(
             Text(
                 text = folder?.name ?: "Папка",
                 color = Color.White,
-                style = MaterialTheme.typography.headlineMedium,
+                fontFamily = GoshaSans,
+                fontSize = 30.sp,
                 modifier = Modifier.weight(1f)
             )
             Box {
@@ -94,21 +96,21 @@ fun MasterFolderContentScreen(
                     onDismissRequest = { menuExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Переименовать") },
+                        text = { Text("Переименовать", fontFamily = GoshaSans) },
                         onClick = {
                             menuExpanded = false
                             showRenameDialog = true
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Удалить") },
+                        text = { Text("Удалить", fontFamily = GoshaSans) },
                         onClick = {
                             menuExpanded = false
                             showDeleteDialog = true
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Свойства", color = Color.Gray) },
+                        text = { Text("Свойства", color = Color.Gray, fontFamily = GoshaSans) },
                         onClick = { menuExpanded = false }
                     )
                 }
@@ -116,9 +118,10 @@ fun MasterFolderContentScreen(
         }
 
         if (media.isEmpty()) {
-            Text(
+Text(
                 text = "Медиа пока нет",
                 color = Color.White.copy(alpha = 0.7f),
+                fontFamily = GoshaSans,
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.align(Alignment.Center)
@@ -166,20 +169,20 @@ fun MasterFolderContentScreen(
         folder?.let { target ->
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
-                title = { Text("Удалить папку?") },
-                text = { Text("Папка «${target.name}» и все фото в ней будут удалены.") },
+                title = { Text("Удалить папку?", fontFamily = GoshaSans) },
+                text = { Text("Папка «${target.name}» и все фото в ней будут удалены.", fontFamily = GoshaSans) },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.deleteFolderWithMedia(target)
                         showDeleteDialog = false
                         onBack()
                     }) {
-                        Text("Да")
+                        Text("Да", fontFamily = GoshaSans)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDeleteDialog = false }) {
-                        Text("Нет")
+                        Text("Нет", fontFamily = GoshaSans)
                     }
                 }
             )
@@ -197,12 +200,12 @@ fun RenameFolderDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Переименовать папку") },
+        title = { Text("Переименовать папку", fontFamily = GoshaSans) },
         text = {
             OutlinedTextField(
                 value = name,
                 onValueChange = { if (it.length <= 50) name = it },
-                label = { Text("Название папки") },
+                label = { Text("Название папки", fontFamily = GoshaSans) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
@@ -214,12 +217,12 @@ fun RenameFolderDialog(
                 enabled = name.isNotBlank(),
                 onClick = { onConfirm(name) }
             ) {
-                Text("Сохранить")
+                Text("Сохранить", fontFamily = GoshaSans)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Отмена")
+                Text("Отмена", fontFamily = GoshaSans)
             }
         }
     )
@@ -233,12 +236,13 @@ fun PickFolderDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Выберите папку") },
+        title = { Text("Выберите папку", fontFamily = GoshaSans) },
         text = {
             Column {
                 folders.forEach { item ->
                     Text(
                         text = item.name,
+                        fontFamily = GoshaSans,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onPick(item) }
@@ -250,7 +254,7 @@ fun PickFolderDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Отмена")
+                Text("Отмена", fontFamily = GoshaSans)
             }
         }
     )
