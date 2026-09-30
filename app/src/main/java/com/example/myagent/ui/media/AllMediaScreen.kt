@@ -92,7 +92,7 @@ fun AllMediaScreen(
                 Spacer(modifier = Modifier.width(12.dp))
                 
                 Text(
-                    text = "Все медиа",
+                    text = "Не сортированное",
                     color = Color.White,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -106,7 +106,7 @@ fun AllMediaScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Медиа пока нет",
+                        text = "Нет несортированных медиа",
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 15.sp,
                         textAlign = TextAlign.Center

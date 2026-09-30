@@ -215,13 +215,13 @@ Spacer(Modifier.height(8.dp))
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Collections,
-                            contentDescription = "Все медиа",
+                            contentDescription = "Не сортированное",
                             tint = Color.White,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "Все медиа",
+                            text = "Не сортированное",
                             fontSize = 14.sp,
                             fontFamily = GoshaSans,
                             fontWeight = FontWeight.Bold
