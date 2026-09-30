@@ -20,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.outlined.Face
+import androidx.compose.material.icons.outlined.CameraFront
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,10 +51,10 @@ import kotlin.math.abs
 
 enum class CameraMode(val label: String) {
     PHOTO("Photo"),
+    VIDEO("Video"),
     SLOW_MO("Slow-mo"),
     TIMELAPSE("Timelapse"),
-    VIDEO("Video"),
-    FIRST_TIME("First time")
+    STROBOSCOPE("Stroboscope")
 }
 
 private val CarouselItemWidth = 84.dp
@@ -165,6 +167,7 @@ fun CameraNavIcons(
     onNavigateToMap: () -> Unit,
     onNavigateToMasterFolders: () -> Unit,
     onOpenGallery: () -> Unit,
+    onSelfieTapped: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -172,6 +175,7 @@ fun CameraNavIcons(
         horizontalArrangement = Arrangement.spacedBy(NavIconSpacing, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        CameraNavButton(Icons.Outlined.Face, "Selfie", onSelfieTapped)
         CameraNavButton(Icons.Filled.Map, "Карта", onNavigateToMap)
         CameraNavButton(Icons.Filled.Folder, "Мастер-папки", onNavigateToMasterFolders)
         CameraNavButton(Icons.Filled.PhotoLibrary, "Галерея", onOpenGallery)

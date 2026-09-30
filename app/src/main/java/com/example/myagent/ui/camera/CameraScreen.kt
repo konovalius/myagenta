@@ -605,7 +605,8 @@ if (isRecording) {
                                             ActivityResultContracts.PickVisualMedia.ImageOnly
                                         )
                                     )
-                                }
+                                },
+                                onSelfieTapped = {}
                             )
                         }
                         Box(
