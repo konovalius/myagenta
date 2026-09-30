@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -76,11 +77,13 @@ fun MasterFolderContentScreen(
                 )
             }
             Spacer(Modifier.width(8.dp))
-            Text(
+Text(
                 text = folder?.name ?: "Папка",
                 color = Color.White,
                 fontFamily = GoshaSans,
-                fontSize = 30.sp,
+                fontSize = 22.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
             Box {
@@ -131,7 +134,7 @@ Text(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 72.dp)
+                    .padding(top = 100.dp)
                     .padding(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
