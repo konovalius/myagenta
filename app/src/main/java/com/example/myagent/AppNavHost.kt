@@ -21,6 +21,7 @@ import com.example.myagent.ui.onboarding.OnboardingScreen
 import com.example.myagent.ui.splash.SplashScreen
 import com.example.myagent.ui.camera.MediaViewerScreen
 import com.example.myagent.ui.media.AllMediaScreen
+import com.example.myagent.ui.media.VideoPlayerScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,6 +35,7 @@ object AppRoutes {
     const val MASTER_FOLDER_CONTENT = "master-folder/{folderUuid}"
     const val ALL_MEDIA = "all-media"
     const val MEDIA_VIEWER = "media-viewer?uri={uri}&folderUuid={folderUuid}&showUseButton={showUseButton}&startIndex={startIndex}"
+    const val VIDEO_PLAYER = "video-player?uri={uri}"
 
     fun mediaViewer(
         uri: Uri,
@@ -60,6 +62,9 @@ object AppRoutes {
         }
         return if (params.isNotEmpty()) "camera?${params.joinToString("&")}" else "camera"
     }
+
+    fun videoPlayer(uri: Uri): String =
+        "video-player?uri=" + Uri.encode(uri.toString())
 }
 
 @Composable
@@ -164,8 +169,29 @@ fun AppNavHost() {
         }
         composable(AppRoutes.ALL_MEDIA) {
             AllMediaScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onOpenVideo = { uri ->
+                    navController.navigate(AppRoutes.videoPlayer(uri))
+                }
             )
+        }
+        composable(
+            route = AppRoutes.VIDEO_PLAYER,
+            arguments = listOf(
+                navArgument("uri") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val uri = backStackEntry.arguments?.getString("uri")
+                ?.let { Uri.decode(it) }
+                ?.let { Uri.parse(it) }
+            if (uri != null) {
+                VideoPlayerScreen(
+                    videoUri = uri,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
         composable(
             route = AppRoutes.MASTER_FOLDER_CONTENT,
@@ -179,6 +205,9 @@ fun AppNavHost() {
                 onBack = { navController.popBackStack() },
                 onOpenMedia = { uri, folderUuid, index ->
                     navController.navigate(AppRoutes.mediaViewer(uri, folderUuid, startIndex = index))
+                },
+                onOpenVideo = { uri ->
+                    navController.navigate(AppRoutes.videoPlayer(uri))
                 }
             )
         }

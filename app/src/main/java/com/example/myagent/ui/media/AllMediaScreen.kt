@@ -48,7 +48,8 @@ import com.example.myagent.data.db.entity.Media
 
 @Composable
 fun AllMediaScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onOpenVideo: (Uri) -> Unit
 ) {
     val viewModel: AllMediaViewModel = hiltViewModel()
     val mediaList = viewModel.unassignedMedia.collectAsState().value
@@ -127,19 +128,7 @@ fun AllMediaScreen(
                                 .clickable {
                                     val uri = Uri.parse(media.uri)
                                     if (media.type == "video") {
-                                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                                            setDataAndType(uri, "video/mp4")
-                                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                        }
-                                        try {
-                                            context.startActivity(intent)
-                                        } catch (e: Exception) {
-                                            val photoIntent = Intent(Intent.ACTION_VIEW).apply {
-                                                setDataAndType(uri, "image/*")
-                                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                            }
-                                            context.startActivity(photoIntent)
-                                        }
+                                        onOpenVideo(uri)
                                     } else {
                                         val intent = Intent(Intent.ACTION_VIEW).apply {
                                             setDataAndType(uri, "image/*")

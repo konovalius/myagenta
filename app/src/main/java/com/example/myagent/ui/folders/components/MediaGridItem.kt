@@ -1,6 +1,5 @@
 package com.example.myagent.ui.folders.components
 
-import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -27,6 +26,7 @@ fun MediaGridItem(
     folderUuid: String,
     index: Int,
     onOpenPhoto: (Uri, String, Int) -> Unit,
+    onOpenVideo: (Uri) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -38,17 +38,8 @@ fun MediaGridItem(
             .clip(RoundedCornerShape(8.dp))
             .clickable {
                 if (media.type == "video") {
-                    // Открываем видео в системном плеере
-                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(uri, "video/mp4")
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    }
-                    try {
-                        context.startActivity(intent)
-                    } catch (e: Exception) {
-                        // Если нет плеера, пытаемся открыть как фото
-                        onOpenPhoto(uri, folderUuid, index)
-                    }
+                    // Открываем видео во внутреннем плеере
+                    onOpenVideo(uri)
                 } else {
                     // Открываем фото
                     onOpenPhoto(uri, folderUuid, index)

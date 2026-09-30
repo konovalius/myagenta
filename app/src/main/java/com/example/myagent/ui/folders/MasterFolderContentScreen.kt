@@ -32,6 +32,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +51,7 @@ import com.example.myagent.ui.theme.GradientBackground
 fun MasterFolderContentScreen(
     onBack: () -> Unit,
     onOpenMedia: (Uri, String, Int) -> Unit,
+    onOpenVideo: (Uri) -> Unit,
     viewModel: MasterFolderContentViewModel = hiltViewModel()
 ) {
     val folder by viewModel.folder.collectAsStateWithLifecycle()
@@ -138,6 +141,7 @@ fun MasterFolderContentScreen(
                         onOpenPhoto = { uri, folderUuid, idx ->
                             onOpenMedia(uri, folderUuid, idx)
                         },
+                        onOpenVideo = onOpenVideo,
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(1f)
