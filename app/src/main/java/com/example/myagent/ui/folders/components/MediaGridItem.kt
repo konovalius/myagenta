@@ -48,15 +48,16 @@ fun MediaGridItem(
     ) {
         if (media.type == "video") {
             // Для видео используем превью с первого кадра
-            AsyncImage(
-                model = ImageRequest.Builder(context).apply {
-                    data(uri)
-                    // Для Coil 2.x с coil-video видео превью должно работать автоматически
-                    // через VideoFrameDecoder, зарегистрированный в MyAgentApp
-                }.build(),
-                contentDescription = "Видео",
-                modifier = Modifier.fillMaxSize()
-            )
+AsyncImage(
+                 model = ImageRequest.Builder(context).apply {
+                     data(uri)
+                     // Для Coil 2.x с coil-video видео превью должно работать автоматически
+                     // через VideoFrameDecoder, зарегистрированный в MyAgentApp
+                 }.build(),
+                 contentDescription = "Видео",
+                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                 modifier = Modifier.fillMaxSize()
+             )
             
             Box(
                 modifier = Modifier
@@ -72,11 +73,12 @@ fun MediaGridItem(
             }
         } else {
             // Для фото обычный AsyncImage
-            AsyncImage(
-                model = uri,
-                contentDescription = "Фото",
-                modifier = Modifier.fillMaxSize()
-            )
+AsyncImage(
+                 model = uri,
+                 contentDescription = "Фото",
+                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                 modifier = Modifier.fillMaxSize()
+             )
         }
     }
 }

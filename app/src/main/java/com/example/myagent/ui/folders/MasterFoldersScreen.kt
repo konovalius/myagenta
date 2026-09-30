@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -481,6 +482,7 @@ private fun FolderPhotoPreview(media: List<Media>) {
             contentDescription = null,
             modifier = Modifier
                 .size(40.dp)
+                .aspectRatio(1f)
                 .clip(RoundedCornerShape(4.dp)),
             contentScale = ContentScale.Crop
         )
@@ -489,16 +491,17 @@ private fun FolderPhotoPreview(media: List<Media>) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                smallMedia.forEach { media ->
-                    AsyncImage(
-                        model = media.uri,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-                }
+smallMedia.forEach { media ->
+                     AsyncImage(
+                         model = media.uri,
+                         contentDescription = null,
+                         modifier = Modifier
+                             .size(20.dp)
+                             .aspectRatio(1f)
+                             .clip(RoundedCornerShape(4.dp)),
+                         contentScale = ContentScale.Crop
+                     )
+                 }
             }
         }
     }

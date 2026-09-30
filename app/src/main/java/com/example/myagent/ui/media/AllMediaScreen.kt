@@ -140,12 +140,13 @@ fun AllMediaScreen(
                                     }
                                 }
                         ) {
-                            if (media.type == "video") {
-                                AsyncImage(
-                                    model = Uri.parse(media.uri),
-                                    contentDescription = "Видео",
-                                    modifier = Modifier.fillMaxSize()
-                                )
+if (media.type == "video") {
+                                 AsyncImage(
+                                     model = Uri.parse(media.uri),
+                                     contentDescription = "Видео",
+                                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                     modifier = Modifier.fillMaxSize()
+                                 )
                                 
                                 Box(
                                     modifier = Modifier
@@ -159,12 +160,13 @@ fun AllMediaScreen(
                                         modifier = Modifier.fillMaxSize()
                                     )
                                 }
-                            } else {
-                                AsyncImage(
-                                    model = Uri.parse(media.uri),
-                                    contentDescription = "Фото",
-                                    modifier = Modifier.fillMaxSize()
-                                )
+} else {
+                                 AsyncImage(
+                                     model = Uri.parse(media.uri),
+                                     contentDescription = "Фото",
+                                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                     modifier = Modifier.fillMaxSize()
+                                 )
                             }
                         }
                     }
