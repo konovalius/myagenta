@@ -27,11 +27,14 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -654,7 +657,7 @@ if (isRecording) {
                                 if (isVideoMode && isRecording) {
                                     PauseIcon(
                                         modifier = Modifier
-                                            .offset(x = 44.dp) // ~16dp от края кнопки (72/2 + 16 = 36+16=52 - 8=44)
+                                            .offset(x = 80.dp) // 40dp от края кнопки (72/2 + 40 = 36+40=76 + 4=80)
                                     )
                                 }
                             }
@@ -835,6 +838,28 @@ private fun ShutterButton(
     val redSquareColor = Color(0xFFFF3B30)
     val density = LocalDensity.current
     
+    // Анимация бегущего отрезка (10 секунд на полный оборот)
+    val runningSegmentAngle = remember { Animatable(0f) }
+    
+    // Запускаем бесконечную анимацию при записи
+    LaunchedEffect(isVideoMode && isRecording) {
+        if (isVideoMode && isRecording) {
+            while (true) {
+                runningSegmentAngle.animateTo(
+                    targetValue = 360f,
+                    animationSpec = tween(
+                        durationMillis = 10000,
+                        easing = LinearEasing
+                    )
+                )
+                runningSegmentAngle.snapTo(0f)
+            }
+        } else {
+            // Если не записываем, сбрасываем угол
+            runningSegmentAngle.snapTo(0f)
+        }
+    }
+    
     Box(
         modifier = modifier
             .size(72.dp)
@@ -875,6 +900,28 @@ private fun ShutterButton(
                                 start = Offset(startX, startY),
                                 end = Offset(endX, endY),
                                 strokeWidth = with(density) { 1.dp.toPx() }
+                            )
+                        }
+                        
+                        // Рисуем бегущий отрезок (черная черточка) только при записи
+                        if (isVideoMode && isRecording) {
+                            val angleRad = runningSegmentAngle.value * (Math.PI / 180).toFloat()
+                            val segmentLength = with(density) { 8.dp.toPx() }
+                            val segmentWidth = with(density) { 2.dp.toPx() }
+                            
+                            // Начало черточки на краю круга
+                            val startX = center.x + radius * cos(angleRad)
+                            val startY = center.y + radius * sin(angleRad)
+                            // Конец черточки внутрь круга
+                            val endX = center.x + (radius - segmentLength) * cos(angleRad)
+                            val endY = center.y + (radius - segmentLength) * sin(angleRad)
+                            
+                            drawLine(
+                                color = Color.Black,
+                                start = Offset(startX, startY),
+                                end = Offset(endX, endY),
+                                strokeWidth = segmentWidth,
+                                cap = StrokeCap.Round
                             )
                         }
                     }
