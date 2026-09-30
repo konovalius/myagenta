@@ -50,6 +50,13 @@ class MasterFolderContentViewModel @Inject constructor(
         viewModelScope.launch { masterFolderRepository.rename(folder.uuid, name.trim()) }
     }
 
+    fun deleteMedia(media: Media) {
+        viewModelScope.launch {
+            fileRepository.delete(Uri.parse(media.uri))
+            mediaRepository.delete(media)
+        }
+    }
+
     fun deleteFolderWithMedia(folder: MasterFolder) {
         viewModelScope.launch {
             mediaRepository.getByFolder(folder.uuid).first().forEach { media ->

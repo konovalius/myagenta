@@ -45,6 +45,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.myagent.data.db.entity.MasterFolder
+import com.example.myagent.data.db.entity.Media
+import com.example.myagent.ui.common.DeleteModeSwitch
 import com.example.myagent.ui.folders.components.MediaGridItem
 import com.example.myagent.ui.theme.GradientBackground
 import com.example.myagent.ui.theme.GoshaSans
@@ -61,98 +63,125 @@ fun MasterFolderContentScreen(
     var menuExpanded by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteMode by remember { mutableStateOf(false) }
+    var mediaToDelete by remember { mutableStateOf<Media?>(null) }
+    var showMediaDeleteDialog by remember { mutableStateOf(false) }
 
     GradientBackground {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Назад",
-                    tint = Color.White
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = folder?.name ?: "Папка",
-                color = Color.White,
-                fontFamily = GoshaSans,
-                fontSize = 18.sp,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                softWrap = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Box {
-                IconButton(onClick = { menuExpanded = true }) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
                     Icon(
-                        imageVector = Icons.Filled.MoreVert,
-                        contentDescription = "Меню папки",
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Назад",
                         tint = Color.White
                     )
                 }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Переименовать", fontFamily = GoshaSans) },
-                        onClick = {
-                            menuExpanded = false
-                            showRenameDialog = true
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Удалить", fontFamily = GoshaSans) },
-                        onClick = {
-                            menuExpanded = false
-                            showDeleteDialog = true
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Свойства", color = Color.Gray, fontFamily = GoshaSans) },
-                        onClick = { menuExpanded = false }
-                    )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = folder?.name ?: "Папка",
+                    color = Color.White,
+                    fontFamily = GoshaSans,
+                    fontSize = 18.sp,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    softWrap = true,
+                    modifier = Modifier.weight(1f)
+                )
+                Box {
+                    IconButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = "Меню папки",
+                            tint = Color.White
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Переименовать", fontFamily = GoshaSans) },
+                            onClick = {
+                                menuExpanded = false
+                                showRenameDialog = true
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Удалить", fontFamily = GoshaSans) },
+                            onClick = {
+                                menuExpanded = false
+                                showDeleteDialog = true
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Свойства", color = Color.Gray, fontFamily = GoshaSans) },
+                            onClick = { menuExpanded = false }
+                        )
+                    }
                 }
             }
-        }
 
-        if (media.isEmpty()) {
-Text(
-                text = "Медиа пока нет",
-                color = Color.White.copy(alpha = 0.7f),
-                fontFamily = GoshaSans,
-                fontSize = 15.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 100.dp)
-                    .padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .fillMaxWidth()
+                    .padding(end = 20.dp, top = 8.dp),
+                horizontalArrangement = Arrangement.End
             ) {
-                itemsIndexed(media, key = { _, media -> media.uuid }) { index, media ->
-                    MediaGridItem(
-                        media = media,
-                        folderUuid = folder?.uuid ?: "",
-                        index = index,
-                        onOpenPhoto = { uri, folderUuid, idx ->
-                            onOpenMedia(uri, folderUuid, idx)
-                        },
-                        onOpenVideo = onOpenVideo,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
+                DeleteModeSwitch(
+                    checked = deleteMode,
+                    onCheckedChange = { deleteMode = it },
+                    contentDescription = "Режим удаления медиа"
+                )
+            }
+
+            if (media.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Медиа пока нет",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontFamily = GoshaSans,
+                        fontSize = 15.sp,
+                        textAlign = TextAlign.Center
                     )
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    itemsIndexed(media, key = { _, media -> media.uuid }) { index, media ->
+                        MediaGridItem(
+                            media = media,
+                            folderUuid = folder?.uuid ?: "",
+                            index = index,
+                            onOpenPhoto = { uri, folderUuid, idx ->
+                                onOpenMedia(uri, folderUuid, idx)
+                            },
+                            onOpenVideo = onOpenVideo,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f),
+                            onClickOverride = if (deleteMode) {
+                                {
+                                    mediaToDelete = media
+                                    showMediaDeleteDialog = true
+                                }
+                            } else null
+                        )
+                    }
                 }
             }
         }
@@ -166,6 +195,31 @@ Text(
                 showRenameDialog = false
             },
             onDismiss = { showRenameDialog = false }
+        )
+    }
+
+    if (showMediaDeleteDialog && mediaToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { showMediaDeleteDialog = false },
+            title = { Text("Удалить медиа?", fontFamily = GoshaSans) },
+            text = { Text("Медиа будет удалено из папки и из галереи устройства.", fontFamily = GoshaSans) },
+            confirmButton = {
+                TextButton(onClick = {
+                    mediaToDelete?.let { viewModel.deleteMedia(it) }
+                    showMediaDeleteDialog = false
+                    mediaToDelete = null
+                }) {
+                    Text("Да", fontFamily = GoshaSans)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showMediaDeleteDialog = false
+                    mediaToDelete = null
+                }) {
+                    Text("Нет", fontFamily = GoshaSans)
+                }
+            }
         )
     }
 

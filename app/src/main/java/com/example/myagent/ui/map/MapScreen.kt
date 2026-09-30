@@ -75,6 +75,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.example.myagent.data.db.entity.MasterFolder
+import com.example.myagent.ui.common.DeleteModeSwitch
 import com.example.myagent.ui.theme.GoshaSans
 import java.util.Locale
 import kotlinx.coroutines.Job
@@ -98,11 +99,6 @@ private const val LOCATION_ZOOM = 17.0
 private const val GEO_FOLDER_ZOOM = 14.0
 private const val PIN_SIZE_DP = 48
 private const val LONG_PRESS_MILLIS = 2000L
-
-private val DELETE_SWITCH_WIDTH = 56.dp
-private val DELETE_SWITCH_HEIGHT = 28.dp
-private val DELETE_SWITCH_THUMB = 24.dp
-private val DELETE_SWITCH_TRAVEL = 28.dp
 
 private data class GeoPickState(
     val lat: Double,
@@ -325,60 +321,14 @@ fun MapScreen(
                 tint = Color.White
             )
         }
-        val deleteThumbOffset by animateDpAsState(
-            targetValue = if (deleteMode) DELETE_SWITCH_TRAVEL else 0.dp,
-            animationSpec = tween(durationMillis = 140),
-            label = "deleteThumb"
-        )
-        Box(
+        DeleteModeSwitch(
+            checked = deleteMode,
+            onCheckedChange = { deleteMode = it },
+            contentDescription = "Режим удаления папок",
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(end = 16.dp, top = 48.dp)
-                .width(DELETE_SWITCH_WIDTH)
-                .height(DELETE_SWITCH_HEIGHT)
-                .clip(RoundedCornerShape(DELETE_SWITCH_HEIGHT / 2))
-                .background(
-                    if (deleteMode) {
-                        Color(0xFFFF3B30)
-                    } else {
-                        Color(0xFF8E8E93)
-                    }
-                )
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                            if (!change.pressed) break
-                            change.consume()
-                        }
-                        deleteMode = !deleteMode
-                    }
-                },
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 2.dp)
-                    .offset(x = deleteThumbOffset)
-                    .size(DELETE_SWITCH_THUMB)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.32f))
-                    .semantics {
-                        contentDescription = "Режим удаления папок"
-                        role = Role.Switch
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Delete,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(15.dp)
-                )
-            }
-        }
+        )
         currentLocation?.let { location ->
             ExtendedFloatingActionButton(
 onClick = {

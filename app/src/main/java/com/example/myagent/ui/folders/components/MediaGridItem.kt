@@ -27,7 +27,8 @@ fun MediaGridItem(
     index: Int,
     onOpenPhoto: (Uri, String, Int) -> Unit,
     onOpenVideo: (Uri) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClickOverride: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val uri = Uri.parse(media.uri)
@@ -37,11 +38,11 @@ fun MediaGridItem(
             .fillMaxSize()
             .clip(RoundedCornerShape(8.dp))
             .clickable {
-                if (media.type == "video") {
-                    // Открываем видео во внутреннем плеере
+                if (onClickOverride != null) {
+                    onClickOverride()
+                } else if (media.type == "video") {
                     onOpenVideo(uri)
                 } else {
-                    // Открываем фото
                     onOpenPhoto(uri, folderUuid, index)
                 }
             }

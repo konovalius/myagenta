@@ -1,10 +1,7 @@
 package com.example.myagent.ui.media
 
-import android.content.ContentResolver
-import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,10 +45,11 @@ import coil.compose.AsyncImage
 import com.example.myagent.R
 import com.example.myagent.data.db.entity.Media
 import android.util.Log
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.example.myagent.ui.common.DeleteModeSwitch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -68,6 +64,7 @@ fun AllMediaScreen(
 
     val (showDeleteDialog, setShowDeleteDialog) = remember { mutableStateOf(false) }
     val (mediaToDelete, setMediaToDelete) = remember { mutableStateOf<Media?>(null) }
+    var deleteMode by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -113,6 +110,19 @@ fun AllMediaScreen(
                 )
             }
 
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 20.dp, top = 8.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                DeleteModeSwitch(
+                    checked = deleteMode,
+                    onCheckedChange = { deleteMode = it },
+                    contentDescription = "Режим удаления медиа"
+                )
+            }
+
             if (mediaList.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -126,53 +136,6 @@ fun AllMediaScreen(
                     )
                 }
             } else {
-                if (showDeleteDialog && mediaToDelete != null) {
-                    AlertDialog(
-                        onDismissRequest = { setShowDeleteDialog(false) },
-                        title = { Text("Удалить медиа?", color = Color.White) },
-                        text = { Text("Медиа будет удалено из приложения и из галереи устройства.", color = Color.White.copy(alpha = 0.7f)) },
-                        confirmButton = {
-                            Button(
-                                onClick = {
-                                    mediaToDelete?.let { media ->
-                                        // Удаление записи из БД
-                                        viewModel.deleteMedia(media)
-                                        
-                                        // Удаление файла из галереи
-                                        try {
-                                            val uri = Uri.parse(media.uri)
-                                            context.contentResolver.delete(uri, null, null)
-                                        } catch (e: Exception) {
-                                            Log.e("AllMedia", "Ошибка удаления файла из галереи", e)
-                                        }
-                                    }
-                                    setShowDeleteDialog(false)
-                                    setMediaToDelete(null)
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFFE53935),
-                                    contentColor = Color.White
-                                )
-                            ) {
-                                Text("Да")
-                            }
-                        },
-                        dismissButton = {
-                            Button(
-                                onClick = {
-                                    setShowDeleteDialog(false)
-                                    setMediaToDelete(null)
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF1A2C4A),
-                                    contentColor = Color.White
-                                )
-                            ) {
-                                Text("Нет")
-                            }
-                        }
-                    )
-                }
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     modifier = Modifier
@@ -189,11 +152,16 @@ fun AllMediaScreen(
                                 .clip(RoundedCornerShape(8.dp))
                                 .combinedClickable(
                                     onClick = {
-                                        val uri = Uri.parse(media.uri)
-                                        if (media.type == "video") {
-                                            onOpenVideo(uri)
+                                        if (deleteMode) {
+                                            setMediaToDelete(media)
+                                            setShowDeleteDialog(true)
                                         } else {
-                                            onOpenPhoto(uri)
+                                            val uri = Uri.parse(media.uri)
+                                            if (media.type == "video") {
+                                                onOpenVideo(uri)
+                                            } else {
+                                                onOpenPhoto(uri)
+                                            }
                                         }
                                     },
                                     onLongClick = {
@@ -235,5 +203,50 @@ if (media.type == "video") {
                 }
             }
         }
+    }
+
+    if (showDeleteDialog && mediaToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { setShowDeleteDialog(false) },
+            title = { Text("Удалить медиа?", color = Color.White) },
+            text = { Text("Медиа будет удалено из приложения и из галереи устройства.", color = Color.White.copy(alpha = 0.7f)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        mediaToDelete?.let { media ->
+                            viewModel.deleteMedia(media)
+                            try {
+                                val uri = Uri.parse(media.uri)
+                                context.contentResolver.delete(uri, null, null)
+                            } catch (e: Exception) {
+                                Log.e("AllMedia", "Ошибка удаления файла из галереи", e)
+                            }
+                        }
+                        setShowDeleteDialog(false)
+                        setMediaToDelete(null)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFE53935),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Да")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        setShowDeleteDialog(false)
+                        setMediaToDelete(null)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1A2C4A),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Нет")
+                }
+            }
+        )
     }
 }
