@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.background
 import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.Media
 
@@ -118,40 +120,67 @@ fun MediaViewerScreen(
                     .weight(1f)
                     .background(Color.Black)
             ) {
-                onSaveMedia?.let { saveMedia ->
+                // Верхняя строка с кнопками save, back, delete
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Кнопка save
+                    onSaveMedia?.let { saveMedia ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.Black.copy(alpha = 0.4f))
+                                .clickable(onClick = saveMedia)
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "save",
+                                style = TextStyle(
+                                    color = Color(0xFF0D3B14),
+                                    fontSize = 14.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            )
+                        }
+                    } ?: Box(modifier = Modifier)
+
+                    // Кнопка back
                     Box(
                         modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(top = 16.dp, start = 16.dp)
-                            .clickable(onClick = saveMedia),
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.Black.copy(alpha = 0.4f))
+                            .clickable(onClick = onBack)
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("back", color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center)
+                    }
+
+                    // Кнопка delete
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.Black.copy(alpha = 0.4f))
+                            .clickable { onDelete(currentUri) }
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "save",
+                            text = "delete",
                             style = TextStyle(
-                                color = Color(0xFF0D3B14),
+                                color = Color(0xFF8C1D18),
                                 fontSize = 14.sp,
                                 textAlign = TextAlign.Center
                             )
                         )
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 16.dp, end = 16.dp)
-                        .clickable { onDelete(currentUri) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "delete",
-                        style = TextStyle(
-                            color = Color(0xFF8C1D18),
-                            fontSize = 14.sp,
-                            textAlign = TextAlign.Center
-                        )
-                    )
-                }
+
+                // Кнопка use (без изменений)
                 onUseMedia?.let { useMedia ->
                     Box(
                         modifier = Modifier
@@ -183,26 +212,6 @@ fun MediaViewerScreen(
                                 )
                             }
                         }
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(start = 16.dp, bottom = 16.dp)
-                        .clickable(onClick = onBack),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "back",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text("back", color = Color.White, fontSize = 12.sp)
                     }
                 }
             }
