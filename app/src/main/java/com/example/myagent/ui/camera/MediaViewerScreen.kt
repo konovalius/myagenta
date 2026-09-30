@@ -12,13 +12,11 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
@@ -28,82 +26,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.Media
-
-private fun Modifier.gradientStroke(shape: Shape, brush: Brush, width: Dp) = this.drawBehind {
-    val stroke = Stroke(width = width.toPx())
-    val outline = shape.createOutline(this.size, this.layoutDirection, this)
-    if (outline is Outline.Generic) {
-        drawPath(outline.path, brush, style = stroke)
-    } else {
-        drawRect(brush, style = stroke)
-    }
-}
-
-private val SaveGradient = Brush.linearGradient(
-    colors = listOf(Color(0xFF0D3B14), Color(0xFF66BB6A)),
-    start = Offset.Zero,
-    end = Offset.Infinite
-)
-
-private val DeleteGradient = Brush.linearGradient(
-    colors = listOf(Color(0xFF8C1D18), Color(0xFFFFC107)),
-    start = Offset.Zero,
-    end = Offset.Infinite
-)
-
-private val DisketteShape = GenericShape { size, _ ->
-    val cut = size.width * 0.25f
-    moveTo(0f, 0f)
-    lineTo(size.width - cut, 0f)
-    lineTo(size.width, cut)
-    lineTo(size.width, size.height)
-    lineTo(0f, size.height)
-    close()
-}
-
-private val TrashShape = GenericShape { size, _ ->
-    val w = size.width
-    val h = size.height
-    val handleBottom = h * 0.1f
-    val handleW = w * 0.4f
-    val handleLeft = (w - handleW) / 2f
-    val rimBottom = h * 0.22f
-    val bodyBottom = h
-    val bodyInset = w * 0.13f
-
-    moveTo(handleLeft, 0f)
-    lineTo(handleLeft + handleW, 0f)
-    lineTo(handleLeft + handleW, handleBottom)
-    lineTo(handleLeft, handleBottom)
-    close()
-
-    moveTo(0f, handleBottom)
-    lineTo(w, handleBottom)
-    lineTo(w, rimBottom)
-    lineTo(0f, rimBottom)
-    close()
-
-    moveTo(0f, rimBottom)
-    lineTo(w, rimBottom)
-    lineTo(w - bodyInset, bodyBottom)
-    lineTo(bodyInset, bodyBottom)
-    close()
-}
 
 @Composable
 fun MediaViewerScreen(
@@ -135,10 +65,6 @@ fun MediaViewerScreen(
     val currentIndex = if (looping) pagerState.currentPage % total else 0
     val currentUri = uris[currentIndex]
 
-    val useToBack = 68.dp
-    val useToDelete = 96.dp
-    val useToSave = 94.dp
-    val shutterBottomInset = 24.dp
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -192,11 +118,45 @@ fun MediaViewerScreen(
                     .weight(1f)
                     .background(Color.Black)
             ) {
+                onSaveMedia?.let { saveMedia ->
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(top = 16.dp, start = 16.dp)
+                            .clickable(onClick = saveMedia),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "save",
+                            style = TextStyle(
+                                color = Color(0xFF0D3B14),
+                                fontSize = 14.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 16.dp, end = 16.dp)
+                        .clickable { onDelete(currentUri) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "delete",
+                        style = TextStyle(
+                            color = Color(0xFF8C1D18),
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    )
+                }
                 onUseMedia?.let { useMedia ->
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = shutterBottomInset)
+                            .padding(bottom = 24.dp)
                             .size(72.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -227,76 +187,22 @@ fun MediaViewerScreen(
                 }
                 Box(
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = shutterBottomInset)
-                        .size(72.dp),
+                        .align(Alignment.BottomStart)
+                        .padding(start = 16.dp, bottom = 16.dp)
+                        .clickable(onClick = onBack),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .offset(x = -useToBack)
-                            .height(44.dp)
-                            .clickable(onClick = onBack),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "back",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text("back", color = Color.White, fontSize = 12.sp)
-                        }
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = shutterBottomInset)
-                        .size(72.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .offset(x = useToDelete)
-                            .size(40.dp)
-                            .gradientStroke(TrashShape, DeleteGradient, 1.dp)
-                            .clickable { onDelete(currentUri) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "delete",
-                            style = TextStyle(
-                                brush = DeleteGradient,
-                                fontSize = 12.sp,
-                                textAlign = TextAlign.Center
-                            )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "back",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
                         )
-                    }
-                }
-                onSaveMedia?.let { saveMedia ->
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = shutterBottomInset)
-                            .offset(y = -useToSave)
-                            .size(40.dp)
-                            .gradientStroke(DisketteShape, SaveGradient, 1.dp)
-                            .clickable(onClick = saveMedia),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "save",
-                            style = TextStyle(
-                                brush = SaveGradient,
-                                fontSize = 12.sp,
-                                textAlign = TextAlign.Center
-                            )
-                        )
+                        Text("back", color = Color.White, fontSize = 12.sp)
                     }
                 }
             }

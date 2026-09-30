@@ -39,14 +39,18 @@ object AppRoutes {
 
     fun mediaViewer(
         uri: Uri,
-        folderUuid: String,
+        folderUuid: String? = null,
         showUseButton: Boolean = true,
         startIndex: Int = 0
-    ): String =
-        "media-viewer?uri=" + Uri.encode(uri.toString()) +
-            "&folderUuid=" + folderUuid +
-            "&showUseButton=" + showUseButton +
-            "&startIndex=" + startIndex
+    ): String {
+        val params = buildList {
+            add("uri=" + Uri.encode(uri.toString()))
+            folderUuid?.let { add("folderUuid=$it") }
+            add("showUseButton=$showUseButton")
+            add("startIndex=$startIndex")
+        }
+        return "media-viewer?" + params.joinToString("&")
+    }
 
     fun camera(
         uri: Uri? = null,
@@ -174,7 +178,7 @@ fun AppNavHost() {
                     navController.navigate(AppRoutes.videoPlayer(uri))
                 },
                 onOpenPhoto = { uri ->
-                    navController.navigate(AppRoutes.mediaViewer(uri, "", showUseButton = false))
+                    navController.navigate(AppRoutes.mediaViewer(uri, null, showUseButton = true))
                 }
             )
         }
@@ -253,7 +257,7 @@ fun AppNavHost() {
                     uri = uri,
                     media = media,
                     startIndex = startIndex,
-                    onUseMedia = if (showUseButton && folderUuid != null) {
+                    onUseMedia = if (showUseButton) {
                         { currentUri ->
                             navController.navigate(
                                 AppRoutes.camera(uri = currentUri, folderUuid = folderUuid)
@@ -262,11 +266,17 @@ fun AppNavHost() {
                     } else {
                         null
                     },
-                    onSaveMedia = if (showUseButton && folderUuid != null) {
+                    onSaveMedia = if (showUseButton) {
                         {
                             scope.launch {
-                                navController.navigate(AppRoutes.camera()) {
-                                    popUpTo(AppRoutes.MASTER_FOLDER_CONTENT) { inclusive = true }
+                                if (folderUuid != null) {
+                                    navController.navigate(AppRoutes.camera()) {
+                                        popUpTo(AppRoutes.MASTER_FOLDER_CONTENT) { inclusive = true }
+                                    }
+                                } else {
+                                    navController.navigate(AppRoutes.camera()) {
+                                        popUpTo(AppRoutes.ALL_MEDIA) { inclusive = true }
+                                    }
                                 }
                             }
                         }
