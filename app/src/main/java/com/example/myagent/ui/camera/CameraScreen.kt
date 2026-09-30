@@ -814,7 +814,7 @@ private fun ShutterButton(
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val shutterColor = if (isVideoMode) Color(0xFFFF3B30) else Color.White
+    val shutterColor = Color.White
 
     Box(
         modifier = modifier
@@ -834,23 +834,15 @@ private fun ShutterButton(
         contentAlignment = Alignment.Center
     ) {
         if (isVideoMode && isRecording) {
-            // Красный квадрат внутри при записи
+            // Белый квадрат внутри при записи
             Box(
                 modifier = Modifier
                     .size(24.dp)
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFFFF3B30))
-            )
-        } else if (isVideoMode) {
-            // Красный кружок с треугольником для старта записи
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFFF3B30), CircleShape)
+                    .background(Color.White)
             )
         } else {
-            // Белый кружок для фото
+            // Белый кружок для фото и видео
             Box(
                 modifier = Modifier
                     .size(60.dp)
