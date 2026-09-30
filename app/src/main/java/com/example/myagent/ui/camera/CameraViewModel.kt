@@ -269,21 +269,6 @@ class CameraViewModel @Inject constructor(
                                 Log.wtf("CameraVM", "MediaScannerConnection.scanFile called for: $filePath")
                             }
                             
-                            // Всегда создаем запись Media с type="video"
-                            viewModelScope.launch(Dispatchers.IO) {
-                                val media = Media(
-                                    uuid = UUID.randomUUID().toString(),
-                                    uri = outputUri.toString(),
-                                    folderUuid = captureFolderUuid,
-                                    type = "video",
-                                    createdAt = System.currentTimeMillis(),
-                                    lat = captureLat,
-                                    lon = captureLon
-                                )
-                                mediaRepository.insert(media)
-                                Log.wtf("CameraVM", "Video Media ALWAYS created: ${media.uuid} folder=${captureFolderUuid ?: "null"}")
-                            }
-                            
                             val geoPromptEligible = captureFolderUuid == null &&
                                 !captureFromMap &&
                                 !geoPromptShown &&
@@ -312,9 +297,34 @@ class CameraViewModel @Inject constructor(
                                         )
                                     }
                                 }
-                            } else if (captureFolderUuid != null) {
-                                // Если запись связана с папкой - сохраняем событие
-                                _savedPhotoEvent.value = SavedPhotoEvent(outputUri, captureFolderUuid)
+                            }
+                            
+                            // Создаем запись Media с type="video" (аналогично фото)
+                            viewModelScope.launch(Dispatchers.IO) {
+                                val targetFolderUuid = if (captureFolderUuid != null) {
+                                    captureFolderUuid
+                                } else if (captureLat != null && captureLon != null) {
+                                    findOrCreateGeoFolder(captureLat, captureLon)
+                                } else {
+                                    null
+                                }
+                                
+                                val media = Media(
+                                    uuid = UUID.randomUUID().toString(),
+                                    uri = outputUri.toString(),
+                                    folderUuid = targetFolderUuid,
+                                    type = "video",
+                                    createdAt = System.currentTimeMillis(),
+                                    lat = captureLat,
+                                    lon = captureLon
+                                )
+                                mediaRepository.insert(media)
+                                Log.wtf("CameraVM", "Video Media created: ${media.uuid} folder=${targetFolderUuid ?: "null"} at $captureLat,$captureLon")
+                                
+                                if (captureFolderUuid != null) {
+                                    // Если запись связана с папкой - сохраняем событие
+                                    _savedPhotoEvent.value = SavedPhotoEvent(outputUri, captureFolderUuid)
+                                }
                             }
                         } else {
                             // Ошибка записи - удаляем pending запись
