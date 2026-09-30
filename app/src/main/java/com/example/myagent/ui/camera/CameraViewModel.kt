@@ -91,6 +91,7 @@ class CameraViewModel @Inject constructor(
     }
 
     fun capturePhoto(imageCapture: ImageCapture, context: Context) {
+        Log.wtf("CameraVM", "PHOTO START: lat=$lat, lon=$lon, deviceLat=$deviceLat, deviceLon=$deviceLon, folderUuid=$folderUuid")
         val captureTime = LocalDateTime.now()
         val captureLat = lat
         val captureLon = lon
@@ -225,6 +226,7 @@ class CameraViewModel @Inject constructor(
     }
 
     fun startVideoRecording(videoCapture: VideoCapture<Recorder>, context: Context): Boolean {
+        Log.wtf("CameraVM", "VIDEO START: lat=$lat, lon=$lon, deviceLat=$deviceLat, deviceLon=$deviceLon, folderUuid=$folderUuid")
         if (activeRecording != null) {
             return false
         }
@@ -257,6 +259,7 @@ class CameraViewModel @Inject constructor(
                         activeRecording = null
                         val outputUri = event.outputResults.outputUri
                         Log.wtf("CameraVM", "Video recording FINALIZE - uri=$outputUri, error=${event.error}, folderUuid=$captureFolderUuid, type=video")
+                        Log.wtf("CameraVM", "VIDEO FINALIZE: outputUri=$outputUri, error=${event.error}, captureLat=$captureLat, captureLon=$captureLon, captureDeviceLat=$captureDeviceLat, captureDeviceLon=$captureDeviceLon, captureFolderUuid=$captureFolderUuid")
                         
                         if (outputUri != null && event.error == null) {
                             // Снимаем флаг IS_PENDING
@@ -318,6 +321,7 @@ class CameraViewModel @Inject constructor(
                                     lat = captureLat,
                                     lon = captureLon
                                 )
+                                Log.wtf("CameraVM", "VIDEO MEDIA: uuid=${media.uuid}, folderUuid=${media.folderUuid}, lat=${media.lat}, lon=${media.lon}, type=${media.type}")
                                 mediaRepository.insert(media)
                                 Log.wtf("CameraVM", "Video Media created: ${media.uuid} folder=${targetFolderUuid ?: "null"} at $captureLat,$captureLon")
                                 
