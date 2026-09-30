@@ -27,4 +27,10 @@ class AllMediaViewModel @Inject constructor(
             source.collect { list -> _unassignedMedia.value = list }
         }
     }
+
+    fun deleteMedia(media: Media) {
+        viewModelScope.launch {
+            mediaRepository.delete(media)
+        }
+    }
 }

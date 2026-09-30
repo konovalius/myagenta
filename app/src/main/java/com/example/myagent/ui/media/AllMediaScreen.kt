@@ -1,5 +1,6 @@
 package com.example.myagent.ui.media
 
+import android.content.ContentResolver
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -22,6 +23,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -46,7 +50,12 @@ import coil.compose.AsyncImage
 import com.example.myagent.R
 import com.example.myagent.data.db.entity.Media
 import android.util.Log
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AllMediaScreen(
     onBackClick: () -> Unit,
@@ -55,6 +64,9 @@ fun AllMediaScreen(
     val viewModel: AllMediaViewModel = hiltViewModel()
     val mediaList = viewModel.unassignedMedia.collectAsState().value
     val context = LocalContext.current
+
+    val (showDeleteDialog, setShowDeleteDialog) = remember { mutableStateOf(false) }
+    val (mediaToDelete, setMediaToDelete) = remember { mutableStateOf<Media?>(null) }
 
     Box(
         modifier = Modifier
@@ -113,6 +125,53 @@ fun AllMediaScreen(
                     )
                 }
             } else {
+                if (showDeleteDialog && mediaToDelete != null) {
+                    AlertDialog(
+                        onDismissRequest = { setShowDeleteDialog(false) },
+                        title = { Text("Удалить медиа?", color = Color.White) },
+                        text = { Text("Медиа будет удалено из приложения и из галереи устройства.", color = Color.White.copy(alpha = 0.7f)) },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    mediaToDelete?.let { media ->
+                                        // Удаление записи из БД
+                                        viewModel.deleteMedia(media)
+                                        
+                                        // Удаление файла из галереи
+                                        try {
+                                            val uri = Uri.parse(media.uri)
+                                            context.contentResolver.delete(uri, null, null)
+                                        } catch (e: Exception) {
+                                            Log.e("AllMedia", "Ошибка удаления файла из галереи", e)
+                                        }
+                                    }
+                                    setShowDeleteDialog(false)
+                                    setMediaToDelete(null)
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFE53935),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text("Да")
+                            }
+                        },
+                        dismissButton = {
+                            Button(
+                                onClick = {
+                                    setShowDeleteDialog(false)
+                                    setMediaToDelete(null)
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF1A2C4A),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text("Нет")
+                            }
+                        }
+                    )
+                }
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     modifier = Modifier
@@ -127,18 +186,24 @@ fun AllMediaScreen(
                             modifier = Modifier
                                 .aspectRatio(1f)
                                 .clip(RoundedCornerShape(8.dp))
-                                .clickable {
-                                    val uri = Uri.parse(media.uri)
-                                    if (media.type == "video") {
-                                        onOpenVideo(uri)
-                                    } else {
-                                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                                            setDataAndType(uri, "image/*")
-                                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                .combinedClickable(
+                                    onClick = {
+                                        val uri = Uri.parse(media.uri)
+                                        if (media.type == "video") {
+                                            onOpenVideo(uri)
+                                        } else {
+                                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                                setDataAndType(uri, "image/*")
+                                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                            }
+                                            context.startActivity(intent)
                                         }
-                                        context.startActivity(intent)
+                                    },
+                                    onLongClick = {
+                                        setMediaToDelete(media)
+                                        setShowDeleteDialog(true)
                                     }
-                                }
+                                )
                         ) {
 if (media.type == "video") {
                                  AsyncImage(
