@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.osmdroid.android)
     implementation(libs.play.services.location)
     implementation(libs.coil.compose)
+    implementation(libs.coil.video)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)

@@ -3,6 +3,9 @@ package com.example.myagent
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.decode.VideoFrameDecoder
 import com.example.myagent.data.service.MediaScannerService
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -13,7 +16,7 @@ import org.osmdroid.config.Configuration
 import javax.inject.Inject
 
 @HiltAndroidApp
-class MyAgentApp : Application() {
+class MyAgentApp : Application(), ImageLoaderFactory {
     
     @Inject
     lateinit var mediaScannerService: MediaScannerService
@@ -45,5 +48,13 @@ class MyAgentApp : Application() {
                 Log.wtf("MyAgentApp", "Ошибка при сканировании медиа", e)
             }
         }
+    }
+    
+    override fun newImageLoader(): ImageLoader {
+        return ImageLoader.Builder(this)
+            .components {
+                add(VideoFrameDecoder.Factory())
+            }
+            .build()
     }
 }

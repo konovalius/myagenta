@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.myagent.R
 import com.example.myagent.data.db.entity.Media
 
@@ -55,9 +56,13 @@ fun MediaGridItem(
             }
     ) {
         if (media.type == "video") {
-            // Для видео используем предзагрузчик thumbnail
+            // Для видео используем превью с первого кадра
             AsyncImage(
-                model = uri,
+                model = ImageRequest.Builder(context).apply {
+                    data(uri)
+                    // Для Coil 2.x с coil-video видео превью должно работать автоматически
+                    // через VideoFrameDecoder, зарегистрированный в MyAgentApp
+                }.build(),
                 contentDescription = "Видео",
                 modifier = Modifier.fillMaxSize()
             )
