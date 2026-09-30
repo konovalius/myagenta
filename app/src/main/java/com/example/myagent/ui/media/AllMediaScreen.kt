@@ -45,6 +45,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.myagent.R
 import com.example.myagent.data.db.entity.Media
+import android.util.Log
 
 @Composable
 fun AllMediaScreen(
@@ -121,6 +122,7 @@ fun AllMediaScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(mediaList, key = { it.uuid }) { media ->
+                        Log.wtf("AllMedia", "Item: uri=${media.uri}, type='${media.type}', isVideo=${media.type == "video"}")
                         Box(
                             modifier = Modifier
                                 .aspectRatio(1f)

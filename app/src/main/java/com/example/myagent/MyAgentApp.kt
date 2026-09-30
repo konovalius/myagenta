@@ -6,6 +6,7 @@ import android.util.Log
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.decode.VideoFrameDecoder
+import com.example.myagent.data.repository.MediaRepository
 import com.example.myagent.data.service.MediaScannerService
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,9 @@ class MyAgentApp : Application(), ImageLoaderFactory {
     
     @Inject
     lateinit var mediaScannerService: MediaScannerService
+
+    @Inject
+    lateinit var mediaRepository: MediaRepository
     
     override fun onCreate() {
         super.onCreate()
@@ -42,6 +46,10 @@ class MyAgentApp : Application(), ImageLoaderFactory {
                 
                 // Сканируем существующие видео
                 mediaScannerService.scanExistingVideos()
+
+                // Исправляем тип видео, записанных как 'photo'
+                mediaRepository.fixVideoTypes()
+                Log.wtf("MyAgentApp", "fixVideoTypes выполнен")
                 
                 Log.wtf("MyAgentApp", "Сканирование медиа завершено успешно")
             } catch (e: Exception) {

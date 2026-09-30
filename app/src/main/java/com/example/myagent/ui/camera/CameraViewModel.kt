@@ -209,13 +209,13 @@ class CameraViewModel @Inject constructor(
                 uuid = UUID.randomUUID().toString(),
                 uri = prompt.uri.toString(),
                 folderUuid = targetFolderUuid,
-                type = "photo",
+                type = if (prompt.uri.toString().contains("/video/media/")) "video" else "photo",
                 createdAt = System.currentTimeMillis(),
                 lat = prompt.lat,
                 lon = prompt.lon
             )
             mediaRepository.insert(media)
-            Log.wtf("CameraVM", "GeoPrompt ответ=$saveToFolder, folder=$targetFolderUuid, media=${media.uuid}")
+            Log.wtf("CameraVM", "GeoPrompt ответ=$saveToFolder, folder=$targetFolderUuid, media=${media.uuid}, type=${media.type}")
         }
     }
 

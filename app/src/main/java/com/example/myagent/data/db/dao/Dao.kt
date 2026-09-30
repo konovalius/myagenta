@@ -48,4 +48,7 @@ interface MediaDao {
 
     @Query("SELECT * FROM media WHERE folder_uuid IS NULL ORDER BY created_at DESC")
     fun getUnassigned(): Flow<List<Media>>
+
+    @Query("UPDATE media SET type = 'video' WHERE uri LIKE '%/video/media/%' AND type = 'photo'")
+    suspend fun fixVideoTypes()
 }

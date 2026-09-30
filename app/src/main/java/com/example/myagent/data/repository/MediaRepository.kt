@@ -27,4 +27,6 @@ class MediaRepository @Inject constructor(
     suspend fun getByUri(uri: String): Media? = mediaDao.getByUri(uri)
 
     fun getUnassigned(): Flow<List<Media>> = mediaDao.getUnassigned()
+
+    suspend fun fixVideoTypes() = mediaDao.fixVideoTypes()
 }
