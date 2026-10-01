@@ -9,7 +9,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.drag
 import kotlinx.coroutines.awaitCancellation
@@ -161,11 +160,15 @@ fun ZoomPill(
             .clip(PillShape)
             .background(if (isScrubbing) PillBackgroundHeld else PillBackgroundIdle)
             .height(PillHeight)
-            .pointerInput(travelPx, ticks, magnificationState.value) {
+            .pointerInput(travelPx, ticks, currentPresets, magnificationState.value) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
-                    val longPress = awaitLongPressOrCancellation(down.id)
-                    if (longPress == null) {
+                    // Проверим, куда попал тап (по индексу в collapsedLabels)
+                    // Но в collapsed состоянии ширина не известна просто — обработаем тап по жесту: если короткий, определим позже по координате
+                    if (!awaitHoldOrRelease(down.id, viewConfiguration.touchSlop)) {
+                        // короткий тап — обработаем ниже через Row с pointerInput? или проще через индексы
+                        // но здесь координата down.position в пределах Box
+                        // запомним позицию
                         pendingTapPos = down.position.x
                         pendingTap = true
                         return@awaitEachGesture
@@ -173,15 +176,17 @@ fun ZoomPill(
                     isScrubbing = true
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                     var value = magnificationState.value
-                    var lastX = longPress.position.x
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        val change = event.changes.firstOrNull { it.id == down.id }
-                        if (change == null || !change.pressed) break
+                    var lastX = down.position.x
+                    drag(down.id) { change ->
                         val delta = change.position.x - lastX
                         lastX = change.position.x
                         change.consume()
-                        value = scrubMagnification(value, delta, travelPx, currentRange)
+                        value = scrubMagnification(
+                            magnification = value,
+                            deltaX = delta,
+                            travelPx = travelPx,
+                            range = currentRange
+                        )
                         currentChange(value)
                     }
                     currentChange(nearestTickValue(ticks, value))
@@ -229,165 +234,91 @@ fun ZoomPill(
                                     .pointerInput(index, count, zoomValNow, travelPx, ticks) {
                                         awaitEachGesture {
                                             val down = awaitFirstDown(requireUnconsumed = false)
-                                            when (count) {
-                                                2 -> {
-                                                    // только 1x,2x
-                                                    if (!awaitHoldOrRelease(down.id, viewConfiguration.touchSlop)) {
-                                                        if (index == 0) currentChange(1f) else currentChange(2f)
-                                                    } else {
-                                                        // удержание на 1x или 2x — открыть scrub
-                                                        val lp = awaitLongPressOrCancellation(down.id) ?: run { return@awaitEachGesture }
-                                                        isScrubbing = true
-                                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                        var value = magnificationState.value
-                                                        var lastX = lp.position.x
-                                                        while (true) {
-                                                            val ev = awaitPointerEvent()
-                                                            val ch = ev.changes.firstOrNull { it.id == down.id }
-                                                            if (ch == null || !ch.pressed) break
-                                                            val d = ch.position.x - lastX
-                                                            lastX = ch.position.x
-                                                            ch.consume()
-                                                            value = scrubMagnification(value, d, travelPx, currentRange)
-                                                            currentChange(value)
-                                                        }
-                                                        currentChange(nearestTickValue(ticks, value))
-                                                        isScrubbing = false
+                                            if (!awaitHoldOrRelease(down.id, viewConfiguration.touchSlop)) {
+                                                // короткий тап
+                                                when (count) {
+                                                    2 -> {
+                                                        if (index == 0) currentChange(1f)
+                                                        else currentChange(2f)
                                                     }
-                                                    return@awaitEachGesture
-                                                }
-                                                3 -> {
-                                                    val isCurrent = if (zoomValNow > 1f && zoomValNow < 2f) index == 1 else index == 2
-                                                    if (isCurrent) {
-                                                        // тап или долгий по текущему → открыть scrub
-                                                        val lp = awaitLongPressOrCancellation(down.id)
-                                                        if (lp != null) {
-                                                            isScrubbing = true
-                                                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                            var value = magnificationState.value
-                                                            var lastX = lp.position.x
-                                                            while (true) {
-                                                                val ev = awaitPointerEvent()
-                                                                val ch = ev.changes.firstOrNull { it.id == down.id }
-                                                                if (ch == null || !ch.pressed) break
-                                                                val d = ch.position.x - lastX
-                                                                lastX = ch.position.x
-                                                                ch.consume()
-                                                                value = scrubMagnification(value, d, travelPx, currentRange)
-                                                                currentChange(value)
+                                                    3 -> {
+                                                        if (zoomValNow > 1f && zoomValNow < 2f) {
+                                                            when (index) {
+                                                                0 -> currentChange(1f)
+                                                                1 -> {
+                                                                    isScrubbing = true
+                                                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                                    var value = magnificationState.value
+                                                                    var lastX = down.position.x
+                                                                    drag(down.id) { change ->
+                                                                        val delta = change.position.x - lastX
+                                                                        lastX = change.position.x
+                                                                        change.consume()
+                                                                        value = scrubMagnification(value, delta, travelPx, currentRange)
+                                                                        currentChange(value)
+                                                                    }
+                                                                    currentChange(nearestTickValue(ticks, value))
+                                                                    isScrubbing = false
+                                                                }
+                                                                2 -> currentChange(2f)
                                                             }
-                                                            currentChange(nearestTickValue(ticks, value))
-                                                            isScrubbing = false
                                                         } else {
-                                                            // короткий тап по текущему → открыть scrub и держать пока палец на экране
+                                                            when (index) {
+                                                                0 -> currentChange(1f)
+                                                                1 -> currentChange(2f)
+                                                                2 -> {
+                                                                    isScrubbing = true
+                                                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                                    var value = magnificationState.value
+                                                                    var lastX = down.position.x
+                                                                    drag(down.id) { change ->
+                                                                        val delta = change.position.x - lastX
+                                                                        lastX = change.position.x
+                                                                        change.consume()
+                                                                        value = scrubMagnification(value, delta, travelPx, currentRange)
+                                                                        currentChange(value)
+                                                                    }
+                                                                    currentChange(nearestTickValue(ticks, value))
+                                                                    isScrubbing = false
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    else -> {
+                                                        if (index == 0) currentChange(1f)
+                                                        else {
                                                             isScrubbing = true
                                                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                                             var value = magnificationState.value
                                                             var lastX = down.position.x
-                                                            while (true) {
-                                                                val ev = awaitPointerEvent()
-                                                                val ch = ev.changes.firstOrNull { it.id == down.id }
-                                                                if (ch == null || !ch.pressed) break
-                                                                val d = ch.position.x - lastX
-                                                                lastX = ch.position.x
-                                                                ch.consume()
-                                                                value = scrubMagnification(value, d, travelPx, currentRange)
-                                                                currentChange(value)
-                                                            }
-                                                            currentChange(nearestTickValue(ticks, value))
-                                                            isScrubbing = false
-                                                        }
-                                                        return@awaitEachGesture
-                                                    } else {
-                                                        // 1x или 2x
-                                                        if (!awaitHoldOrRelease(down.id, viewConfiguration.touchSlop)) {
-                                                            if (index == 0) currentChange(1f) else currentChange(2f)
-                                                        } else {
-                                                            val lp = awaitLongPressOrCancellation(down.id) ?: run { return@awaitEachGesture }
-                                                            isScrubbing = true
-                                                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                            var value = magnificationState.value
-                                                            var lastX = lp.position.x
-                                                            while (true) {
-                                                                val ev = awaitPointerEvent()
-                                                                val ch = ev.changes.firstOrNull { it.id == down.id }
-                                                                if (ch == null || !ch.pressed) break
-                                                                val d = ch.position.x - lastX
-                                                                lastX = ch.position.x
-                                                                ch.consume()
-                                                                value = scrubMagnification(value, d, travelPx, currentRange)
-                                                                currentChange(value)
-                                                            }
-                                                            currentChange(nearestTickValue(ticks, value))
-                                                            isScrubbing = false
-                                                        }
-                                                        return@awaitEachGesture
-                                                    }
-                                                }
-                                                else -> {
-                                                    if (index == 0) {
-                                                        if (!awaitHoldOrRelease(down.id, viewConfiguration.touchSlop)) {
-                                                            currentChange(1f)
-                                                        } else {
-                                                            val lp = awaitLongPressOrCancellation(down.id) ?: run { return@awaitEachGesture }
-                                                            isScrubbing = true
-                                                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                            var value = magnificationState.value
-                                                            var lastX = lp.position.x
-                                                            while (true) {
-                                                                val ev = awaitPointerEvent()
-                                                                val ch = ev.changes.firstOrNull { it.id == down.id }
-                                                                if (ch == null || !ch.pressed) break
-                                                                val d = ch.position.x - lastX
-                                                                lastX = ch.position.x
-                                                                ch.consume()
-                                                                value = scrubMagnification(value, d, travelPx, currentRange)
-                                                                currentChange(value)
-                                                            }
-                                                            currentChange(nearestTickValue(ticks, value))
-                                                            isScrubbing = false
-                                                        }
-                                                    } else {
-                                                        val lp = awaitLongPressOrCancellation(down.id)
-                                                        if (lp != null) {
-                                                            isScrubbing = true
-                                                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                            var value = magnificationState.value
-                                                            var lastX = lp.position.x
-                                                            while (true) {
-                                                                val ev = awaitPointerEvent()
-                                                                val ch = ev.changes.firstOrNull { it.id == down.id }
-                                                                if (ch == null || !ch.pressed) break
-                                                                val d = ch.position.x - lastX
-                                                                lastX = ch.position.x
-                                                                ch.consume()
-                                                                value = scrubMagnification(value, d, travelPx, currentRange)
-                                                                currentChange(value)
-                                                            }
-                                                            currentChange(nearestTickValue(ticks, value))
-                                                            isScrubbing = false
-                                                        } else {
-                                                            isScrubbing = true
-                                                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                            var value = magnificationState.value
-                                                            var lastX = down.position.x
-                                                            while (true) {
-                                                                val ev = awaitPointerEvent()
-                                                                val ch = ev.changes.firstOrNull { it.id == down.id }
-                                                                if (ch == null || !ch.pressed) break
-                                                                val d = ch.position.x - lastX
-                                                                lastX = ch.position.x
-                                                                ch.consume()
-                                                                value = scrubMagnification(value, d, travelPx, currentRange)
+                                                            drag(down.id) { change ->
+                                                                val delta = change.position.x - lastX
+                                                                lastX = change.position.x
+                                                                change.consume()
+                                                                value = scrubMagnification(value, delta, travelPx, currentRange)
                                                                 currentChange(value)
                                                             }
                                                             currentChange(nearestTickValue(ticks, value))
                                                             isScrubbing = false
                                                         }
                                                     }
-                                                    return@awaitEachGesture
                                                 }
+                                                return@awaitEachGesture
                                             }
+                                            // удержание
+                                            isScrubbing = true
+                                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            var value = magnificationState.value
+                                            var lastX = down.position.x
+                                            drag(down.id) { change ->
+                                                val delta = change.position.x - lastX
+                                                lastX = change.position.x
+                                                change.consume()
+                                                value = scrubMagnification(value, delta, travelPx, currentRange)
+                                                currentChange(value)
+                                            }
+                                            currentChange(nearestTickValue(ticks, value))
+                                            isScrubbing = false
                                         }
                                     }
                             ) {
