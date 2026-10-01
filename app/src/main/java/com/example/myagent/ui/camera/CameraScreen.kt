@@ -358,18 +358,33 @@ fun PauseButtonWithPulse(
     modifier: Modifier = Modifier,
     isPaused: Boolean
 ) {
-    // Анимация пульсации (от 0.85 до 1.15)
-    val infiniteTransition = rememberInfiniteTransition(label = "pulseAnimation")
-    val pulseScale = infiniteTransition.animateFloat(
-        initialValue = 0.85f,
-        targetValue = 1.15f,
+    // Анимация пульсации: масштаб 0.6 -> 1.4, прозрачность 0.1 -> 0.6
+    val infiniteTransition = rememberInfiniteTransition(label = "pausePulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.6f,
+        targetValue = 1.4f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 800, easing = LinearEasing),
+            animation = tween(800, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "pulseScale"
+        label = "pauseScale"
     )
-    
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.1f,
+        targetValue = 0.6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pauseAlpha"
+    )
+
+    // Чтение анимируемых значений в теле composable — подписывает композицию
+    // на пересчёт. graphicsLayer/alpha на этом узле не применяются, поэтому
+    // пульсация реализована через размер и цвет, вычисляемые в композиции.
+    val s = pulseScale
+    val a = pulseAlpha
+
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
@@ -378,15 +393,14 @@ fun PauseButtonWithPulse(
         if (isPaused) {
             Box(
                 modifier = Modifier
-                    .size(64.dp) // Круг увеличен в 2 раза (было 32.dp)
+                    .size((64 * s).dp)
                     .background(
-                        Color.White.copy(alpha = 0.3f),
+                        Color.White.copy(alpha = 0.9f * a),
                         CircleShape
                     )
-                    .scale(pulseScale.value)
             )
         }
-        
+
         // Значок паузы
         PauseIcon()
     }
