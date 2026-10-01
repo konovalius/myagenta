@@ -11,7 +11,6 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.drag
-import kotlinx.coroutines.awaitCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -231,11 +230,13 @@ fun ZoomPill(
                             Box(
                                 modifier = Modifier
                                     .clip(CircleShape)
-                                    .pointerInput(index, count, zoomValNow, travelPx, ticks) {
-                                        awaitEachGesture {
-                                            val down = awaitFirstDown(requireUnconsumed = false)
-                                            if (!awaitHoldOrRelease(down.id, viewConfiguration.touchSlop)) {
-                                                // короткий тап
+                                    .pointerInput(index, count, zoomValNow) {
+                                        detectTapGestures(
+                                            onLongPress = {
+                                                isScrubbing = true
+                                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            },
+                                            onTap = {
                                                 when (count) {
                                                     2 -> {
                                                         if (index == 0) currentChange(1f)
@@ -248,17 +249,6 @@ fun ZoomPill(
                                                                 1 -> {
                                                                     isScrubbing = true
                                                                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                                    var value = magnificationState.value
-                                                                    var lastX = down.position.x
-                                                                    drag(down.id) { change ->
-                                                                        val delta = change.position.x - lastX
-                                                                        lastX = change.position.x
-                                                                        change.consume()
-                                                                        value = scrubMagnification(value, delta, travelPx, currentRange)
-                                                                        currentChange(value)
-                                                                    }
-                                                                    currentChange(nearestTickValue(ticks, value))
-                                                                    isScrubbing = false
                                                                 }
                                                                 2 -> currentChange(2f)
                                                             }
@@ -269,17 +259,6 @@ fun ZoomPill(
                                                                 2 -> {
                                                                     isScrubbing = true
                                                                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                                    var value = magnificationState.value
-                                                                    var lastX = down.position.x
-                                                                    drag(down.id) { change ->
-                                                                        val delta = change.position.x - lastX
-                                                                        lastX = change.position.x
-                                                                        change.consume()
-                                                                        value = scrubMagnification(value, delta, travelPx, currentRange)
-                                                                        currentChange(value)
-                                                                    }
-                                                                    currentChange(nearestTickValue(ticks, value))
-                                                                    isScrubbing = false
                                                                 }
                                                             }
                                                         }
@@ -289,37 +268,11 @@ fun ZoomPill(
                                                         else {
                                                             isScrubbing = true
                                                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                            var value = magnificationState.value
-                                                            var lastX = down.position.x
-                                                            drag(down.id) { change ->
-                                                                val delta = change.position.x - lastX
-                                                                lastX = change.position.x
-                                                                change.consume()
-                                                                value = scrubMagnification(value, delta, travelPx, currentRange)
-                                                                currentChange(value)
-                                                            }
-                                                            currentChange(nearestTickValue(ticks, value))
-                                                            isScrubbing = false
                                                         }
                                                     }
                                                 }
-                                                return@awaitEachGesture
                                             }
-                                            // удержание
-                                            isScrubbing = true
-                                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            var value = magnificationState.value
-                                            var lastX = down.position.x
-                                            drag(down.id) { change ->
-                                                val delta = change.position.x - lastX
-                                                lastX = change.position.x
-                                                change.consume()
-                                                value = scrubMagnification(value, delta, travelPx, currentRange)
-                                                currentChange(value)
-                                            }
-                                            currentChange(nearestTickValue(ticks, value))
-                                            isScrubbing = false
-                                        }
+                                        )
                                     }
                             ) {
                                 val isActive = when (count) {
