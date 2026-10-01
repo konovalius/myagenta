@@ -89,6 +89,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -217,10 +218,16 @@ fun CameraScreen(
     var hasFrontCamera by remember { mutableStateOf(true) }
     var isSlowMotionActive by remember { mutableStateOf(false) }
     var isTimelapseActive by remember { mutableStateOf(false) }
-    var isVideoMode by remember { mutableStateOf(false) }
     var centeredModeIndex by remember { mutableIntStateOf(0) }
     var activeMode by remember { mutableStateOf(CameraMode.PHOTO) }
     var isRecording by remember { mutableStateOf(false) }
+    var isPaused by remember { mutableStateOf(false) }
+    
+    // Определяем isVideoMode на основе текущего выбранного режима
+    val isVideoMode = remember(centeredModeIndex) {
+        val mode = CameraMode.entries.getOrNull(centeredModeIndex)
+        mode == CameraMode.VIDEO || mode == CameraMode.SLOW_MO || mode == CameraMode.TIMELAPSE
+    }
     val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
     val savedPhotoEvent by viewModel.savedPhotoEvent.collectAsState()
     var viewerUri by remember { mutableStateOf<Uri?>(null) }
@@ -327,6 +334,7 @@ fun CameraScreen(
         if (isRecording) {
             viewModel.stopVideoRecording()
             isRecording = false
+            isPaused = false
             Toast.makeText(context, "Запись видео остановлена", Toast.LENGTH_SHORT).show()
         } else {
             val capture = videoCapture
@@ -336,11 +344,60 @@ fun CameraScreen(
                 val started = viewModel.startVideoRecording(capture, context)
                 if (started) {
                     isRecording = true
+                    isPaused = false
                     Toast.makeText(context, "Начата запись видео", Toast.LENGTH_SHORT).show()
                 }
             } else {
                 videoPermissionLauncher.launch(videoPermissions.toTypedArray())
-            }
+}
+    }
+}
+
+@Composable
+fun PauseButtonWithPulse(
+    modifier: Modifier = Modifier,
+    isPaused: Boolean
+) {
+    // Анимация пульсации (от 1.0 до on 1.3)
+    val infiniteTransition = rememberInfiniteTransition(label = "pulseAnimation")
+    val pulseScale = infiniteTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+    
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        // Пульсирующий круг (только при активной паузе)
+        if (isPaused) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp) // Круг увеличен в 2 раза (было 32.dp)
+                    .background(
+                        Color.White.copy(alpha = 0.3f),
+                        CircleShape
+                    )
+                    .scale(pulseScale.value)
+            )
+        }
+        
+        // Значок паузы
+        PauseIcon()
+    }
+}
+
+    val togglePauseRecording = {
+        if (isRecording) {
+            viewModel.togglePauseRecording()
+            isPaused = viewModel.isPaused()
+            val message = if (isPaused) "Запись на паузе" else "Запись продолжена"
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -575,7 +632,8 @@ if (isRecording) {
     VideoRecordingIndicator(
         modifier = Modifier
             .align(Alignment.TopEnd)
-            .padding(end = 16.dp, top = 16.dp)
+            .padding(end = 16.dp, top = 16.dp),
+        isPaused = isPaused
     )
 }
                 }
@@ -635,6 +693,7 @@ if (isRecording) {
                                 ShutterButton(
                                     isVideoMode = isVideoMode,
                                     isRecording = isRecording,
+                                    isPaused = isPaused,
                                     enabled = !isVideoMode || videoCapture != null,
                                     onClick = {
                                         activeMode = CameraMode.entries[centeredModeIndex]
@@ -642,7 +701,6 @@ if (isRecording) {
                                             activeMode == CameraMode.SLOW_MO
                                         isTimelapseActive =
                                             activeMode == CameraMode.TIMELAPSE
-                                        isVideoMode = activeMode == CameraMode.VIDEO
                                         
                                         if (isVideoMode) {
                                             toggleVideoRecording()
@@ -655,10 +713,25 @@ if (isRecording) {
                                 
                                 // Значок паузы справа от кнопки во время записи видео
                                 if (isVideoMode && isRecording) {
-                                    PauseIcon(
+                                    Box(
                                         modifier = Modifier
-                                            .offset(x = 80.dp) // 40dp от края кнопки (72/2 + 40 = 36+40=76 + 4=80)
-                                    )
+                                            .offset(x = 80.dp)
+                                            .clip(CircleShape)
+                                            .clickable(
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = null
+                                            ) {
+                                                togglePauseRecording()
+                                            }
+                                            .padding(12.dp)
+                                            .size(64.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        PauseButtonWithPulse(
+                                            modifier = Modifier.matchParentSize(),
+                                            isPaused = isPaused
+                                        )
+                                    }
                                 }
                             }
                             lastPhotoUri?.let { uri ->
@@ -827,6 +900,7 @@ private fun CircularIconButton(
 private fun ShutterButton(
     isVideoMode: Boolean,
     isRecording: Boolean,
+    isPaused: Boolean = false,
     enabled: Boolean = true,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
@@ -841,9 +915,10 @@ private fun ShutterButton(
     // Анимация бегущего отрезка (10 секунд на полный оборот)
     val runningSegmentAngle = remember { Animatable(0f) }
     
-    // Запускаем бесконечную анимацию при записи
-    LaunchedEffect(isVideoMode && isRecording) {
-        if (isVideoMode && isRecording) {
+    // Запускаем/останавливаем анимацию в зависимости от состояния паузы
+    LaunchedEffect(isVideoMode, isRecording, isPaused) {
+        if (isVideoMode && isRecording && !isPaused) {
+            // Бесконечная анимация при записи и не на паузе
             while (true) {
                 runningSegmentAngle.animateTo(
                     targetValue = 360f,
@@ -854,10 +929,12 @@ private fun ShutterButton(
                 )
                 runningSegmentAngle.snapTo(0f)
             }
-        } else {
+        } else if (!isVideoMode || !isRecording) {
             // Если не записываем, сбрасываем угол
             runningSegmentAngle.snapTo(0f)
         }
+        // При паузе (isVideoMode && isRecording && isPaused) - ничего не делаем,
+        // угол остаётся на текущем значении
     }
     
     Box(
@@ -917,7 +994,7 @@ private fun ShutterButton(
                             val endY = center.y + (radius - segmentLength) * sin(angleRad)
                             
                             drawLine(
-                                color = Color.Black,
+                                color = Color.White,
                                 start = Offset(startX, startY),
                                 end = Offset(endX, endY),
                                 strokeWidth = segmentWidth,
@@ -986,38 +1063,62 @@ private fun RecordingIndicator(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun VideoRecordingIndicator(modifier: Modifier = Modifier) {
+private fun VideoRecordingIndicator(
+    modifier: Modifier = Modifier,
+    isPaused: Boolean
+) {
+    // Анимация мигания для индикатора
+    val infiniteTransition = rememberInfiniteTransition(label = "blinkAnimation")
+    val alphaAnimation = infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "blinkAlpha"
+    )
+    
+    // Цвет в зависимости от состояния
+    val indicatorColor = if (isPaused) Color.Yellow else Color(0xFFFF3B30)
+    
     Box(
         modifier = modifier
             .size(12.dp)
             .clip(CircleShape)
-            .background(Color(0xFFFF3B30), CircleShape)
+            .background(
+                indicatorColor.copy(alpha = alphaAnimation.value),
+                CircleShape
+            )
     )
 }
 
 @Composable
 private fun PauseIcon(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier.size(8.dp),
+        modifier = modifier.size(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Две вертикальные полоски
+        // Две вертикальные полоски (увеличены в 2 раза)
         Row(
             modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
+            horizontalArrangement = Arrangement.Center
         ) {
+            Spacer(modifier = Modifier.width(2.dp))
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(2.dp)
+                    .width(4.dp)
                     .background(Color.White)
             )
+            Spacer(modifier = Modifier.width(4.dp))
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(2.dp)
+                    .width(4.dp)
                     .background(Color.White)
             )
+            Spacer(modifier = Modifier.width(2.dp))
         }
     }
 }
