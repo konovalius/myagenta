@@ -378,9 +378,7 @@ private suspend fun AwaitPointerEventScope.awaitHoldOrRelease(
             val event = awaitPointerEvent()
             val change = event.changes.firstOrNull { it.id == pointerId }
             val delta = change?.positionChange()
-            val dx = delta?.x ?: 0f
-            val dy = delta?.y ?: 0f
-            val moved = delta == null || abs(dx) > touchSlop * 1.2f || abs(dy) > touchSlop * 2.0f
+            val moved = delta == null || abs(delta.x) > touchSlop || abs(delta.y) > touchSlop
             if (change == null || !change.pressed || moved) {
                 alive = false
             }
