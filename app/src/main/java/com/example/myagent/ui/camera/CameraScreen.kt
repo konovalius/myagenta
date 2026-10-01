@@ -2,6 +2,7 @@ package com.example.myagent.ui.camera
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCharacteristics
 import android.location.Location
 import android.net.Uri
 import android.util.Log
@@ -9,6 +10,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
@@ -756,6 +758,22 @@ fun CameraPreview(
             {
                 try {
                     val cameraProvider = cameraProviderFuture.get()
+
+                    cameraProvider.availableCameraInfos.forEachIndexed { index, info ->
+                        val zs = info.zoomState.value
+                        val focalLengths: FloatArray? = Camera2CameraInfo.from(info)
+                            .getCameraCharacteristic(
+                                CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS
+                            )
+                        Log.wtf(
+                            "CameraInfo",
+                            "Camera[$index] lensFacing=${info.lensFacing} " +
+                                "minZoomRatio=${zs?.minZoomRatio} " +
+                                "maxZoomRatio=${zs?.maxZoomRatio} " +
+                                "focalLengths=${focalLengths?.joinToString(",")}"
+                        )
+                    }
+
                     val preview = Preview.Builder().build().also {
                         it.setSurfaceProvider(previewView.surfaceProvider)
                     }
