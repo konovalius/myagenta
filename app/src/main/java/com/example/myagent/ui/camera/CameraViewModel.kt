@@ -49,6 +49,7 @@ class CameraViewModel @Inject constructor(
     val savedPhotoEvent: StateFlow<SavedPhotoEvent?> = _savedPhotoEvent.asStateFlow()
 
     private var activeRecording: Recording? = null
+    private var isPaused: Boolean = false
 
     var lat: Double? = null
         private set
@@ -233,6 +234,8 @@ class CameraViewModel @Inject constructor(
         if (activeRecording != null) {
             return false
         }
+        
+        isPaused = false
 
         val captureTime = LocalDateTime.now()
         val captureLat = lat
@@ -353,9 +356,23 @@ class CameraViewModel @Inject constructor(
     fun stopVideoRecording() {
         activeRecording?.stop()
         activeRecording = null
+        isPaused = false
     }
 
     fun isRecording(): Boolean = activeRecording != null
+
+    fun isPaused(): Boolean = isPaused
+
+    fun togglePauseRecording() {
+        val recording = activeRecording ?: return
+        if (isPaused) {
+            recording.resume()
+            isPaused = false
+        } else {
+            recording.pause()
+            isPaused = true
+        }
+    }
 
     private suspend fun findGeoFolderNear(lat: Double, lon: Double): MasterFolder? {
         val folders = masterFolderRepository.getAll().first()

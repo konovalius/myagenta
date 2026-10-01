@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.Media
+import com.example.myagent.ui.common.ShutterUi
 
 @Composable
 fun MediaViewerScreen(
@@ -180,26 +181,27 @@ fun MediaViewerScreen(
                     }
                 }
 
-                // Кнопка use (без изменений)
+                // Кнопка use — те же размеры и та же привязка, что кнопка съёмки:
+                // центр = (ширина / 2, низ экрана - ShutterUi.BottomPadding - ShutterUi.Size / 2)
                 onUseMedia?.let { useMedia ->
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 24.dp)
-                            .size(72.dp),
+                            .padding(bottom = ShutterUi.BottomPadding)
+                            .size(ShutterUi.Size),
                         contentAlignment = Alignment.Center
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(72.dp)
+                                .size(ShutterUi.Size)
                                 .clip(CircleShape)
-                                .border(4.dp, Color.White, CircleShape)
+                                .border(ShutterUi.BorderWidth, Color.White, CircleShape)
                                 .clickable { useMedia(currentUri) },
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(60.dp)
+                                    .size(ShutterUi.InnerSize)
                                     .clip(CircleShape)
                                     .background(Color.White, CircleShape),
                                 contentAlignment = Alignment.Center

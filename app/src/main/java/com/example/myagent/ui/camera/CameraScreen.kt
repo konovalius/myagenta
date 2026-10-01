@@ -111,6 +111,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import coil.compose.AsyncImage
+import com.example.myagent.ui.common.ShutterUi
 import com.example.myagent.ui.common.pressScale
 
 @Composable
@@ -350,59 +351,6 @@ fun CameraScreen(
             } else {
                 videoPermissionLauncher.launch(videoPermissions.toTypedArray())
 }
-    }
-}
-
-@Composable
-fun PauseButtonWithPulse(
-    modifier: Modifier = Modifier,
-    isPaused: Boolean
-) {
-    // Анимация пульсации: масштаб 0.6 -> 1.4, прозрачность 0.1 -> 0.6
-    val infiniteTransition = rememberInfiniteTransition(label = "pausePulse")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 1.4f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pauseScale"
-    )
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.1f,
-        targetValue = 0.6f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pauseAlpha"
-    )
-
-    // Чтение анимируемых значений в теле composable — подписывает композицию
-    // на пересчёт. graphicsLayer/alpha на этом узле не применяются, поэтому
-    // пульсация реализована через размер и цвет, вычисляемые в композиции.
-    val s = pulseScale
-    val a = pulseAlpha
-
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
-        // Пульсирующий круг (только при активной паузе)
-        if (isPaused) {
-            Box(
-                modifier = Modifier
-                    .size((64 * s).dp)
-                    .background(
-                        Color.White.copy(alpha = 0.9f * a),
-                        CircleShape
-                    )
-            )
-        }
-
-        // Значок паузы
-        PauseIcon()
     }
 }
 
@@ -691,7 +639,7 @@ if (isRecording) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 24.dp),
+                                .padding(ShutterUi.BottomPadding),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularIconButton(
@@ -725,24 +673,25 @@ if (isRecording) {
                                     onLongPress = {}
                                 )
                                 
-                                // Значок паузы справа от кнопки во время записи видео
+                                // Значок паузы справа от кнопки во время записи видео.
+                                // Размер узла строго ShutterUi.Size, иначе строка с кнопкой
+                                // съёмки становится выше и кнопка съёмки смещается вверх.
                                 if (isVideoMode && isRecording) {
                                     Box(
                                         modifier = Modifier
                                             .offset(x = 80.dp)
+                                            .size(ShutterUi.Size)
                                             .clip(CircleShape)
                                             .clickable(
                                                 interactionSource = remember { MutableInteractionSource() },
                                                 indication = null
                                             ) {
                                                 togglePauseRecording()
-                                            }
-                                            .padding(12.dp)
-                                            .size(64.dp),
+                                            },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         PauseButtonWithPulse(
-                                            modifier = Modifier.matchParentSize(),
+                                            modifier = Modifier.fillMaxSize(),
                                             isPaused = isPaused
                                         )
                                     }
@@ -953,10 +902,10 @@ private fun ShutterButton(
     
     Box(
         modifier = modifier
-            .size(72.dp)
+            .size(ShutterUi.Size)
             .pressScale(interactionSource)
             .clip(CircleShape)
-            .border(4.dp, shutterColor, CircleShape)
+            .border(ShutterUi.BorderWidth, shutterColor, CircleShape)
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -1029,7 +978,7 @@ private fun ShutterButton(
             // Видео режим до записи - белый круг с красной точкой
             Box(
                 modifier = Modifier
-                    .size(60.dp)
+                    .size(ShutterUi.InnerSize)
                     .clip(CircleShape)
                     .background(Color.White, CircleShape),
                 contentAlignment = Alignment.Center
@@ -1046,7 +995,7 @@ private fun ShutterButton(
             // Фото режим - белый круг
             Box(
                 modifier = Modifier
-                    .size(60.dp)
+                    .size(ShutterUi.InnerSize)
                     .clip(CircleShape)
                     .background(Color.White, CircleShape)
             )
@@ -1108,7 +1057,7 @@ private fun VideoRecordingIndicator(
 }
 
 @Composable
-private fun PauseIcon(modifier: Modifier = Modifier) {
+fun PauseIcon(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.size(16.dp),
         contentAlignment = Alignment.Center
