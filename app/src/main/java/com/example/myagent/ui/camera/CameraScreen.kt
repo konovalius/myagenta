@@ -358,13 +358,13 @@ fun PauseButtonWithPulse(
     modifier: Modifier = Modifier,
     isPaused: Boolean
 ) {
-    // Анимация пульсации (от 1.0 до on 1.3)
+    // Анимация пульсации (от 0.85 до 1.15)
     val infiniteTransition = rememberInfiniteTransition(label = "pulseAnimation")
     val pulseScale = infiniteTransition.animateFloat(
-        initialValue = 1.0f,
-        targetValue = 1.3f,
+        initialValue = 0.85f,
+        targetValue = 1.15f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            animation = tween(durationMillis = 800, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseScale"
