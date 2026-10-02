@@ -25,8 +25,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -40,6 +41,7 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -49,7 +51,6 @@ import androidx.compose.ui.unit.sp
 import com.example.myagent.ui.theme.GoshaSans
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
-import kotlin.math.ln
 import kotlin.math.roundToInt
 
 private val PillHeight = 32.dp
@@ -97,11 +98,11 @@ private const val PillFadeMillis = 120
  * 1x ↔ 2x, активное значение при этом стоит в светлом кружке.
  *
  * Удержание раскрывает капсулу вширь на всю ширину превью и показывает
- * линейку без подписей: деления на целых значениях и одна линия-указатель.
- * Пока палец не отпущен, протяжка едет ровно под пальцем, а после отпускания
- * зум защёлкивается на ближайшее деление. Шкала логарифмическая: при линейной
- * почти весь ход пальца уходил бы на телеобъектив и дальнего края диапазона
- * нельзя было бы достичь за один проход.
+ * линейку без подписей: деления с шагом 0.5x и одна линия-указатель.
+ * Указатель стоит ровно под пальцем, а значение зума считается от его
+ * позиции, поэтому линейка и протяжка не расходятся. Шкала линейная: пока
+ * палец не отпущен, идёт под ним, а после отпускания зум защёлкивается на
+ * ближайшее деление.
  */
 @Composable
 fun ZoomPill(
@@ -122,20 +123,33 @@ fun ZoomPill(
     // Состояние, а не снимок значения: линейка читает его прямо в offset, иначе
     // каждый кадр протяжки пересобирал бы дерево целиком.
     val magnificationState = rememberUpdatedState(magnification)
-    // Стартовое значение протяжки. Живое увеличение нельзя класть в ключи
-    // pointerInput: первый же кадр drag меняет его, жест пересоздаётся и
-    // отменяется посреди протяжки — палец уже на экране, второго down не будет.
-    val currentMagnification by rememberUpdatedState(magnificationState.value)
+    // Позиция пальца на линейке — по ней же считается зум, поэтому линейке она
+    // нужна как состояние по той же причине, что и увеличение выше.
+    var pointerX by remember { mutableFloatStateOf(0f) }
+    // Ширина капсулы прямо сейчас: в покое она узкая, а в развёрнутом виде
+    // занимает всё превью. Нужна, чтобы привести координату нажатия к линейке.
+    var pillWidthPx by remember { mutableIntStateOf(0) }
     var pendingTap by remember { mutableStateOf(false) }
     var pendingTapPos by remember { mutableStateOf(0f) }
 
     BoxWithConstraints(modifier = modifier) {
         val insetPx = with(density) { RulerInset.toPx() }
+        // Ширина превью — это ширина развёрнутой капсулы и длина линейки.
+        val fullWidthPx = constraints.maxWidth
         // Ход протяжки — длина шкалы между полями. Заодно это и длина самой
         // линейки, поэтому указатель едет ровно под пальцем. Ширину самой капсулы
         // брать нельзя: она анимируется, и первые кадры протяжки летели бы вразы
         // быстрее.
-        val travelPx = (constraints.maxWidth - 2f * insetPx).coerceAtLeast(1f)
+        val travelPx = (fullWidthPx - 2f * insetPx).coerceAtLeast(1f)
+
+        // Зум по позиции пальца на линейке. Шкала линейная, поэтому это просто
+        // доля пройденного хода в диапазоне.
+        fun valueAtRuler(x: Float): Float {
+            val range = currentRange
+            val start = minOf(range.start, range.endInclusive)
+            val end = maxOf(range.start, range.endInclusive)
+            return start + (x - insetPx) / travelPx * (end - start)
+        }
 
         val base = baseZoomPreset(currentPresets)
         val two = secondZoomPreset(currentPresets)
@@ -163,6 +177,7 @@ fun ZoomPill(
             .clip(PillShape)
             .background(if (isScrubbing) PillBackgroundHeld else PillBackgroundIdle)
             .height(PillHeight)
+            .onSizeChanged { pillWidthPx = it.width }
             .pointerInput(travelPx, ticks, currentPresets) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
@@ -176,18 +191,25 @@ fun ZoomPill(
                         pendingTap = true
                         return@awaitEachGesture
                     }
+                    // Позицию пальца надо привести к линейке. Капсула в покое
+                    // узкая и стоит по центру превью, а линейка занимает всю
+                    // ширину, поэтому при раскрытии левый край капсулы уезжает
+                    // влево и координата внутри капсули завышается. Приводим её
+                    // один раз, при нажатии, когда ширина ещё не меняется, а
+                    // дальше копим приращения: они от края не зависят.
+                    val shift = (fullWidthPx - pillWidthPx) / 2f
+                    var fingerX = (down.position.x + shift).coerceIn(insetPx, insetPx + travelPx)
+                    pointerX = fingerX
                     isScrubbing = true
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    var value = currentMagnification
+                    var value = valueAtRuler(fingerX)
+                    currentChange(value)
                     drag(down.id) { change ->
-                        val delta = change.positionChange().x
+                        fingerX = (fingerX + change.positionChange().x)
+                            .coerceIn(insetPx, insetPx + travelPx)
                         change.consume()
-                        value = scrubMagnification(
-                            magnification = value,
-                            deltaX = delta,
-                            travelPx = travelPx,
-                            range = currentRange
-                        )
+                        pointerX = fingerX
+                        value = valueAtRuler(fingerX)
                         currentChange(value)
                     }
                     currentChange(nearestTickValue(ticks, value))
@@ -215,7 +237,7 @@ fun ZoomPill(
                         range = currentRange,
                         insetPx = insetPx,
                         travelPx = travelPx,
-                        magnification = magnificationState
+                        pointerX = pointerX
                     )
                 } else {
                     Row(
@@ -346,8 +368,9 @@ private suspend fun AwaitPointerEventScope.awaitHoldOrRelease(
  * Линейка зума без подписей: деления и одна линия-указатель.
  *
  * Деления на месте, едет указатель, поэтому текущее увеличение читается по его
- * положению. Шкала логарифмическая, а её длина совпадает с ходом протяжки —
- * благодаря этому указатель идёт ровно под пальцем, без догоняющей анимации.
+ * положению. Шкала линейная: деления с шагом 0.5x стоят на равных расстояниях,
+ * а указатель приходит из той же координаты, из которой считается зум, — он
+ * стоит ровно под пальцем, без догоняющей анимации.
  */
 @Composable
 private fun ZoomRuler(
@@ -356,13 +379,13 @@ private fun ZoomRuler(
     range: ClosedFloatingPointRange<Float>,
     insetPx: Float,
     travelPx: Float,
-    magnification: State<Float>
+    pointerX: Float
 ) {
     val start = maxOf(minOf(range.start, range.endInclusive), 0.01f)
     val end = maxOf(range.start, range.endInclusive)
-    // Пикселей на единицу натурального логарифма: так деления раскладываются по
-    // шкале, а ход пальца ровно в тех же единицах ведёт увеличение.
-    val perLn = if (end > start) travelPx / ln(end / start) else 0f
+    // Пикселей на единицу зума: так деления раскладываются по шкале, а ход
+    // пальца ровно в тех же единицах ведёт увеличение.
+    val perUnit = if (end > start) travelPx / (end - start) else 0f
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -372,7 +395,7 @@ private fun ZoomRuler(
             val base = abs(tick - baseMagnification) < TickEpsilon
             Box(
                 modifier = Modifier
-                    .offset { IntOffset((insetPx + ln(tick / start) * perLn).roundToInt(), 0) }
+                    .offset { IntOffset((insetPx + (tick - start) * perUnit).roundToInt(), 0) }
                     .width(TickWidth)
                     .height(if (base) BaseTickHeight else TickHeight)
                     .background(if (base) BaseTickColor else TickColor)
@@ -381,10 +404,7 @@ private fun ZoomRuler(
         Box(
             modifier = Modifier
                 .offset {
-                    IntOffset(
-                        (insetPx + ln(magnification.value / start) * perLn).roundToInt(),
-                        0
-                    )
+                    IntOffset(pointerX.coerceIn(insetPx, insetPx + travelPx).roundToInt(), 0)
                 }
                 .width(IndicatorWidth)
                 .height(IndicatorHeight)
