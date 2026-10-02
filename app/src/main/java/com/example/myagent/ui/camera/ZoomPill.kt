@@ -76,6 +76,15 @@ private val BaseTickHeight = 14.dp
 private val IndicatorWidth = 2.dp
 private val IndicatorHeight = 16.dp
 
+/** Во столько раз выше деление под самим указателем. */
+private const val PeakHeightScale = 2f
+
+/** Сколько делений вокруг указателя остаются приподнятыми. */
+private const val PeakNeighbourTicks = 3
+
+/** Во столько раз выше деление у указателя, но не под ним. */
+private const val PeakNeighbourScale = 1.3f
+
 private val PillBackgroundIdle = Color.Black.copy(alpha = 0.55f)
 private val PillBackgroundHeld = Color.Black.copy(alpha = 0.72f)
 private val ActiveRed = Color(0xFFFF3B30)
@@ -418,9 +427,13 @@ private suspend fun AwaitPointerEventScope.awaitHoldOrRelease(
  * Линейка зума без подписей: деления и одна линия-указатель.
  *
  * Деления на месте, едет указатель, поэтому текущее увеличение читается по его
- * положению. Шкала линейная: деления с шагом 0.5x стоят на равных расстояниях,
- * а указатель приходит из той же координаты, из которой считается зум, — он
- * стоит ровно под пальцем, без догоняющей анимации.
+ * положению. Шкала линейная: деления стоят на равных расстояниях, а указатель
+ * приходит из той же координаты, из которой считается зум, — он стоит ровно под
+ * пальцем, без догоняющей анимации.
+ *
+ * Высота деления зависит от того, сколько делений до него до указателя: под ним
+ * самая высокая, рядом слегка приподнятая, дальше обычная. Так указатель виден
+ * даже на мелкой шкале, а «горка» едет вместе с ним.
  */
 @Composable
 private fun ZoomRuler(
@@ -436,18 +449,33 @@ private fun ZoomRuler(
     // Пикселей на единицу зума: так деления раскладываются по шкале, а ход
     // пальца ровно в тех же единицах ведёт увеличение.
     val perUnit = if (end > start) travelPx / (end - start) else 0f
+    // Деления равномерные, поэтому указателю достаточно знать свой номер:
+    // так «горка» считается по позиции пальца, без второго источника правды.
+    val pxPerTick = if (ticks.size > 1) travelPx / (ticks.size - 1) else 0f
+    val pointerTick = if (pxPerTick > 0f) {
+        ((pointerX - insetPx) / pxPerTick).roundToInt()
+    } else {
+        0
+    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.CenterStart
     ) {
-        ticks.forEach { tick ->
+        ticks.forEachIndexed { index, tick ->
             val base = abs(tick - baseMagnification) < TickEpsilon
+            val distance = abs(index - pointerTick)
+            val nearPointer = when {
+                distance == 0 -> TickHeight * PeakHeightScale
+                distance <= PeakNeighbourTicks -> TickHeight * PeakNeighbourScale
+                else -> TickHeight
+            }
+            val height = maxOf(nearPointer, if (base) BaseTickHeight else TickHeight)
             Box(
                 modifier = Modifier
                     .offset { IntOffset((insetPx + (tick - start) * perUnit).roundToInt(), 0) }
                     .width(TickWidth)
-                    .height(if (base) BaseTickHeight else TickHeight)
+                    .height(height)
                     .background(if (base) BaseTickColor else TickColor)
             )
         }

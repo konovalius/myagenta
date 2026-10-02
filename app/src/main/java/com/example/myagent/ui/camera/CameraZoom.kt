@@ -332,10 +332,10 @@ fun LensInfo.clampZoomRatio(ratio: Float): Float =
 /**
  * Деления линейки зума.
  *
- * Шаг 0.5x на всём диапазоне: шкала линейная, поэтому глазу нужно постоянное
- * расстояние между делениями, а не постоянный шаг на единицу зума. Значения
- * округляются до 0.1, чтобы накопление самого шага не давало 2.6000001 и
- * наложения делений друг на друга.
+ * Шкала линейная, поэтому расстояние между делениями должно быть постоянным, а
+ * шаг по значению — нет: на всём диапазоне ровно [ZoomTickGaps] промежутков, то
+ * есть линейка не зависит от того, 1x…10x это или 0.5x…2x. Шаг получается сам,
+ * а значения округляются до сотых, чтобы накопление шага не давало 2.6000001.
  *
  * Начало диапазона берётся как есть: если оно нецелое (например, 0.6x от
  * ультра-широкого объектива), то первое деление стоит ровно на левом краю шкалы,
@@ -344,19 +344,24 @@ fun LensInfo.clampZoomRatio(ratio: Float): Float =
 fun zoomTickValues(range: ClosedFloatingPointRange<Float>): List<Float> {
     val start = minOf(range.start, range.endInclusive)
     val end = maxOf(range.start, range.endInclusive)
+    if (end <= start) return listOf(start)
+    val step = (end - start) / ZoomTickGaps
     val ticks = mutableListOf<Float>()
-    var v = start
-    while (v <= end + ZoomTickEpsilon) {
-        ticks += (v * 10f).roundToInt() / 10f
-        v += ZoomTickStep
+    for (i in 0..ZoomTickGaps) {
+        // Умножаем на индекс, а не копим шаг: накопление уводило последние
+        // деления от расчётных мест.
+        val tick = ((start + i * step) * 100f).roundToInt() / 100f
+        // На узком диапазоне шаг меньше сотой, и соседние деления слились бы в
+        // одно — такое деление убираем, чтобы линейка не выглядела слипшейся.
+        if (ticks.isEmpty() || tick > ticks.last() + ZoomTickEpsilon) ticks += tick
     }
     return ticks
 }
 
-/** Шаг делений линейки зума. */
-private const val ZoomTickStep = 0.5f
+/** Промежутков между делениями линейки: делений получается на одно больше. */
+private const val ZoomTickGaps = 56
 
-/** Запас на округление шага, чтобы последнее деление не отвалилось. */
+/** Минимальный разрыв между делениями — меньший сливается в одно деление. */
 private const val ZoomTickEpsilon = 0.001f
 
 /**
