@@ -179,10 +179,8 @@ fun ZoomPill(
                     isScrubbing = true
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                     var value = currentMagnification
-                    var lastX = down.position.x
                     drag(down.id) { change ->
-                        val delta = change.position.x - lastX
-                        lastX = change.position.x
+                        val delta = change.positionChange().x
                         change.consume()
                         value = scrubMagnification(
                             magnification = value,
