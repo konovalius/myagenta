@@ -118,11 +118,15 @@ fun ZoomPill(
     magnification: Float,
     range: ClosedFloatingPointRange<Float>,
     onMagnificationChange: (Float) -> Unit,
+    onScrubbingChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     if (presets.isEmpty()) return
 
     var isScrubbing by remember { mutableStateOf(false) }
+    // Наружу нужно знать, раскрыта капсула или нет: по этому флагу превью
+    // показывает значение зума по центру.
+    val currentScrubbing by rememberUpdatedState(onScrubbingChange)
     val haptics = LocalHapticFeedback.current
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
@@ -142,7 +146,14 @@ fun ZoomPill(
     // занимает всё превью. Нужна, чтобы привести координату нажатия к линейке.
     var pillWidthPx by remember { mutableIntStateOf(0) }
     var pendingTap by remember { mutableStateOf(false) }
-    var pendingTapPos by remember { mutableStateOf(0f) }
+    var pendingTapPos by remember { mutableFloatStateOf(0f) }
+
+    // Раскрытие меняем только здесь, чтобы наружу уходило ровно то же,
+    // что видит сама капсула.
+    fun setScrubbing(value: Boolean) {
+        isScrubbing = value
+        currentScrubbing(value)
+    }
 
     BoxWithConstraints(modifier = modifier) {
         val insetPx = with(density) { RulerInset.toPx() }
@@ -212,7 +223,7 @@ fun ZoomPill(
                     val shift = (fullWidthPx - pillWidthPx) / 2f
                     var fingerX = (down.position.x + shift).coerceIn(insetPx, insetPx + travelPx)
                     pointerX = fingerX
-                    isScrubbing = true
+                    setScrubbing(true)
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                     // Под пальцем может быть совсем другое значение, чем текущее,
                     // поэтому прыгать на него сразу нельзя — едем туда сами за
@@ -247,7 +258,7 @@ fun ZoomPill(
                     openZoomJob?.cancel()
                     openZoomJob = null
                     currentChange(nearestTickValue(ticks, value))
-                    isScrubbing = false
+                    setScrubbing(false)
                 }
             },
             contentAlignment = Alignment.Center
@@ -291,7 +302,7 @@ fun ZoomPill(
                                     .pointerInput(index, count, zoomValNow) {
                                         detectTapGestures(
                                             onLongPress = {
-                                                isScrubbing = true
+                                                setScrubbing(true)
                                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                             },
                                             onTap = {
@@ -305,7 +316,7 @@ fun ZoomPill(
                                                             when (index) {
                                                                 0 -> currentChange(1f)
                                                                 1 -> {
-                                                                    isScrubbing = true
+                                                                    setScrubbing(true)
                                                                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                                                 }
                                                                 2 -> currentChange(2f)
@@ -315,7 +326,7 @@ fun ZoomPill(
                                                                 0 -> currentChange(1f)
                                                                 1 -> currentChange(2f)
                                                                 2 -> {
-                                                                    isScrubbing = true
+                                                                    setScrubbing(true)
                                                                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                                                 }
                                                             }
@@ -324,7 +335,7 @@ fun ZoomPill(
                                                     else -> {
                                                         if (index == 0) currentChange(1f)
                                                         else {
-                                                            isScrubbing = true
+                                                            setScrubbing(true)
                                                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                                         }
                                                     }

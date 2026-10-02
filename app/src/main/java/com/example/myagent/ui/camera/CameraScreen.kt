@@ -2,7 +2,6 @@ package com.example.myagent.ui.camera
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.hardware.camera2.CameraCharacteristics
 import android.location.Location
 import android.net.Uri
 import android.util.Log
@@ -10,12 +9,13 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
+import androidx.camera.core.ZoomState
 import android.util.Rational
 import androidx.camera.core.impl.utils.AspectRatioUtil
 import androidx.camera.core.impl.utils.CameraOrientationUtil
@@ -77,9 +77,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -103,11 +105,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.myagent.ui.theme.GoshaSans
 import kotlin.math.cos
 import kotlin.math.sin
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Observer
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -225,6 +230,19 @@ fun CameraScreen(
     var activeMode by remember { mutableStateOf(CameraMode.PHOTO) }
     var isRecording by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
+
+    // Ряд пресетов зума, посчитанный из реально доступных объективов.
+    var zoomPresets by remember { mutableStateOf<List<ZoomPreset>>(emptyList()) }
+
+    // Непрерывное увеличение относительно базового объектива — единственный
+    // источник правды по зуму. Дискретный пресет задаёт его значение, пинч
+    // двигает между шагами, поэтому оно не обязано совпадать с подписью
+    // какого-либо чипа. Объектив и коэффициент для камеры выводятся из него.
+    var zoomMagnification by remember { mutableFloatStateOf(1f) }
+    // Капсула зума раскрыта — пока это так, по центру превью висит крупное
+    // значение увеличения.
+    var isZoomScrubbing by remember { mutableStateOf(false) }
+    var boundCamera by remember { mutableStateOf<Camera?>(null) }
     
     // Определяем isVideoMode на основе текущего выбранного режима
     val isVideoMode = remember(centeredModeIndex) {
@@ -305,6 +323,92 @@ fun CameraScreen(
         )
     }
 
+    // Разведка объективов: определяем, какие камеры реально отдал CameraX,
+    // и строим из них ряд пресетов зума. Пересчитывается при смене направления.
+    LaunchedEffect(isFrontCamera) {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        cameraProviderFuture.addListener(
+            {
+                val selector = if (isFrontCamera) {
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+                } else {
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                }
+                runCatching {
+                    val provider = cameraProviderFuture.get()
+                    val lensFacing = selector.lensFacing ?: CameraSelector.LENS_FACING_BACK
+                    val manager = cameraManagerFrom(context)
+                    val baseId = selector.resolveCameraId(provider.availableCameraInfos)
+                    val lenses = manager?.lensesFor(lensFacing).orEmpty().filter { lens ->
+                        runCatching {
+                            provider.hasCamera(lensCameraSelector(selector, lens.cameraId))
+                        }.getOrDefault(false)
+                    }
+                    val baseLens = lenses.firstOrNull { it.cameraId == baseId }
+                        ?: lenses.firstOrNull()
+                    val presets = baseLens?.let { buildZoomPresets(lenses, it) } ?: emptyList()
+                    zoomPresets = presets
+                    zoomMagnification = presets
+                        .firstOrNull { it.isBaseLens }
+                        ?.magnification
+                        ?: 1f
+                }.onFailure {
+                    Log.e("CameraZoom", "Не удалось разобрать объективы", it)
+                }
+            },
+            ContextCompat.getMainExecutor(context)
+        )
+    }
+
+// Пул объективов берётся из самих пресетов: отдельная копия в состоянии
+    // рано или поздно рассинхронизируется с рядом.
+    val lensPool = remember(zoomPresets) {
+        zoomPresets.map { it.lens }.distinctBy { it.cameraId }
+    }
+    val baseLens = remember(zoomPresets) {
+        zoomPresets.firstOrNull { it.isBaseLens }?.lens
+    }
+
+    // Пинч двигает непрерывное увеличение, а объектив и коэффициент зума на
+    // нём выводятся отсюда. Переход между объективами поэтому двусторонний:
+    // и уход ниже 1x на широкий, и возврат обратно на основной.
+    val resolvedZoom = remember(lensPool, baseLens, zoomMagnification) {
+        baseLens?.let { resolveZoom(lensPool, it, zoomMagnification) }
+    }
+    val appliedZoomRatio = resolvedZoom?.zoomRatio ?: 1f
+    val magnificationRange = remember(lensPool, baseLens) {
+        baseLens?.let { zoomMagnificationRange(lensPool, it) } ?: (1f..1f)
+    }
+
+    // Объектив, отличный от базового, требует перебиндовки камеры. На самом
+    // базовом перебиндовываться вхолостую незачем.
+    val lensCameraId = resolvedZoom
+        ?.lens
+        ?.takeIf { baseLens == null || it.cameraId != baseLens.cameraId }
+        ?.cameraId
+
+// Цифровой зум применяется к текущей камере. Ключ включает boundCamera,
+    // поэтому после каждого перебиндинга (смена объектива, флип, режим) зум
+    // восстанавливается, а не сбрасывается в 1x.
+    LaunchedEffect(boundCamera, appliedZoomRatio) {
+        boundCamera?.cameraControl?.setZoomRatio(appliedZoomRatio)
+    }
+
+    // Фактический коэффициент зума, который применил HAL. Лог нужен, чтобы
+    // проверять пресеты по цифрам, а не на глаз.
+    DisposableEffect(boundCamera) {
+        val zoomState = boundCamera?.cameraInfo?.zoomState
+        val observer = Observer<ZoomState> { state ->
+            Log.wtf(
+                "CameraZoom",
+                "zoom=${state.zoomRatio} min=${state.minZoomRatio} max=${state.maxZoomRatio}"
+            )
+        }
+        zoomState?.observeForever(observer)
+        onDispose { zoomState?.removeObserver(observer) }
+    }
+
+
     val capturePhoto = {
         val capture = imageCapture
         if (capture == null) {
@@ -325,7 +429,7 @@ fun CameraScreen(
                 val started = viewModel.startVideoRecording(capture, context)
                 if (started) {
                     isRecording = true
-                    Toast.makeText(context, "Начата запись видео", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "запись видео", Toast.LENGTH_SHORT).show()
                 }
             }
         } else {
@@ -411,16 +515,47 @@ fun CameraScreen(
                         .fillMaxWidth()
                         .aspectRatio(3f / 4f)
                         .background(Color.Black)
+                        // Пинч зумит превью. Жест отключён, пока правится
+                        // ориентир-фото: там щипок масштабирует саму картинку,
+                        // и два жеста на одном экране конфликтовали бы.
+                        .then(
+                            if (isEditingOverlay) {
+                                Modifier
+                            } else {
+                                Modifier.pointerInput(boundCamera, magnificationRange) {
+                                    detectTransformGestures(panZoomLock = true) { _, _, gestureZoom, _ ->
+                                        // Кламп по суммарному диапазону всех
+                                        // объективов: увеличение не уезжает за
+                                        // пределы, поэтому подсветка чипа не
+                                        // залипает на краю ряда.
+                                        zoomMagnification = (zoomMagnification * gestureZoom)
+                                            .coerceIn(magnificationRange)
+                                    }
+                                }
+                            }
+                        )
                 ) {
                     CameraPreview(
                         cameraSelector = cameraSelector,
                         isVideoMode = isVideoMode,
-                        onCameraReady = { imgCapture, vidCapture ->
+                        lensCameraId = lensCameraId,
+                        onCameraReady = { imgCapture, vidCapture, camera ->
                             imageCapture = imgCapture
                             videoCapture = vidCapture
-                            Log.wtf("CameraPreview", "onCameraReady called: videoCapture=${vidCapture != null}")
+                            boundCamera = camera
+                            Log.wtf("CameraPreview", "onCameraReady called: videoCapture=${vidCapture != null} camera=${camera != null}")
+                        },
+onBindFailed = {
+                            // Откат на основной объектив: он есть всегда.
+                            zoomPresets.firstOrNull { it.isBaseLens }?.let {
+                                zoomMagnification = it.magnification
+                            }
+                            boundCamera = null
+                            Toast.makeText(context, "Объектив недоступен", Toast.LENGTH_SHORT)
+                                .show()
                         }
                     )
+
                 
                 referencePhotoUri?.let { uri ->
                     Box(
@@ -592,6 +727,17 @@ val editInteraction = remember { MutableInteractionSource() }
                         }
                     }
                 }
+// Пока тянут линейку, крупное значение стоит по центру кадра: цифры
+                    // читаются сразу, не надо искать кончик указателя.
+                    if (isZoomScrubbing) {
+                        Text(
+                            text = "%.1fx".format(zoomMagnification),
+                            fontSize = 48.sp,
+                            fontFamily = GoshaSans,
+                            color = Color.White,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
 if (isRecording) {
     VideoRecordingIndicator(
         modifier = Modifier
@@ -600,6 +746,19 @@ if (isRecording) {
         isPaused = isPaused
     )
 }
+                    // Капсула зума по нижнему краю превью. В покое показывает «1x» и текущее
+                    // значение; удержание раскрывает весь ряд пресетов, и пока
+                    // палец не отпущен, протяжка водит зум непрерывно.
+                    ZoomPill(
+                        presets = zoomPresets,
+                        magnification = zoomMagnification,
+                        range = magnificationRange,
+                        onMagnificationChange = { zoomMagnification = it },
+                        onScrubbingChange = { isZoomScrubbing = it },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 24.dp)
+                    )
                 }
                 // Зона 3: нижняя полоса
                 Box(
@@ -727,7 +886,9 @@ if (isRecording) {
 fun CameraPreview(
     cameraSelector: CameraSelector,
     isVideoMode: Boolean,
-    onCameraReady: (ImageCapture, VideoCapture<Recorder>?) -> Unit = { _, _ -> }
+    lensCameraId: String?,
+    onCameraReady: (ImageCapture, VideoCapture<Recorder>?, Camera?) -> Unit = { _, _, _ -> },
+    onBindFailed: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -752,27 +913,12 @@ fun CameraPreview(
         Log.wtf("CameraPreview", "VideoCapture created and ready: ${videoCapture != null}")
     }
 
-    LaunchedEffect(cameraSelector, isVideoMode) {
+    LaunchedEffect(cameraSelector, isVideoMode, lensCameraId) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener(
             {
                 try {
                     val cameraProvider = cameraProviderFuture.get()
-
-                    cameraProvider.availableCameraInfos.forEachIndexed { index, info ->
-                        val zs = info.zoomState.value
-                        val focalLengths: FloatArray? = Camera2CameraInfo.from(info)
-                            .getCameraCharacteristic(
-                                CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS
-                            )
-                        Log.wtf(
-                            "CameraInfo",
-                            "Camera[$index] lensFacing=${info.lensFacing} " +
-                                "minZoomRatio=${zs?.minZoomRatio} " +
-                                "maxZoomRatio=${zs?.maxZoomRatio} " +
-                                "focalLengths=${focalLengths?.joinToString(",")}"
-                        )
-                    }
 
                     val preview = Preview.Builder().build().also {
                         it.setSurfaceProvider(previewView.surfaceProvider)
@@ -799,15 +945,19 @@ fun CameraPreview(
                             .build()
                     }
                     
+                    val selector = lensCameraId?.let { lensCameraSelector(cameraSelector, it) }
+                        ?: cameraSelector
+
                     cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
+                    val camera = cameraProvider.bindToLifecycle(
                         lifecycleOwner,
-                        cameraSelector,
+                        selector,
                         useCaseGroup
                     )
-                    onCameraReady(imageCapture, videoCapture)
+                    onCameraReady(imageCapture, videoCapture, camera)
                 } catch (e: Exception) {
                     Log.e("CameraPreview", "Не удалось открыть камеру", e)
+                    onBindFailed()
                 }
             },
             ContextCompat.getMainExecutor(context)
@@ -822,6 +972,14 @@ fun CameraPreview(
     )
 }
 
+/**
+ * Селектор конкретного физического обътива.
+ *
+ * Широкий угол на части устройств недостижим через [androidx.camera.core.CameraControl.setZoomRatio]
+ * (там minZoomRatio = 1.0), поэтому объектив выбирается прямой привязкой к cameraId.
+ * Направление камеры наследуется от базового селектора, чтобы wide нельзя было выбрать
+ * на фронтальной камере.
+ */
 @Composable
 private fun LastPhotoThumbnail(
     uri: Uri,
