@@ -732,9 +732,9 @@ val editInteraction = remember { MutableInteractionSource() }
                     if (isZoomScrubbing) {
                         Text(
                             text = "%.1fx".format(zoomMagnification),
-                            fontSize = 48.sp,
+                            fontSize = 36.sp,
                             fontFamily = GoshaSans,
-                            color = Color.White,
+                            color = Color.White.copy(alpha = 0.6f),
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
@@ -758,6 +758,7 @@ if (isRecording) {
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 24.dp)
+                            .padding(horizontal = 24.dp)
                     )
                 }
                 // Зона 3: нижняя полоса

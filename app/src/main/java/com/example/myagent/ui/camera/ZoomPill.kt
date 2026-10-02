@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -58,12 +59,15 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private val PillHeight = 32.dp
+private val PillHeight = 28.dp
 private val PillShape = RoundedCornerShape(percent = 50)
 
 private val PillSidePadding = 4.dp
-private val ValueCircleSize = 24.dp
+private val ValueCircleSize = 22.dp
 private val ValueChipPadding = 2.dp
+
+/** Промежуток между значениями в свёрнутой капсуле. */
+private val ChipSpacing = 16.dp
 
 private val RulerInset = 8.dp
 private val TickWidth = 2.dp
@@ -81,7 +85,7 @@ private val IdleValueColor = Color.White.copy(alpha = 0.85f)
 private val TickColor = Color.White.copy(alpha = 0.35f)
 private val BaseTickColor = Color.White.copy(alpha = 0.6f)
 
-private const val ValueFontSize = 12
+private const val ValueFontSize = 11
 
 /** Насколько деление должно совпасть с базой, чтобы считаться базовым. */
 private const val TickEpsilon = 0.01f
@@ -289,6 +293,7 @@ fun ZoomPill(
                         modifier = Modifier
                             .fillMaxHeight()
                             .padding(horizontal = PillSidePadding),
+                        horizontalArrangement = Arrangement.spacedBy(ChipSpacing),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         val zoomValNow = magnificationState.value
