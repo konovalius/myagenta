@@ -2,6 +2,8 @@ package com.example.myagent.ui.camera
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -30,6 +32,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -49,6 +52,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myagent.ui.theme.GoshaSans
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -90,6 +95,9 @@ private const val PresetSnapEpsilon = 0.005f
 private const val PillExpandMillis = 200
 private const val PillFadeMillis = 120
 
+/** Сколько едет увеличение от текущего значения к тому, что оказалось под пальцем. */
+private const val OpenZoomMillis = 250
+
 /**
  * Капсула зума.
  *
@@ -117,6 +125,10 @@ fun ZoomPill(
     var isScrubbing by remember { mutableStateOf(false) }
     val haptics = LocalHapticFeedback.current
     val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
+    // Доводка увеличения при раскрытии. Живёт отдельно от жеста: указатель
+    // сразу встаёт под палец, а значение ещё едет к нему.
+    var openZoomJob by remember { mutableStateOf<Job?>(null) }
     val currentChange by rememberUpdatedState(onMagnificationChange)
     val currentPresets by rememberUpdatedState(presets)
     val currentRange by rememberUpdatedState(range)
@@ -202,9 +214,29 @@ fun ZoomPill(
                     pointerX = fingerX
                     isScrubbing = true
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    var value = valueAtRuler(fingerX)
-                    currentChange(value)
+                    // Под пальцем может быть совсем другое значение, чем текущее,
+                    // поэтому прыгать на него сразу нельзя — едем туда сами за
+                    // OpenZoomMillis. Указатель при этом уже под пальцем.
+                    var value = magnificationState.value
+                    val target = valueAtRuler(fingerX)
+                    openZoomJob?.cancel()
+                    openZoomJob = scope.launch {
+                        val anim = Animatable(value)
+                        anim.animateTo(
+                            targetValue = target,
+                            animationSpec = tween(
+                                durationMillis = OpenZoomMillis,
+                                easing = FastOutSlowInEasing
+                            )
+                        ) {
+                            value = this.value
+                            currentChange(value)
+                        }
+                    }
                     drag(down.id) { change ->
+                        // Палец тронулся — доводка больше не нужна, зум идёт сам.
+                        openZoomJob?.cancel()
+                        openZoomJob = null
                         fingerX = (fingerX + change.positionChange().x)
                             .coerceIn(insetPx, insetPx + travelPx)
                         change.consume()
@@ -212,6 +244,8 @@ fun ZoomPill(
                         value = valueAtRuler(fingerX)
                         currentChange(value)
                     }
+                    openZoomJob?.cancel()
+                    openZoomJob = null
                     currentChange(nearestTickValue(ticks, value))
                     isScrubbing = false
                 }
