@@ -122,6 +122,10 @@ fun ZoomPill(
     // Состояние, а не снимок значения: линейка читает его прямо в offset, иначе
     // каждый кадр протяжки пересобирал бы дерево целиком.
     val magnificationState = rememberUpdatedState(magnification)
+    // Стартовое значение протяжки. Живое увеличение нельзя класть в ключи
+    // pointerInput: первый же кадр drag меняет его, жест пересоздаётся и
+    // отменяется посреди протяжки — палец уже на экране, второго down не будет.
+    val currentMagnification by rememberUpdatedState(magnificationState.value)
     var pendingTap by remember { mutableStateOf(false) }
     var pendingTapPos by remember { mutableStateOf(0f) }
 
@@ -159,7 +163,7 @@ fun ZoomPill(
             .clip(PillShape)
             .background(if (isScrubbing) PillBackgroundHeld else PillBackgroundIdle)
             .height(PillHeight)
-            .pointerInput(travelPx, ticks, currentPresets, magnificationState.value) {
+            .pointerInput(travelPx, ticks, currentPresets) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     // Проверим, куда попал тап (по индексу в collapsedLabels)
@@ -174,7 +178,7 @@ fun ZoomPill(
                     }
                     isScrubbing = true
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    var value = magnificationState.value
+                    var value = currentMagnification
                     var lastX = down.position.x
                     drag(down.id) { change ->
                         val delta = change.position.x - lastX
