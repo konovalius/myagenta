@@ -13,9 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -84,6 +83,7 @@ fun MasterFolderContentScreen(
     var selectedIds by remember { mutableStateOf(emptySet<String>()) }
     var mediaToDelete by remember { mutableStateOf<Media?>(null) }
     var showMediaDeleteDialog by remember { mutableStateOf(false) }
+    var expandedSubfolderUuid by remember { mutableStateOf<String?>(null) }
 
     // Группируем медиа: одиночные (subfolderUuid == null) и по подпапкам
     val singleMedia = remember(media) { media.filter { it.subfolderUuid == null } }
@@ -92,20 +92,50 @@ fun MasterFolderContentScreen(
             .filter { it.subfolderUuid != null }
             .groupBy { it.subfolderUuid!! }
     }
+    // Индекс каждого медиа в общем списке папки — для открытия в просмотрщике
+    val indexByUuid = remember(media) {
+        media.withIndex().associate { (index, item) -> item.uuid to index }
+    }
 
-    val gridItems = remember(singleMedia, mediaBySubfolder, subfolders) {
-        val items = mutableListOf<GridItem>()
-        // Добавляем одиночные медиа
-        singleMedia.forEachIndexed { index, media ->
-            items.add(GridItem.Single(media, index))
-        }
-        // Добавляем подпапки (по одной ячейке на подпапку)
+    // Ряды по 3 ячейки; развёрнутая подпапка добавляет свои кадры отдельными рядами
+    val gridRows = remember(
+        singleMedia,
+        mediaBySubfolder,
+        subfolders,
+        indexByUuid,
+        expandedSubfolderUuid
+    ) {
+        val base = mutableListOf<GridItem>()
+        singleMedia.forEach { base.add(GridItem.Single(it, indexByUuid[it.uuid] ?: 0)) }
         subfolders.forEach { subfolder ->
             val subfolderMedia = mediaBySubfolder[subfolder.uuid] ?: emptyList()
-            val lastMedia = subfolderMedia.maxByOrNull { it.createdAt }
-            items.add(GridItem.SubfolderItem(subfolder, lastMedia))
+            base.add(GridItem.SubfolderItem(subfolder, subfolderMedia.maxByOrNull { it.createdAt }))
         }
-        items
+
+        val result = mutableListOf<List<GridItem>>()
+        var current = mutableListOf<GridItem>()
+        fun flush() {
+            if (current.isNotEmpty()) {
+                result.add(current)
+                current = mutableListOf()
+            }
+        }
+
+        base.forEach { item ->
+            current.add(item)
+            if (current.size == 3) flush()
+            val isExpanded = item is GridItem.SubfolderItem &&
+                item.subfolder.uuid == expandedSubfolderUuid
+            if (isExpanded) {
+                flush()
+                val inside = (mediaBySubfolder[item.subfolder.uuid] ?: emptyList())
+                    .sortedBy { it.createdAt }
+                    .map { GridItem.Single(it, indexByUuid[it.uuid] ?: 0) }
+                inside.chunked(3).forEach { chunk -> result.add(chunk) }
+            }
+        }
+        flush()
+        result
     }
 
     GradientBackground {
@@ -197,7 +227,7 @@ fun MasterFolderContentScreen(
                 )
             }
 
-            if (gridItems.isEmpty()) {
+            if (gridRows.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -213,67 +243,85 @@ fun MasterFolderContentScreen(
                     )
                 }
             } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
+                LazyColumn(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
                         .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(gridItems, key = { item ->
-                        when (item) {
-                            is GridItem.Single -> item.media.uuid
-                            is GridItem.SubfolderItem -> "subfolder_${item.subfolder.uuid}"
-                        }
-                    }) { item ->
-                        when (item) {
-                            is GridItem.Single -> {
-                                MediaGridItem(
-                                    media = item.media,
-                                    folderUuid = folder?.uuid ?: "",
-                                    index = item.index,
-                                    onOpenPhoto = { uri, folderUuid, idx ->
-                                        onOpenMedia(uri, folderUuid, idx)
-                                    },
-                                    onOpenVideo = onOpenVideo,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(1f),
-                                    selectionMode = isMergeMode,
-                                    isSelected = item.media.uuid in selectedIds,
-                                    onClickOverride = when {
-                                        isMergeMode -> {
-                                            {
-                                                selectedIds = if (item.media.uuid in selectedIds) {
-                                                    selectedIds - item.media.uuid
-                                                } else {
-                                                    selectedIds + item.media.uuid
-                                                }
-                                            }
-                                        }
-                                        deleteMode -> {
-                                            {
-                                                viewModel.deleteMedia(item.media)
-                                                Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                        else -> null
-                                    }
-                                )
+                    items(gridRows, key = { row ->
+                        row.joinToString("|") { item ->
+                            when (item) {
+                                is GridItem.Single -> item.media.uuid
+                                is GridItem.SubfolderItem -> "subfolder_${item.subfolder.uuid}"
                             }
-                            is GridItem.SubfolderItem -> {
-                                SubfolderGridItem(
-                                    subfolder = item.subfolder,
-                                    lastMedia = item.lastMedia,
-                                    onClick = {
-                                        Log.wtf("Subfolder", "Clicked: ${item.subfolder.uuid}")
-                                    },
+                        }
+                    }) { row ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            row.forEach { item ->
+                                Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
+                                        .weight(1f)
                                         .aspectRatio(1f)
-                                )
+                                ) {
+                                    when (item) {
+                                        is GridItem.Single -> {
+                                            MediaGridItem(
+                                                media = item.media,
+                                                folderUuid = folder?.uuid ?: "",
+                                                index = item.index,
+                                                onOpenPhoto = { uri, folderUuid, idx ->
+                                                    onOpenMedia(uri, folderUuid, idx)
+                                                },
+                                                onOpenVideo = onOpenVideo,
+                                                modifier = Modifier.fillMaxSize(),
+                                                selectionMode = isMergeMode,
+                                                isSelected = item.media.uuid in selectedIds,
+                                                onClickOverride = when {
+                                                    isMergeMode -> {
+                                                        {
+                                                            selectedIds = if (item.media.uuid in selectedIds) {
+                                                                selectedIds - item.media.uuid
+                                                            } else {
+                                                                selectedIds + item.media.uuid
+                                                            }
+                                                        }
+                                                    }
+                                                    deleteMode -> {
+                                                        {
+                                                            viewModel.deleteMedia(item.media)
+                                                            Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    }
+                                                    else -> null
+                                                }
+                                            )
+                                        }
+                                        is GridItem.SubfolderItem -> {
+                                            SubfolderGridItem(
+                                                subfolder = item.subfolder,
+                                                lastMedia = item.lastMedia,
+                                                onClick = {
+                                                    Log.wtf("Subfolder", "Clicked: ${item.subfolder.uuid}")
+                                                    expandedSubfolderUuid =
+                                                        if (expandedSubfolderUuid == item.subfolder.uuid) {
+                                                            null
+                                                        } else {
+                                                            item.subfolder.uuid
+                                                        }
+                                                },
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            repeat(3 - row.size) {
+                                Spacer(Modifier.weight(1f))
                             }
                         }
                     }
