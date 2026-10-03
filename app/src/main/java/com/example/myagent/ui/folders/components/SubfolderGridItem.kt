@@ -39,11 +39,11 @@ fun SubfolderGridItem(
             .aspectRatio(1f)
             .clickable(onClick = onClick)
     ) {
-        // Тень - сдвинутая копия ячейки (вниз-вправо на 6dp)
+        // Тень - сдвинутая копия ячейки (вниз-влево на 6dp)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 6.dp, top = 6.dp)
+                .padding(end = 6.dp, top = 6.dp)
                 .background(Color.White.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
         )
 
@@ -51,7 +51,7 @@ fun SubfolderGridItem(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(end = 6.dp, bottom = 6.dp)
+                .padding(start = 6.dp, bottom = 6.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color.Black)
         ) {
