@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
@@ -49,7 +51,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myagent.ui.theme.GoshaSans
@@ -72,18 +73,14 @@ private val ChipSpacing = 16.dp
 private val RulerInset = 8.dp
 private val TickWidth = 2.dp
 private val TickHeight = 10.dp
-private val BaseTickHeight = 14.dp
 private val IndicatorWidth = 2.dp
 private val IndicatorHeight = 16.dp
 
-/** Во столько раз выше деление под самим указателем. */
-private const val PeakHeightScale = 2f
+/** Насколько обычное деление вырастает под указателем: 2 даёт тройную высоту. */
+private const val PeakHeightBoost = 2f
 
-/** Сколько делений вокруг указателя остаются приподнятыми. */
-private const val PeakNeighbourTicks = 3
-
-/** Во столько раз выше деление у указателя, но не под ним. */
-private const val PeakNeighbourScale = 1.3f
+/** Доля высоты капсулы, до которой дотягивается вершина горы. */
+private const val PeakHeightLimit = 0.88f
 
 private val PillBackgroundIdle = Color.Black.copy(alpha = 0.55f)
 private val PillBackgroundHeld = Color.Black.copy(alpha = 0.72f)
@@ -426,14 +423,18 @@ private suspend fun AwaitPointerEventScope.awaitHoldOrRelease(
 /**
  * Линейка зума без подписей: деления и одна линия-указатель.
  *
+ * Всё рисуется одним [Canvas], а не пачкой композитных элементов: пока едет
+ * палец, деления пересчитываются каждый кадр, и57 отдельных узлов композиции
+ * обходятся слишком дорого — на линейке заметно лагало.
+ *
  * Деления на месте, едет указатель, поэтому текущее увеличение читается по его
  * положению. Шкала линейная: деления стоят на равных расстояниях, а указатель
  * приходит из той же координаты, из которой считается зум, — он стоит ровно под
  * пальцем, без догоняющей анимации.
  *
- * Высота деления зависит от того, сколько делений до него до указателя: под ним
- * самая высокая, рядом слегка приподнятая, дальше обычная. Так указатель виден
- * даже на мелкой шкале, а «горка» едет вместе с ним.
+ * Высота деления плавно зависит от расстояния до указателя: чем ближе, тем выше,
+ * к краям спадает до обычной. Получается холм, который едет вместе с пальцем и
+ * показывает, где сейчас зум, без ступенек.
  */
 @Composable
 private fun ZoomRuler(
@@ -449,44 +450,44 @@ private fun ZoomRuler(
     // Пикселей на единицу зума: так деления раскладываются по шкале, а ход
     // пальца ровно в тех же единицах ведёт увеличение.
     val perUnit = if (end > start) travelPx / (end - start) else 0f
-    // Деления равномерные, поэтому указателю достаточно знать свой номер:
-    // так «горка» считается по позиции пальца, без второго источника правды.
-    val pxPerTick = if (ticks.size > 1) travelPx / (ticks.size - 1) else 0f
-    val pointerTick = if (pxPerTick > 0f) {
-        ((pointerX - insetPx) / pxPerTick).roundToInt()
-    } else {
-        0
-    }
+    val centerX = pointerX.coerceIn(insetPx, insetPx + travelPx)
+    // Половина хода — это расстояние, на котором горка спадает до обычной
+    // высоты: у краёв линейки она уже не читается.
+    val halfTravel = travelPx / 2f
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        ticks.forEachIndexed { index, tick ->
-            val base = abs(tick - baseMagnification) < TickEpsilon
-            val distance = abs(index - pointerTick)
-            val nearPointer = when {
-                distance == 0 -> TickHeight * PeakHeightScale
-                distance <= PeakNeighbourTicks -> TickHeight * PeakNeighbourScale
-                else -> TickHeight
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val centerY = size.height / 2f
+        val tickHeight = TickHeight.toPx()
+        val tickWidth = TickWidth.toPx()
+        val indicatorHeight = IndicatorHeight.toPx()
+        val indicatorWidth = IndicatorWidth.toPx()
+        // Тройная высота — это 30dp, а капсула ниже: без ограничения вершину
+        // срезало бы скруглением, и треть делений вышла бы одной высоты — холма
+        // не осталось бы. Поэтому упираемся в высоту капсулы с запасом.
+        val peakHeight = (tickHeight * (1f + PeakHeightBoost))
+            .coerceAtMost(size.height * PeakHeightLimit)
+
+        ticks.forEach { tick ->
+            val x = insetPx + (tick - start) * perUnit
+            val hill = if (halfTravel > 0f) {
+                (1f - abs(x - centerX) / halfTravel).coerceIn(0f, 1f)
+            } else {
+                1f
             }
-            val height = maxOf(nearPointer, if (base) BaseTickHeight else TickHeight)
-            Box(
-                modifier = Modifier
-                    .offset { IntOffset((insetPx + (tick - start) * perUnit).roundToInt(), 0) }
-                    .width(TickWidth)
-                    .height(height)
-                    .background(if (base) BaseTickColor else TickColor)
+            val height = tickHeight + (peakHeight - tickHeight) * hill
+            drawLine(
+                color = if (abs(tick - baseMagnification) < TickEpsilon) BaseTickColor else TickColor,
+                start = Offset(x, centerY - height / 2f),
+                end = Offset(x, centerY + height / 2f),
+                strokeWidth = tickWidth
             )
         }
-        Box(
-            modifier = Modifier
-                .offset {
-                    IntOffset(pointerX.coerceIn(insetPx, insetPx + travelPx).roundToInt(), 0)
-                }
-                .width(IndicatorWidth)
-                .height(IndicatorHeight)
-                .background(ActiveRed)
+
+        drawLine(
+            color = ActiveRed,
+            start = Offset(centerX, centerY - indicatorHeight / 2f),
+            end = Offset(centerX, centerY + indicatorHeight / 2f),
+            strokeWidth = indicatorWidth
         )
     }
 }
