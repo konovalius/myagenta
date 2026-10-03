@@ -2,6 +2,7 @@ package com.example.myagent.ui.folders.components
 
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,12 +40,16 @@ fun SubfolderGridItem(
             .aspectRatio(1f)
             .clickable(onClick = onClick)
     ) {
-        // Тень - сдвинутая копия ячейки (вниз-влево на 6dp)
+        // Тень - контур, сдвинутый влево-вниз на 6dp
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(end = 6.dp, top = 6.dp)
-                .background(Color.White.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                .border(
+                    width = 2.dp,
+                    color = Color.White.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(8.dp)
+                )
         )
 
         // Основная ячейка
