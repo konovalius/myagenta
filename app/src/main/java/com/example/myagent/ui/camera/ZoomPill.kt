@@ -74,17 +74,10 @@ private val RulerInset = 8.dp
 private val TickWidth = 2.dp
 private val TickHeight = 10.dp
 private val IndicatorWidth = 2.dp
-private val IndicatorHeight = 16.dp
-
-/** Насколько обычное деление вырастает под указателем: 2 даёт тройную высоту. */
-private const val PeakHeightBoost = 2f
-
-/** Доля высоты капсулы, до которой дотягивается вершина горы. */
-private const val PeakHeightLimit = 0.88f
 
 private val PillBackgroundIdle = Color.Black.copy(alpha = 0.55f)
 private val PillBackgroundHeld = Color.Black.copy(alpha = 0.72f)
-private val ActiveRed = Color(0xFFFF3B30)
+private val IndicatorColor = Color(0xFFFFC107)
 private val ActiveChipBackground = Color.White.copy(alpha = 0.85f)
 private val ActiveChipText = Color(0xFF0B0B0B)
 private val IdleValueColor = Color.White.copy(alpha = 0.85f)
@@ -432,9 +425,13 @@ private suspend fun AwaitPointerEventScope.awaitHoldOrRelease(
  * приходит из той же координаты, из которой считается зум, — он стоит ровно под
  * пальцем, без догоняющей анимации.
  *
- * Высота деления плавно зависит от расстояния до указателя: чем ближе, тем выше,
- * к краям спадает до обычной. Получается холм, который едет вместе с пальцем и
- * показывает, где сейчас зум, без ступенек.
+ * Высота деления не меняется: все деления одной длины. Под указателем деление
+ * просто поднято к самому верху капсулы, а к краям плавно опускается на
+ * обычную высоту. Получается волна, которая едет вместе с пальцем и показывает,
+ * где сейчас зум, без ступенек.
+ *
+ * Указатель жёлтый и рисуется во всю высоту капсулы — так он читается на любом
+ * фоне и сразу видно, где сейчас зум.
  */
 @Composable
 private fun ZoomRuler(
@@ -451,42 +448,38 @@ private fun ZoomRuler(
     // пальца ровно в тех же единицах ведёт увеличение.
     val perUnit = if (end > start) travelPx / (end - start) else 0f
     val centerX = pointerX.coerceIn(insetPx, insetPx + travelPx)
-    // Половина хода — это расстояние, на котором горка спадает до обычной
-    // высоты: у краёв линейки она уже не читается.
+    // Половина хода — это расстояние, на котором волна спадает до обычной
+    // высоты: у краёв линейки подъём уже не читается.
     val halfTravel = travelPx / 2f
 
     Canvas(modifier = Modifier.fillMaxSize()) {
         val centerY = size.height / 2f
-        val tickHeight = TickHeight.toPx()
+        val tickLength = TickHeight.toPx()
         val tickWidth = TickWidth.toPx()
-        val indicatorHeight = IndicatorHeight.toPx()
         val indicatorWidth = IndicatorWidth.toPx()
-        // Тройная высота — это 30dp, а капсула ниже: без ограничения вершину
-        // срезало бы скруглением, и треть делений вышла бы одной высоты — холма
-        // не осталось бы. Поэтому упираемся в высоту капсулы с запасом.
-        val peakHeight = (tickHeight * (1f + PeakHeightBoost))
-            .coerceAtMost(size.height * PeakHeightLimit)
+        // Под указателем деление стоит у самого верха капсулы, поэтому ход
+        // подъёма — это половина высоты капсулы минус половина деления.
+        val waveTravel = size.height / 2f - tickLength / 2f
 
         ticks.forEach { tick ->
             val x = insetPx + (tick - start) * perUnit
-            val hill = if (halfTravel > 0f) {
-                (1f - abs(x - centerX) / halfTravel).coerceIn(0f, 1f)
-            } else {
-                1f
-            }
-            val height = tickHeight + (peakHeight - tickHeight) * hill
+            val distancePx = abs(x - centerX)
+            val waveFactor = (1f - distancePx / halfTravel).coerceIn(0f, 1f)
+            // Длина деления постоянная — меняется только положение по вертикали.
+            val tickTopY = centerY - tickLength / 2f - waveFactor * waveTravel
+            val tickBottomY = tickTopY + tickLength
             drawLine(
                 color = if (abs(tick - baseMagnification) < TickEpsilon) BaseTickColor else TickColor,
-                start = Offset(x, centerY - height / 2f),
-                end = Offset(x, centerY + height / 2f),
+                start = Offset(x, tickTopY),
+                end = Offset(x, tickBottomY),
                 strokeWidth = tickWidth
             )
         }
 
         drawLine(
-            color = ActiveRed,
-            start = Offset(centerX, centerY - indicatorHeight / 2f),
-            end = Offset(centerX, centerY + indicatorHeight / 2f),
+            color = IndicatorColor,
+            start = Offset(centerX, 0f),
+            end = Offset(centerX, size.height),
             strokeWidth = indicatorWidth
         )
     }
