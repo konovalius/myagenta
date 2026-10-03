@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -37,20 +37,24 @@ fun SubfolderGridItem(
         modifier = modifier
             .fillMaxSize()
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
     ) {
-        // Тень - сдвинутая копия ячейки
+        // Тень - сдвинутая копия ячейки (вниз-вправо на 6dp)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White.copy(alpha = 0.2f))
-                .clip(RoundedCornerShape(8.dp))
-                .offset(x = 6.dp, y = 6.dp)
+                .padding(start = 6.dp, top = 6.dp)
+                .background(Color.White.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
         )
 
         // Основная ячейка
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(end = 6.dp, bottom = 6.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Black)
+        ) {
             lastMedia?.let { media ->
                 val uri = Uri.parse(media.uri)
                 if (media.type == "video") {
