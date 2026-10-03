@@ -84,6 +84,9 @@ private val IdleValueColor = Color.White.copy(alpha = 0.85f)
 private val TickColor = Color.White.copy(alpha = 0.35f)
 private val BaseTickColor = Color.White.copy(alpha = 0.6f)
 
+/** На сколько делений в каждую сторону от указателя держится подъём волны. */
+private const val WaveTickSpan = 4f
+
 private const val ValueFontSize = 11
 
 /** Насколько деление должно совпасть с базой, чтобы считаться базовым. */
@@ -425,10 +428,10 @@ private suspend fun AwaitPointerEventScope.awaitHoldOrRelease(
  * приходит из той же координаты, из которой считается зум, — он стоит ровно под
  * пальцем, без догоняющей анимации.
  *
- * Высота деления не меняется: все деления одной длины. Под указателем деление
- * просто поднято к самому верху капсулы, а к краям плавно опускается на
- * обычную высоту. Получается волна, которая едет вместе с пальцем и показывает,
- * где сейчас зум, без ступенек.
+ * Высота деления не меняется: все деления одной длины. Подъём держится только
+ * рядом с указателем — на [WaveTickSpan] делений в каждую сторону, дальше деления
+ * стоят на обычной высоте. Получается узкая волна, которая едет вместе с
+ * пальцем и показывает, где сейчас зум, не расползаясь по всей шкале.
  *
  * Указатель жёлтый и рисуется во всю высоту капсулы — так он читается на любом
  * фоне и сразу видно, где сейчас зум.
@@ -448,9 +451,10 @@ private fun ZoomRuler(
     // пальца ровно в тех же единицах ведёт увеличение.
     val perUnit = if (end > start) travelPx / (end - start) else 0f
     val centerX = pointerX.coerceIn(insetPx, insetPx + travelPx)
-    // Половина хода — это расстояние, на котором волна спадает до обычной
-    // высоты: у краёв линейки подъём уже не читается.
-    val halfTravel = travelPx / 2f
+    // Шаг деления в пикселях. Деления растянуты на весь ход и стоят на равных
+    // расстояниях, поэтому шаг один на всю линейку — на сколько делений отстоит
+    // указатель, можно посчитать, не зная диапазона зума.
+    val tickSpacingPx = travelPx / (ticks.size - 1).coerceAtLeast(1)
 
     Canvas(modifier = Modifier.fillMaxSize()) {
         val centerY = size.height / 2f
@@ -463,8 +467,14 @@ private fun ZoomRuler(
 
         ticks.forEach { tick ->
             val x = insetPx + (tick - start) * perUnit
-            val distancePx = abs(x - centerX)
-            val waveFactor = (1f - distancePx / halfTravel).coerceIn(0f, 1f)
+            // На сколько делений отстоит деление от указателя: волна узкая и
+            // держится рядом с ним, а не расползается по всей шкале.
+            val distanceTicks = abs(x - centerX) / tickSpacingPx
+            val waveFactor = when {
+                distanceTicks <= 1f -> 1f
+                distanceTicks <= WaveTickSpan -> (WaveTickSpan + 1f - distanceTicks) / WaveTickSpan
+                else -> 0f
+            }
             // Длина деления постоянная — меняется только положение по вертикали.
             val tickTopY = centerY - tickLength / 2f - waveFactor * waveTravel
             val tickBottomY = tickTopY + tickLength
