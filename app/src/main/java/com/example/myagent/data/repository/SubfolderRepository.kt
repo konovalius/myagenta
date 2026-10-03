@@ -12,6 +12,8 @@ class SubfolderRepository @Inject constructor(
 ) {
     fun getByFolder(folderUuid: String): Flow<List<Subfolder>> = subfolderDao.getByFolder(folderUuid)
 
+    fun getUnassigned(): Flow<List<Subfolder>> = subfolderDao.getUnassigned()
+
     suspend fun getByAnchor(anchorMediaUuid: String): Subfolder? = subfolderDao.getByAnchor(anchorMediaUuid)
 
     suspend fun getById(uuid: String): Subfolder? = subfolderDao.getById(uuid)

@@ -28,10 +28,17 @@ class AllMediaViewModel @Inject constructor(
     private val _unassignedMedia = MutableStateFlow<List<Media>>(emptyList())
     val unassignedMedia: StateFlow<List<Media>> = _unassignedMedia.asStateFlow()
 
+    private val _subfolders = MutableStateFlow<List<Subfolder>>(emptyList())
+    val subfolders: StateFlow<List<Subfolder>> = _subfolders.asStateFlow()
+
     init {
         viewModelScope.launch {
             val source: Flow<List<Media>> = mediaRepository.getUnassigned()
             source.collect { list -> _unassignedMedia.value = list }
+        }
+        viewModelScope.launch {
+            val source: Flow<List<Subfolder>> = subfolderRepository.getUnassigned()
+            source.collect { list -> _subfolders.value = list }
         }
     }
 

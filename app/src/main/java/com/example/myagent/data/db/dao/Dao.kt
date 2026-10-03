@@ -70,6 +70,9 @@ interface SubfolderDao {
     @Query("SELECT * FROM subfolders WHERE folder_uuid = :folderUuid ORDER BY created_at DESC")
     fun getByFolder(folderUuid: String): Flow<List<Subfolder>>
 
+    @Query("SELECT * FROM subfolders WHERE folder_uuid IS NULL ORDER BY created_at DESC")
+    fun getUnassigned(): Flow<List<Subfolder>>
+
     @Query("SELECT * FROM subfolders WHERE anchor_media_uuid = :anchorMediaUuid LIMIT 1")
     suspend fun getByAnchor(anchorMediaUuid: String): Subfolder?
 
