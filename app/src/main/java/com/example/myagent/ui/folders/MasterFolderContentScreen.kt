@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -53,10 +53,17 @@ import android.widget.Toast
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.db.entity.Media
+import com.example.myagent.data.db.entity.Subfolder
 import com.example.myagent.ui.common.DeleteModeSwitch
 import com.example.myagent.ui.folders.components.MediaGridItem
+import com.example.myagent.ui.folders.components.SubfolderGridItem
 import com.example.myagent.ui.theme.GradientBackground
 import com.example.myagent.ui.theme.GoshaSans
+
+sealed interface GridItem {
+    data class Single(val media: Media, val index: Int) : GridItem
+    data class SubfolderItem(val subfolder: Subfolder, val lastMedia: Media?) : GridItem
+}
 
 @Composable
 fun MasterFolderContentScreen(
@@ -68,6 +75,7 @@ fun MasterFolderContentScreen(
     val context = LocalContext.current
     val folder by viewModel.folder.collectAsStateWithLifecycle()
     val media by viewModel.media.collectAsStateWithLifecycle()
+    val subfolders by viewModel.subfolders.collectAsStateWithLifecycle()
     var menuExpanded by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -76,6 +84,29 @@ fun MasterFolderContentScreen(
     var selectedIds by remember { mutableStateOf(emptySet<String>()) }
     var mediaToDelete by remember { mutableStateOf<Media?>(null) }
     var showMediaDeleteDialog by remember { mutableStateOf(false) }
+
+    // Группируем медиа: одиночные (subfolderUuid == null) и по подпапкам
+    val singleMedia = remember(media) { media.filter { it.subfolderUuid == null } }
+    val mediaBySubfolder = remember(media) {
+        media
+            .filter { it.subfolderUuid != null }
+            .groupBy { it.subfolderUuid!! }
+    }
+
+    val gridItems = remember(singleMedia, mediaBySubfolder, subfolders) {
+        val items = mutableListOf<GridItem>()
+        // Добавляем одиночные медиа
+        singleMedia.forEachIndexed { index, media ->
+            items.add(GridItem.Single(media, index))
+        }
+        // Добавляем подпапки (по одной ячейке на подпапку)
+        subfolders.forEach { subfolder ->
+            val subfolderMedia = mediaBySubfolder[subfolder.uuid] ?: emptyList()
+            val lastMedia = subfolderMedia.maxByOrNull { it.createdAt }
+            items.add(GridItem.SubfolderItem(subfolder, lastMedia))
+        }
+        items
+    }
 
     GradientBackground {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -166,7 +197,7 @@ fun MasterFolderContentScreen(
                 )
             }
 
-            if (media.isEmpty()) {
+            if (gridItems.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -191,41 +222,60 @@ fun MasterFolderContentScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(media, key = { _, media -> media.uuid }) { index, media ->
-                        MediaGridItem(
-                            media = media,
-                            folderUuid = folder?.uuid ?: "",
-                            index = index,
-                            onOpenPhoto = { uri, folderUuid, idx ->
-                                onOpenMedia(uri, folderUuid, idx)
-                            },
-                            onOpenVideo = onOpenVideo,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(1f),
-                            selectionMode = isMergeMode,
-                            isSelected = media.uuid in selectedIds,
-                            onClickOverride = when {
-                                isMergeMode -> {
-                                    {
-                                        selectedIds = if (media.uuid in selectedIds) {
-                                            selectedIds - media.uuid
-                                        } else {
-                                            selectedIds + media.uuid
+                    items(gridItems, key = { item ->
+                        when (item) {
+                            is GridItem.Single -> item.media.uuid
+                            is GridItem.SubfolderItem -> "subfolder_${item.subfolder.uuid}"
+                        }
+                    }) { item ->
+                        when (item) {
+                            is GridItem.Single -> {
+                                MediaGridItem(
+                                    media = item.media,
+                                    folderUuid = folder?.uuid ?: "",
+                                    index = item.index,
+                                    onOpenPhoto = { uri, folderUuid, idx ->
+                                        onOpenMedia(uri, folderUuid, idx)
+                                    },
+                                    onOpenVideo = onOpenVideo,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(1f),
+                                    selectionMode = isMergeMode,
+                                    isSelected = item.media.uuid in selectedIds,
+                                    onClickOverride = when {
+                                        isMergeMode -> {
+                                            {
+                                                selectedIds = if (item.media.uuid in selectedIds) {
+                                                    selectedIds - item.media.uuid
+                                                } else {
+                                                    selectedIds + item.media.uuid
+                                                }
+                                            }
                                         }
+                                        deleteMode -> {
+                                            {
+                                                viewModel.deleteMedia(item.media)
+                                                Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                        else -> null
                                     }
-                                }
-                                deleteMode -> {
-                                    {
-                                        // Удаление сразу без диалога
-                                        viewModel.deleteMedia(media)
-                                        // Показываем Toast
-                                        Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                                else -> null
+                                )
                             }
-                        )
+                            is GridItem.SubfolderItem -> {
+                                SubfolderGridItem(
+                                    subfolder = item.subfolder,
+                                    lastMedia = item.lastMedia,
+                                    onClick = {
+                                        Log.wtf("Subfolder", "Clicked: ${item.subfolder.uuid}")
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(1f)
+                                )
+                            }
+                        }
                     }
                 }
             }
