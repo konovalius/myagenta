@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.example.myagent.data.db.AppDatabase
 import com.example.myagent.data.db.dao.MasterFolderDao
 import com.example.myagent.data.db.dao.MediaDao
+import com.example.myagent.data.db.dao.SubfolderDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,4 +31,8 @@ object DataModule {
     @Provides
     fun provideMediaDao(database: AppDatabase): MediaDao =
         database.mediaDao()
+
+    @Provides
+    fun provideSubfolderDao(database: AppDatabase): SubfolderDao =
+        database.subfolderDao()
 }

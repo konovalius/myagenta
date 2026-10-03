@@ -21,6 +21,19 @@ data class MasterFolder(
     val lon: Double? = null
 )
 
+@Entity(tableName = "subfolders")
+data class Subfolder(
+    @PrimaryKey
+    @ColumnInfo(name = "uuid")
+    val uuid: String,
+    @ColumnInfo(name = "folder_uuid")
+    val folderUuid: String,
+    @ColumnInfo(name = "anchor_media_uuid")
+    val anchorMediaUuid: String,
+    @ColumnInfo(name = "created_at")
+    val createdAt: Long
+)
+
 @Entity(tableName = "media")
 data class Media(
     @PrimaryKey
@@ -30,6 +43,8 @@ data class Media(
     val uri: String,
     @ColumnInfo(name = "folder_uuid")
     val folderUuid: String? = null,
+    @ColumnInfo(name = "subfolder_uuid")
+    val subfolderUuid: String? = null,
     @ColumnInfo(name = "type")
     val type: String,
     @ColumnInfo(name = "created_at")
