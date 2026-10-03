@@ -13,7 +13,7 @@ import com.example.myagent.data.db.entity.Subfolder
 
 @Database(
     entities = [MasterFolder::class, Media::class, Subfolder::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

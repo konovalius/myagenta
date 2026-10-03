@@ -1,6 +1,7 @@
 package com.example.myagent.ui.media
 
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,43 +17,40 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.MergeType
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
-import com.example.myagent.R
 import com.example.myagent.data.db.entity.Media
-import android.util.Log
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import com.example.myagent.ui.common.DeleteModeSwitch
+import com.example.myagent.ui.folders.components.MediaGridItem
+import com.example.myagent.ui.theme.GoshaSans
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AllMediaScreen(
     onBackClick: () -> Unit,
@@ -66,6 +64,10 @@ fun AllMediaScreen(
     val (showDeleteDialog, setShowDeleteDialog) = remember { mutableStateOf(false) }
     val (mediaToDelete, setMediaToDelete) = remember { mutableStateOf<Media?>(null) }
     var deleteMode by remember { mutableStateOf(false) }
+    var isMergeMode by remember { mutableStateOf(false) }
+    var selectedIds by remember { mutableStateOf(emptySet<String>()) }
+    var showMergeDialog by remember { mutableStateOf(false) }
+    var mergeFolderName by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -115,18 +117,36 @@ fun AllMediaScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(end = 20.dp, top = 8.dp),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 DeleteModeSwitch(
+                    checked = isMergeMode,
+                    onCheckedChange = {
+                        deleteMode = false
+                        isMergeMode = it
+                        if (!it) selectedIds = emptySet()
+                    },
+                    contentDescription = "Режим объединения медиа",
+                    icon = Icons.AutoMirrored.Outlined.MergeType
+                )
+                Spacer(Modifier.width(16.dp))
+                DeleteModeSwitch(
                     checked = deleteMode,
-                    onCheckedChange = { deleteMode = it },
+                    onCheckedChange = {
+                        isMergeMode = false
+                        selectedIds = emptySet()
+                        deleteMode = it
+                    },
                     contentDescription = "Режим удаления медиа"
                 )
             }
 
             if (mediaList.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -140,79 +160,150 @@ fun AllMediaScreen(
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
+                        .fillMaxWidth()
                         .padding(top = 12.dp, start = 8.dp, end = 8.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(mediaList, key = { it.uuid }) { media ->
-                        Log.wtf("AllMedia", "Item: uri=${media.uri}, type='${media.type}', isVideo=${media.type == "video"}")
-                        Box(
+                    itemsIndexed(mediaList, key = { _, media -> media.uuid }) { index, media ->
+                        MediaGridItem(
+                            media = media,
+                            folderUuid = "",
+                            index = index,
+                            onOpenPhoto = { uri, _, _ -> onOpenPhoto(uri) },
+                            onOpenVideo = onOpenVideo,
                             modifier = Modifier
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .combinedClickable(
-                                    onClick = {
-                                        if (deleteMode) {
-                                            // Удаление сразу без диалога
-                                            viewModel.deleteMedia(media)
-                                            try {
-                                                val uri = Uri.parse(media.uri)
-                                                context.contentResolver.delete(uri, null, null)
-                                            } catch (e: Exception) {
-                                                Log.e("AllMedia", "Ошибка удаления файла из галереи", e)
-                                            }
-                                            // Показываем Toast
-                                            Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
+                                .fillMaxWidth()
+                                .aspectRatio(1f),
+                            selectionMode = isMergeMode,
+                            isSelected = media.uuid in selectedIds,
+                            onLongClick = {
+                                setMediaToDelete(media)
+                                setShowDeleteDialog(true)
+                            },
+                            onClickOverride = when {
+                                isMergeMode -> {
+                                    {
+                                        selectedIds = if (media.uuid in selectedIds) {
+                                            selectedIds - media.uuid
                                         } else {
-                                            val uri = Uri.parse(media.uri)
-                                            if (media.type == "video") {
-                                                onOpenVideo(uri)
-                                            } else {
-                                                onOpenPhoto(uri)
-                                            }
+                                            selectedIds + media.uuid
                                         }
-                                    },
-                                    onLongClick = {
-                                        // Долгое нажатие всегда вызывает диалог
-                                        setMediaToDelete(media)
-                                        setShowDeleteDialog(true)
                                     }
-                                )
-                        ) {
-if (media.type == "video") {
-                                 AsyncImage(
-                                     model = Uri.parse(media.uri),
-                                     contentDescription = "Видео",
-                                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                     modifier = Modifier.fillMaxSize()
-                                 )
-                                
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.Center)
-                                        .size(48.dp)
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_play_video),
-                                        contentDescription = "Play video",
-                                        tint = Color.White.copy(alpha = 0.9f),
-                                        modifier = Modifier.fillMaxSize()
-                                    )
                                 }
-} else {
-                                 AsyncImage(
-                                     model = Uri.parse(media.uri),
-                                     contentDescription = "Фото",
-                                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                     modifier = Modifier.fillMaxSize()
-                                 )
+                                deleteMode -> {
+                                    {
+                                        // Удаление сразу без диалога
+                                        viewModel.deleteMedia(media)
+                                        try {
+                                            context.contentResolver.delete(Uri.parse(media.uri), null, null)
+                                        } catch (e: Exception) {
+                                            Log.e("AllMedia", "Ошибка удаления файла из галереи", e)
+                                        }
+                                        // Показываем Toast
+                                        Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                else -> null
                             }
-                        }
+                        )
                     }
                 }
             }
+
+            if (isMergeMode) {
+                Button(
+                    onClick = {
+                        if (selectedIds.isNotEmpty()) {
+                            mergeFolderName = viewModel.defaultFolderName()
+                            showMergeDialog = true
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, bottom = 20.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF3B30),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "Готово (${selectedIds.size})",
+                        fontFamily = GoshaSans,
+                        fontSize = 15.sp
+                    )
+                }
+            }
         }
+    }
+
+    if (showMergeDialog) {
+        AlertDialog(
+            onDismissRequest = { showMergeDialog = false },
+            title = { Text("Создать новую мастер-папку?", color = Color.White, fontFamily = GoshaSans) },
+            text = {
+                OutlinedTextField(
+                    value = mergeFolderName,
+                    onValueChange = { if (it.length <= 50) mergeFolderName = it },
+                    label = { Text("Название папки", fontFamily = GoshaSans) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedLabelColor = Color.White.copy(alpha = 0.7f),
+                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
+                        focusedBorderColor = Color(0xFFFF3B30),
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                        cursorColor = Color(0xFFFF3B30)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.mergeSelected(
+                            selectedIds = selectedIds.toList(),
+                            createMasterFolder = true,
+                            masterFolderName = mergeFolderName
+                        )
+                        showMergeDialog = false
+                        selectedIds = emptySet()
+                        isMergeMode = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFE53935),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Да", fontFamily = GoshaSans)
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        viewModel.mergeSelected(
+                            selectedIds = selectedIds.toList(),
+                            createMasterFolder = false,
+                            masterFolderName = ""
+                        )
+                        showMergeDialog = false
+                        selectedIds = emptySet()
+                        isMergeMode = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1A2C4A),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Нет", fontFamily = GoshaSans)
+                }
+            }
+        )
     }
 
     if (showDeleteDialog && mediaToDelete != null) {

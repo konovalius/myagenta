@@ -3,7 +3,8 @@ package com.example.myagent.ui.folders.components
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -26,6 +27,7 @@ import coil.request.ImageRequest
 import com.example.myagent.R
 import com.example.myagent.data.db.entity.Media
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MediaGridItem(
     media: Media,
@@ -35,6 +37,7 @@ fun MediaGridItem(
     onOpenVideo: (Uri) -> Unit,
     modifier: Modifier = Modifier,
     onClickOverride: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     selectionMode: Boolean = false,
     isSelected: Boolean = false
 ) {
@@ -45,15 +48,18 @@ fun MediaGridItem(
         modifier = modifier
             .fillMaxSize()
             .clip(RoundedCornerShape(8.dp))
-            .clickable {
-                if (onClickOverride != null) {
-                    onClickOverride()
-                } else if (media.type == "video") {
-                    onOpenVideo(uri)
-                } else {
-                    onOpenPhoto(uri, folderUuid, index)
+            .combinedClickable(
+                onLongClick = onLongClick,
+                onClick = {
+                    if (onClickOverride != null) {
+                        onClickOverride()
+                    } else if (media.type == "video") {
+                        onOpenVideo(uri)
+                    } else {
+                        onOpenPhoto(uri, folderUuid, index)
+                    }
                 }
-            }
+            )
     ) {
         if (media.type == "video") {
             // Для видео используем превью с первого кадра

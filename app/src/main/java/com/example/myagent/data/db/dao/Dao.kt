@@ -46,6 +46,9 @@ interface MediaDao {
     @Delete
     suspend fun delete(media: Media)
 
+    @Query("SELECT * FROM media WHERE uuid IN (:uuids)")
+    suspend fun getByUuids(uuids: List<String>): List<Media>
+
     @Query("UPDATE media SET folder_uuid = :folderUuid WHERE uuid = :mediaUuid")
     suspend fun updateFolder(mediaUuid: String, folderUuid: String?)
 

@@ -22,10 +22,12 @@ class MasterFolderRepository @Inject constructor(
 
     suspend fun rename(uuid: String, name: String) = masterFolderDao.rename(uuid, name)
 
-    suspend fun createDefaultFolder(): MasterFolder {
+    suspend fun createDefaultFolder(): MasterFolder = createFolder(defaultFolderName())
+
+    suspend fun createFolder(name: String): MasterFolder {
         val folder = MasterFolder(
             uuid = UUID.randomUUID().toString(),
-            name = DEFAULT_NAME_FORMAT.format(LocalDateTime.now()),
+            name = name,
             type = "object",
             createdAt = System.currentTimeMillis(),
             lat = null,
@@ -34,6 +36,8 @@ class MasterFolderRepository @Inject constructor(
         masterFolderDao.insert(folder)
         return folder
     }
+
+    fun defaultFolderName(): String = DEFAULT_NAME_FORMAT.format(LocalDateTime.now())
 
     private companion object {
         private val DEFAULT_NAME_FORMAT: DateTimeFormatter =

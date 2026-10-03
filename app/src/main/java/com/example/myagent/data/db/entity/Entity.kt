@@ -27,7 +27,7 @@ data class Subfolder(
     @ColumnInfo(name = "uuid")
     val uuid: String,
     @ColumnInfo(name = "folder_uuid")
-    val folderUuid: String,
+    val folderUuid: String?,
     @ColumnInfo(name = "anchor_media_uuid")
     val anchorMediaUuid: String,
     @ColumnInfo(name = "created_at")

@@ -1,21 +1,28 @@
 package com.example.myagent.ui.media
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.myagent.data.db.entity.Subfolder
 import com.example.myagent.data.db.entity.Media
+import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.MediaRepository
+import com.example.myagent.data.repository.SubfolderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class AllMediaViewModel @Inject constructor(
-    private val mediaRepository: MediaRepository
+    private val mediaRepository: MediaRepository,
+    private val masterFolderRepository: MasterFolderRepository,
+    private val subfolderRepository: SubfolderRepository
 ) : ViewModel() {
 
     private val _unassignedMedia = MutableStateFlow<List<Media>>(emptyList())
@@ -31,6 +38,53 @@ class AllMediaViewModel @Inject constructor(
     fun deleteMedia(media: Media) {
         viewModelScope.launch {
             mediaRepository.delete(media)
+        }
+    }
+
+    fun defaultFolderName(): String = masterFolderRepository.defaultFolderName()
+
+    fun mergeSelected(selectedIds: List<String>, createMasterFolder: Boolean, masterFolderName: String) {
+        if (selectedIds.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val found = mediaRepository.getByUuids(selectedIds)
+                val ordered = selectedIds.mapNotNull { id -> found.firstOrNull { it.uuid == id } }
+                if (ordered.isEmpty()) {
+                    Log.wtf("Merge", "Нет медиа для объединения")
+                    return@launch
+                }
+                val anchor = ordered.first()
+                val targetFolderUuid = if (createMasterFolder) {
+                    masterFolderRepository.createFolder(
+                        masterFolderName.ifBlank { masterFolderRepository.defaultFolderName() }
+                    ).uuid
+                } else {
+                    null
+                }
+                val subfolderUuid = UUID.randomUUID().toString()
+                subfolderRepository.insert(
+                    Subfolder(
+                        uuid = subfolderUuid,
+                        folderUuid = targetFolderUuid,
+                        anchorMediaUuid = anchor.uuid,
+                        createdAt = System.currentTimeMillis()
+                    )
+                )
+                ordered.forEach { media ->
+                    mediaRepository.update(
+                        media.copy(
+                            folderUuid = targetFolderUuid ?: media.folderUuid,
+                            subfolderUuid = subfolderUuid
+                        )
+                    )
+                }
+                Log.wtf(
+                    "Merge",
+                    "Объединено ${ordered.size}: folderUuid=$targetFolderUuid, subfolderUuid=$subfolderUuid, anchor=${anchor.uuid}"
+                )
+            } catch (e: Exception) {
+                Log.e("Merge", "Ошибка объединения", e)
+            }
         }
     }
 }
