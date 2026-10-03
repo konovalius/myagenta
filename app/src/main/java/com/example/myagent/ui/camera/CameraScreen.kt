@@ -267,6 +267,10 @@ fun CameraScreen(
         viewModel.setFolderUuid(initialFolderUuid)
     }
 
+    LaunchedEffect(referencePhotoUri) {
+        viewModel.setReferenceUri(referencePhotoUri)
+    }
+
     LaunchedEffect(savedPhotoEvent) {
         val event = savedPhotoEvent
         if (event != null) {

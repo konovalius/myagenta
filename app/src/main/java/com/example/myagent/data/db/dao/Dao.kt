@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.db.entity.Media
 import com.example.myagent.data.db.entity.Subfolder
@@ -50,6 +51,9 @@ interface MediaDao {
 
     @Query("SELECT * FROM media WHERE uri = :uri LIMIT 1")
     suspend fun getByUri(uri: String): Media?
+
+    @Update
+    suspend fun update(media: Media)
 
     @Query("SELECT * FROM media WHERE folder_uuid IS NULL ORDER BY created_at DESC")
     fun getUnassigned(): Flow<List<Media>>

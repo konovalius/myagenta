@@ -19,9 +19,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.db.entity.Media
+import com.example.myagent.data.db.entity.Subfolder
 import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.MediaRepository
+import com.example.myagent.data.repository.SubfolderRepository
 import com.example.myagent.data.util.PlaceNameResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDateTime
@@ -39,7 +41,8 @@ import kotlinx.coroutines.launch
 class CameraViewModel @Inject constructor(
     private val fileRepository: FileRepository,
     private val mediaRepository: MediaRepository,
-    private val masterFolderRepository: MasterFolderRepository
+    private val masterFolderRepository: MasterFolderRepository,
+    private val subfolderRepository: SubfolderRepository
 ) : ViewModel() {
 
     private val _lastPhotoUri = MutableStateFlow<Uri?>(null)
@@ -68,6 +71,7 @@ class CameraViewModel @Inject constructor(
     private var locationFromMap = false
     private var deviceLat: Double? = null
     private var deviceLon: Double? = null
+    private var referenceUri: Uri? = null
 
     init {
         Log.wtf("CameraVM", "ViewModel initialized")
@@ -89,6 +93,11 @@ class CameraViewModel @Inject constructor(
     fun setFolderUuid(folderUuid: String?) {
         this.folderUuid = folderUuid
         Log.wtf("CameraVM", "folderUuid=$folderUuid")
+    }
+
+    fun setReferenceUri(uri: Uri?) {
+        referenceUri = uri
+        Log.wtf("CameraVM", "referenceUri=$uri")
     }
 
     fun capturePhoto(imageCapture: ImageCapture, context: Context) {
@@ -119,59 +128,45 @@ class CameraViewModel @Inject constructor(
                         fileRepository.setPending(savedUri, false)
                         _lastPhotoUri.value = savedUri
 
-                        val geoPromptEligible = captureFolderUuid == null &&
-                            !captureFromMap &&
-                            !geoPromptShown &&
-                            captureDeviceLat != null &&
-                            captureDeviceLon != null
+                        val reference = referenceUri
 
-                        if (geoPromptEligible) {
-                            geoPromptShown = true
-                            val promptLat = captureDeviceLat!!
-                            val promptLon = captureDeviceLon!!
+                        if (reference != null) {
+                            // Съёмка с наложением: ориентир задаёт подпапку.
                             viewModelScope.launch(Dispatchers.IO) {
-                                val existing = findGeoFolderNear(promptLat, promptLon)
-                                _geoPrompt.value = if (existing != null) {
-                                    GeoPrompt.ExistingFolder(
-                                        uri = savedUri,
-                                        lat = promptLat,
-                                        lon = promptLon,
-                                        folderUuid = existing.uuid,
-                                        folderName = existing.name
+                                val anchor = mediaRepository.getByUri(reference.toString())
+                                if (anchor == null) {
+                                    Log.wtf("CameraVM", "Ориентир не найден в БД: $reference — сохраняю одиночное фото")
+                                    saveStandalonePhoto(
+                                        savedUri,
+                                        captureFolderUuid,
+                                        captureLat,
+                                        captureLon,
+                                        captureDeviceLat,
+                                        captureDeviceLon,
+                                        captureFromMap
                                     )
                                 } else {
-                                    GeoPrompt.NewFolder(
-                                        uri = savedUri,
-                                        lat = promptLat,
-                                        lon = promptLon
+                                    savePhotoWithSubfolder(
+                                        savedUri,
+                                        captureFolderUuid,
+                                        captureLat,
+                                        captureLon,
+                                        captureDeviceLat,
+                                        captureDeviceLon,
+                                        anchor
                                     )
                                 }
-                                Log.wtf("CameraVM", "geoPrompt показан: ${_geoPrompt.value}")
                             }
-                        } else if (captureFolderUuid != null || (captureLat != null && captureLon != null) || (captureDeviceLat != null && captureDeviceLon != null)) {
-                            val savedUriString = savedUri.toString()
-                            viewModelScope.launch(Dispatchers.IO) {
-                                val finalLat = captureLat ?: captureDeviceLat
-                                val finalLon = captureLon ?: captureDeviceLon
-                                
-                                val targetFolderUuid = captureFolderUuid
-                                    ?: findOrCreateGeoFolder(finalLat!!, finalLon!!)
-                                Log.wtf("CameraVM", "folderUuid=$targetFolderUuid (привязка)")
-                                val media = Media(
-                                    uuid = UUID.randomUUID().toString(),
-                                    uri = savedUriString,
-                                    folderUuid = targetFolderUuid,
-                                    type = "photo",
-                                    createdAt = System.currentTimeMillis(),
-                                    lat = finalLat,
-                                    lon = finalLon
-                                )
-                                mediaRepository.insert(media)
-                                Log.wtf("CameraVM", "Media record created: ${media.uuid} in folder $targetFolderUuid at $finalLat,$finalLon")
-                                if (captureFolderUuid != null) {
-                                    _savedPhotoEvent.value = SavedPhotoEvent(savedUri, captureFolderUuid)
-                                }
-                            }
+                        } else {
+                            saveStandalonePhoto(
+                                savedUri,
+                                captureFolderUuid,
+                                captureLat,
+                                captureLon,
+                                captureDeviceLat,
+                                captureDeviceLon,
+                                captureFromMap
+                            )
                         }
                         Toast.makeText(context, "Фото сохранено в галерею", Toast.LENGTH_SHORT)
                             .show()
@@ -371,6 +366,145 @@ class CameraViewModel @Inject constructor(
         } else {
             recording.pause()
             isPaused = true
+        }
+    }
+
+    private fun saveStandalonePhoto(
+        savedUri: Uri,
+        captureFolderUuid: String?,
+        captureLat: Double?,
+        captureLon: Double?,
+        captureDeviceLat: Double?,
+        captureDeviceLon: Double?,
+        captureFromMap: Boolean
+    ) {
+        val geoPromptEligible = captureFolderUuid == null &&
+            !captureFromMap &&
+            !geoPromptShown &&
+            captureDeviceLat != null &&
+            captureDeviceLon != null
+
+        if (geoPromptEligible) {
+            geoPromptShown = true
+            val promptLat = captureDeviceLat!!
+            val promptLon = captureDeviceLon!!
+            viewModelScope.launch(Dispatchers.IO) {
+                val existing = findGeoFolderNear(promptLat, promptLon)
+                _geoPrompt.value = if (existing != null) {
+                    GeoPrompt.ExistingFolder(
+                        uri = savedUri,
+                        lat = promptLat,
+                        lon = promptLon,
+                        folderUuid = existing.uuid,
+                        folderName = existing.name
+                    )
+                } else {
+                    GeoPrompt.NewFolder(
+                        uri = savedUri,
+                        lat = promptLat,
+                        lon = promptLon
+                    )
+                }
+                Log.wtf("CameraVM", "geoPrompt показан: ${_geoPrompt.value}")
+            }
+            return
+        }
+
+        if (captureFolderUuid != null ||
+            (captureLat != null && captureLon != null) ||
+            (captureDeviceLat != null && captureDeviceLon != null)
+        ) {
+            val savedUriString = savedUri.toString()
+            viewModelScope.launch(Dispatchers.IO) {
+                val finalLat = captureLat ?: captureDeviceLat
+                val finalLon = captureLon ?: captureDeviceLon
+
+                val targetFolderUuid = captureFolderUuid
+                    ?: findOrCreateGeoFolder(finalLat!!, finalLon!!)
+                Log.wtf("CameraVM", "folderUuid=$targetFolderUuid (привязка)")
+                val media = Media(
+                    uuid = UUID.randomUUID().toString(),
+                    uri = savedUriString,
+                    folderUuid = targetFolderUuid,
+                    type = "photo",
+                    createdAt = System.currentTimeMillis(),
+                    lat = finalLat,
+                    lon = finalLon
+                )
+                mediaRepository.insert(media)
+                Log.wtf("CameraVM", "Media record created: ${media.uuid} in folder $targetFolderUuid at $finalLat,$finalLon")
+                if (captureFolderUuid != null) {
+                    _savedPhotoEvent.value = SavedPhotoEvent(savedUri, captureFolderUuid)
+                }
+            }
+        }
+    }
+
+    private suspend fun savePhotoWithSubfolder(
+        savedUri: Uri,
+        captureFolderUuid: String?,
+        captureLat: Double?,
+        captureLon: Double?,
+        captureDeviceLat: Double?,
+        captureDeviceLon: Double?,
+        anchor: Media
+    ) {
+        var targetFolderUuid = anchor.folderUuid ?: captureFolderUuid
+        if (targetFolderUuid == null) {
+            val anchorLat = anchor.lat
+            val anchorLon = anchor.lon
+            targetFolderUuid = if (anchorLat != null && anchorLon != null) {
+                findOrCreateGeoFolder(anchorLat, anchorLon)
+            } else {
+                masterFolderRepository.createDefaultFolder().uuid
+            }
+            Log.wtf("CameraVM", "Ориентир вне папки — создана мастер-папка $targetFolderUuid")
+        }
+
+        var anchorToUpdate: Media? = null
+        val targetSubfolderUuid: String
+        val existingSubfolderUuid = anchor.subfolderUuid
+        if (existingSubfolderUuid != null) {
+            targetSubfolderUuid = existingSubfolderUuid
+            if (anchor.folderUuid != targetFolderUuid) {
+                anchorToUpdate = anchor.copy(folderUuid = targetFolderUuid)
+            }
+        } else {
+            targetSubfolderUuid = UUID.randomUUID().toString()
+            subfolderRepository.insert(
+                Subfolder(
+                    uuid = targetSubfolderUuid,
+                    folderUuid = targetFolderUuid,
+                    anchorMediaUuid = anchor.uuid,
+                    createdAt = System.currentTimeMillis()
+                )
+            )
+            anchorToUpdate = anchor.copy(
+                folderUuid = targetFolderUuid,
+                subfolderUuid = targetSubfolderUuid
+            )
+        }
+        anchorToUpdate?.let { mediaRepository.update(it) }
+
+        val finalLat = captureLat ?: captureDeviceLat
+        val finalLon = captureLon ?: captureDeviceLon
+        val media = Media(
+            uuid = UUID.randomUUID().toString(),
+            uri = savedUri.toString(),
+            folderUuid = targetFolderUuid,
+            subfolderUuid = targetSubfolderUuid,
+            type = "photo",
+            createdAt = System.currentTimeMillis(),
+            lat = finalLat,
+            lon = finalLon
+        )
+        mediaRepository.insert(media)
+        Log.wtf(
+            "CameraVM",
+            "Media с ориентиром: media=${media.uuid}, folder=$targetFolderUuid, subfolder=$targetSubfolderUuid, anchor=${anchor.uuid}"
+        )
+        if (captureFolderUuid != null) {
+            _savedPhotoEvent.value = SavedPhotoEvent(savedUri, targetFolderUuid)
         }
     }
 
