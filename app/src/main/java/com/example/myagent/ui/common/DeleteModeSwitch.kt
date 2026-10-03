@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -39,7 +40,8 @@ fun DeleteModeSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    contentDescription: String = "Режим удаления"
+    contentDescription: String = "Режим удаления",
+    icon: ImageVector = Icons.Outlined.Delete
 ) {
     val thumbOffset by animateDpAsState(
         targetValue = if (checked) SWITCH_TRAVEL else 0.dp,
@@ -80,7 +82,7 @@ fun DeleteModeSwitch(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Outlined.Delete,
+                imageVector = icon,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(15.dp)

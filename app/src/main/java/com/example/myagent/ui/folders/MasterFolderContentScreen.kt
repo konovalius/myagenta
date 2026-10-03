@@ -1,6 +1,7 @@
 package com.example.myagent.ui.folders
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,10 +16,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.MergeType
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -67,6 +72,8 @@ fun MasterFolderContentScreen(
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var deleteMode by remember { mutableStateOf(false) }
+    var isMergeMode by remember { mutableStateOf(false) }
+    var selectedIds by remember { mutableStateOf(emptySet<String>()) }
     var mediaToDelete by remember { mutableStateOf<Media?>(null) }
     var showMediaDeleteDialog by remember { mutableStateOf(false) }
 
@@ -134,18 +141,36 @@ fun MasterFolderContentScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(end = 20.dp, top = 8.dp),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 DeleteModeSwitch(
+                    checked = isMergeMode,
+                    onCheckedChange = {
+                        deleteMode = false
+                        isMergeMode = it
+                        if (!it) selectedIds = emptySet()
+                    },
+                    contentDescription = "Режим объединения медиа",
+                    icon = Icons.AutoMirrored.Outlined.MergeType
+                )
+                Spacer(Modifier.width(16.dp))
+                DeleteModeSwitch(
                     checked = deleteMode,
-                    onCheckedChange = { deleteMode = it },
+                    onCheckedChange = {
+                        isMergeMode = false
+                        selectedIds = emptySet()
+                        deleteMode = it
+                    },
                     contentDescription = "Режим удаления медиа"
                 )
             }
 
             if (media.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -160,7 +185,8 @@ fun MasterFolderContentScreen(
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
+                        .fillMaxWidth()
                         .padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -177,16 +203,54 @@ fun MasterFolderContentScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(1f),
-                            onClickOverride = if (deleteMode) {
-                                {
-                                    // Удаление сразу без диалога
-                                    viewModel.deleteMedia(media)
-                                    // Показываем Toast
-                                    Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
+                            selectionMode = isMergeMode,
+                            isSelected = media.uuid in selectedIds,
+                            onClickOverride = when {
+                                isMergeMode -> {
+                                    {
+                                        selectedIds = if (media.uuid in selectedIds) {
+                                            selectedIds - media.uuid
+                                        } else {
+                                            selectedIds + media.uuid
+                                        }
+                                    }
                                 }
-                            } else null
+                                deleteMode -> {
+                                    {
+                                        // Удаление сразу без диалога
+                                        viewModel.deleteMedia(media)
+                                        // Показываем Toast
+                                        Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                else -> null
+                            }
                         )
                     }
+                }
+            }
+
+            if (isMergeMode) {
+                Button(
+                    onClick = {
+                        Log.wtf("Merge", "Selected: ${selectedIds.size}")
+                        selectedIds = emptySet()
+                        isMergeMode = false
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, bottom = 20.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF3B30),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "Готово (${selectedIds.size})",
+                        fontFamily = GoshaSans,
+                        fontSize = 15.sp
+                    )
                 }
             }
         }

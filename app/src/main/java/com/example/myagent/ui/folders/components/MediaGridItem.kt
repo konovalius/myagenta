@@ -1,11 +1,17 @@
 package com.example.myagent.ui.folders.components
 
 import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,7 +34,9 @@ fun MediaGridItem(
     onOpenPhoto: (Uri, String, Int) -> Unit,
     onOpenVideo: (Uri) -> Unit,
     modifier: Modifier = Modifier,
-    onClickOverride: (() -> Unit)? = null
+    onClickOverride: (() -> Unit)? = null,
+    selectionMode: Boolean = false,
+    isSelected: Boolean = false
 ) {
     val context = LocalContext.current
     val uri = Uri.parse(media.uri)
@@ -80,6 +88,39 @@ AsyncImage(
                  contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                  modifier = Modifier.fillMaxSize()
              )
+        }
+
+        if (selectionMode) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isSelected) Color(0x33FF3B30) else Color(0x00000000)),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .size(22.dp)
+                        .clip(CircleShape)
+                        .background(if (isSelected) Color(0xFFFF3B30) else Color(0x66000000))
+                        .border(
+                            width = 2.dp,
+                            color = Color.White,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
