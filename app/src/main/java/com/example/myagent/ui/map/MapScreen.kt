@@ -9,7 +9,6 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.MotionEvent
@@ -42,6 +41,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -65,7 +65,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -82,6 +81,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import coil.size.Scale
 import com.google.android.gms.location.LocationServices
@@ -607,8 +607,8 @@ private fun ArchivePhotoSheet(
     onOpen: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val fallbackColor = MaterialTheme.colorScheme.surfaceVariant
-    val fallbackImage = remember(fallbackColor) { ColorDrawable(fallbackColor.toArgb()) }
+    val thumbnailUrl = ARCHIVE_THUMBNAIL_BASE_URL + photo.file
+    Log.wtf("PastVu", "thumbnail URL: $thumbnailUrl")
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
@@ -626,15 +626,38 @@ private fun ArchivePhotoSheet(
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                AsyncImage(
+                SubcomposeAsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(ARCHIVE_THUMBNAIL_BASE_URL + photo.file)
-                        .placeholder(fallbackImage)
-                        .error(fallbackImage)
+                        .data(thumbnailUrl)
                         .crossfade(true)
+                        .listener(
+                            onSuccess = { _, _ -> Log.wtf("PastVu", "thumb OK: ${photo.cid}") },
+                            onError = { _, result ->
+                                Log.wtf(
+                                    "PastVu",
+                                    "thumb ERROR: ${photo.cid}, ${result.throwable.message}"
+                                )
+                            }
+                        )
                         .build(),
                     contentDescription = photo.title,
                     contentScale = ContentScale.Crop,
+                    loading = {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = Color.White)
+                        }
+                    },
+                    error = {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Не удалось загрузить", color = Color.Gray)
+                        }
+                    },
                     modifier = Modifier.fillMaxSize()
                 )
             }
