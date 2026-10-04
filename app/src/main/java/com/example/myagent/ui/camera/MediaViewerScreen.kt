@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +66,20 @@ fun MediaViewerScreen(
         initialPage = startPage,
         pageCount = { if (looping) Int.MAX_VALUE else 1 }
     )
+
+    // Список медиа приходит асинхронно, поэтому на первой композиции pager
+    // создаётся с initialPage = 0 и startIndex уже не применяется.
+    // Докручиваем к нужной странице, когда данные загрузились.
+    LaunchedEffect(total, startIndex) {
+        if (total > 1 && startIndex in 0 until total) {
+            val half = Int.MAX_VALUE / 2
+            val targetPage = half - (half % total) + startIndex
+            if (pagerState.currentPage != targetPage) {
+                pagerState.scrollToPage(targetPage)
+            }
+        }
+    }
+
     val currentIndex = if (looping) pagerState.currentPage % total else 0
     val currentUri = uris[currentIndex]
 
