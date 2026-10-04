@@ -7,6 +7,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Log
@@ -102,6 +103,7 @@ private const val LOCATION_ZOOM = 17.0
 private const val GEO_FOLDER_ZOOM = 14.0
 private const val PIN_SIZE_DP = 48
 private const val ARCHIVE_MARKER_SIZE_DP = 16
+private const val ARCHIVE_CLUSTER_SIZE_DP = 24
 private const val LONG_PRESS_MILLIS = 2000L
 
 private data class GeoPickState(
@@ -324,7 +326,20 @@ fun MapScreen(
             mapView.overlays.add(marker)
             archiveMarkers += marker
         }
-        Log.wtf("PastVu", "markers=${archiveMarkers.size}")
+        archiveSnapshot?.clusters?.forEach { cluster ->
+            val marker = Marker(mapView).apply {
+                position = GeoPoint(cluster.lat, cluster.lon)
+                icon = createArchiveClusterIcon(context, cluster.count)
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                title = "${cluster.count} фото"
+            }
+            mapView.overlays.add(marker)
+            archiveMarkers += marker
+        }
+        Log.wtf(
+            "PastVu",
+            "markers=${archiveMarkers.size}, photos=${archiveSnapshot?.photos?.size ?: 0}, clusters=${archiveSnapshot?.clusters?.size ?: 0}"
+        )
         mapView.invalidate()
     }
 
@@ -504,6 +519,38 @@ private fun createArchiveMarkerIcon(context: android.content.Context): Drawable 
         (center - border).coerceAtLeast(1f),
         Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.rgb(255, 149, 0) }
     )
+    return BitmapDrawable(context.resources, bitmap)
+}
+
+private fun createArchiveClusterIcon(context: android.content.Context, count: Int): Drawable {
+    val density = context.resources.displayMetrics.density
+    val size = (ARCHIVE_CLUSTER_SIZE_DP * density).toInt().coerceAtLeast(1)
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val center = size / 2f
+    val border = (1.5f * density).toInt().coerceAtLeast(1)
+    canvas.drawCircle(
+        center,
+        center,
+        center,
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
+    )
+    canvas.drawCircle(
+        center,
+        center,
+        (center - border).coerceAtLeast(1f),
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.rgb(0, 105, 224) }
+    )
+    val label = count.toString()
+    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        textAlign = Paint.Align.CENTER
+        textSize = (ARCHIVE_CLUSTER_SIZE_DP * density) * 0.45f
+        typeface = Typeface.DEFAULT_BOLD
+    }
+    val metrics = textPaint.fontMetrics
+    val baseline = center - (metrics.ascent + metrics.descent) / 2f
+    canvas.drawText(label, center, baseline, textPaint)
     return BitmapDrawable(context.resources, bitmap)
 }
 
