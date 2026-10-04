@@ -11,6 +11,8 @@ import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.MediaRepository
 import com.example.myagent.data.repository.SubfolderRepository
 import com.example.myagent.data.util.PastVuApi
+import com.example.myagent.data.util.PastVuBounds
+import com.example.myagent.data.util.PastVuSnapshot
 import com.example.myagent.data.util.PlaceNameResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
@@ -47,6 +49,9 @@ class MapViewModel @Inject constructor(
         refresh()
         viewModelScope.launch { PastVuApi.probe() }
     }
+
+    suspend fun fetchArchiveSnapshot(bounds: PastVuBounds, zoom: Int): PastVuSnapshot? =
+        PastVuApi.fetchPhotos(zoom, bounds)
 
     fun refresh() {
         viewModelScope.launch {

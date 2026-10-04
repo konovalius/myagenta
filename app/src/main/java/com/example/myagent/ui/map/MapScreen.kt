@@ -75,6 +75,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.example.myagent.data.db.entity.MasterFolder
+import com.example.myagent.data.util.PastVuBounds
 import com.example.myagent.ui.common.ArchiveModeSwitch
 import com.example.myagent.ui.common.DeleteModeSwitch
 import com.example.myagent.ui.theme.GoshaSans
@@ -330,9 +331,20 @@ fun MapScreen(
         }
         ArchiveModeSwitch(
             checked = isArchiveMode,
-            onCheckedChange = {
-                isArchiveMode = it
-                Log.wtf("PastVu", "Archive mode: $it")
+            onCheckedChange = { checked ->
+                isArchiveMode = checked
+                Log.wtf("PastVu", "Archive mode: $checked")
+                if (checked) {
+                    val box = mapView.boundingBox
+                    val bounds = PastVuBounds(
+                        north = box.latNorth,
+                        south = box.latSouth,
+                        east = box.lonEast,
+                        west = box.lonWest
+                    )
+                    val zoom = mapView.zoomLevelDouble.toInt()
+                    scope.launch { viewModel.fetchArchiveSnapshot(bounds, zoom) }
+                }
             },
             modifier = Modifier
                 .align(Alignment.TopStart)
