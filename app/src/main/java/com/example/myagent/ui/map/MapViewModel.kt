@@ -10,6 +10,7 @@ import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.MediaRepository
 import com.example.myagent.data.repository.SubfolderRepository
+import com.example.myagent.data.util.PastVuApi
 import com.example.myagent.data.util.PlaceNameResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
@@ -44,6 +45,7 @@ class MapViewModel @Inject constructor(
 
     init {
         refresh()
+        viewModelScope.launch { PastVuApi.probe() }
     }
 
     fun refresh() {
