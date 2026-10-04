@@ -3,7 +3,10 @@ package com.example.myagent
 import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
@@ -74,6 +77,19 @@ object AppRoutes {
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
+    val isPreviewOpen = remember { mutableStateOf(false) }
+
+    fun openSinglePreview(route: String) {
+        if (isPreviewOpen.value) return
+        val currentRoute = navController.currentDestination?.route
+        if (currentRoute == AppRoutes.MEDIA_VIEWER || currentRoute == AppRoutes.VIDEO_PLAYER) return
+        isPreviewOpen.value = true
+        try {
+            navController.navigate(route) { launchSingleTop = true }
+        } catch (e: Exception) {
+            isPreviewOpen.value = false
+        }
+    }
     
     NavHost(
         navController = navController,
@@ -175,10 +191,10 @@ fun AppNavHost() {
             AllMediaScreen(
                 onBackClick = { navController.popBackStack() },
                 onOpenVideo = { uri ->
-                    navController.navigate(AppRoutes.videoPlayer(uri))
+                    openSinglePreview(AppRoutes.videoPlayer(uri))
                 },
                 onOpenPhoto = { uri ->
-                    navController.navigate(AppRoutes.mediaViewer(uri, null, showUseButton = true))
+                    openSinglePreview(AppRoutes.mediaViewer(uri, null, showUseButton = true))
                 }
             )
         }
@@ -199,6 +215,9 @@ fun AppNavHost() {
                     onBack = { navController.popBackStack() }
                 )
             }
+            DisposableEffect(Unit) {
+                onDispose { isPreviewOpen.value = false }
+            }
         }
         composable(
             route = AppRoutes.MASTER_FOLDER_CONTENT,
@@ -211,10 +230,10 @@ fun AppNavHost() {
             MasterFolderContentScreen(
                 onBack = { navController.popBackStack() },
                 onOpenMedia = { uri, folderUuid, index ->
-                    navController.navigate(AppRoutes.mediaViewer(uri, folderUuid, startIndex = index))
+                    openSinglePreview(AppRoutes.mediaViewer(uri, folderUuid, startIndex = index))
                 },
                 onOpenVideo = { uri ->
-                    navController.navigate(AppRoutes.videoPlayer(uri))
+                    openSinglePreview(AppRoutes.videoPlayer(uri))
                 }
             )
         }
@@ -252,6 +271,9 @@ fun AppNavHost() {
             val viewerViewModel: PhotoViewerViewModel = hiltViewModel()
             val media by viewerViewModel.media.collectAsStateWithLifecycle()
             val scope = rememberCoroutineScope()
+            DisposableEffect(Unit) {
+                onDispose { isPreviewOpen.value = false }
+            }
             if (uri != null) {
                 MediaViewerScreen(
                     uri = uri,
