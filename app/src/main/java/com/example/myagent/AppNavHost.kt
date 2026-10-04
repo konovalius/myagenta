@@ -15,11 +15,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.myagent.data.util.PastVuPhoto
 import com.example.myagent.ui.camera.CameraScreen
 import com.example.myagent.ui.folders.MasterFolderContentScreen
 import com.example.myagent.ui.folders.MasterFoldersScreen
 import com.example.myagent.ui.folders.PhotoViewerViewModel
 import com.example.myagent.ui.map.MapScreen
+import com.example.myagent.ui.map.ArchivePhotoViewerScreen
 import com.example.myagent.ui.onboarding.OnboardingScreen
 import com.example.myagent.ui.splash.SplashScreen
 import com.example.myagent.ui.camera.MediaViewerScreen
@@ -39,6 +41,17 @@ object AppRoutes {
     const val ALL_MEDIA = "all-media"
     const val MEDIA_VIEWER = "media-viewer?uri={uri}&folderUuid={folderUuid}&showUseButton={showUseButton}&startIndex={startIndex}"
     const val VIDEO_PLAYER = "video-player?uri={uri}"
+    const val ARCHIVE_PHOTO = "archive-photo?file={file}&title={title}&year={year}&year2={year2}"
+
+    fun archivePhoto(file: String, title: String, year: Int, year2: Int): String {
+        val params = buildList {
+            add("file=" + Uri.encode(file))
+            add("title=" + Uri.encode(title))
+            add("year=$year")
+            add("year2=$year2")
+        }
+        return "archive-photo?" + params.joinToString("&")
+    }
 
     fun mediaViewer(
         uri: Uri,
@@ -175,7 +188,45 @@ fun AppNavHost() {
                 },
                 onOpenFolder = { folderUuid: String ->
                     navController.navigate("master-folder/$folderUuid")
+                },
+                onOpenArchivePhoto = { photo: PastVuPhoto ->
+                    navController.navigate(
+                        AppRoutes.archivePhoto(photo.file, photo.title, photo.year, photo.year2)
+                    )
                 }
+            )
+        }
+        composable(
+            route = AppRoutes.ARCHIVE_PHOTO,
+            arguments = listOf(
+                navArgument("file") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+                navArgument("title") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+                navArgument("year") {
+                    type = NavType.StringType
+                    defaultValue = "0"
+                },
+                navArgument("year2") {
+                    type = NavType.StringType
+                    defaultValue = "0"
+                }
+            )
+        ) { backStackEntry ->
+            val file = backStackEntry.arguments?.getString("file").orEmpty()
+            val title = backStackEntry.arguments?.getString("title").orEmpty()
+            val year = backStackEntry.arguments?.getString("year")?.toIntOrNull() ?: 0
+            val year2 = backStackEntry.arguments?.getString("year2")?.toIntOrNull() ?: 0
+            ArchivePhotoViewerScreen(
+                file = Uri.decode(file),
+                title = Uri.decode(title),
+                year = year,
+                year2 = year2,
+                onBack = { navController.popBackStack() }
             )
         }
         composable(AppRoutes.MASTER_FOLDERS) {

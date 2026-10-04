@@ -39,11 +39,13 @@ data class PastVuSnapshot(
     val clusters: List<PastVuCluster>
 )
 
-fun PastVuPhoto.yearLabel(): String? = when {
+fun formatYearLabel(year: Int, year2: Int): String? = when {
     year <= 0 -> null
     year2 > year -> "$year—$year2"
     else -> "$year"
 }
+
+fun PastVuPhoto.yearLabel(): String? = formatYearLabel(year, year2)
 
 object PastVuApi {
 

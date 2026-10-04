@@ -22,6 +22,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -30,6 +31,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -155,6 +157,7 @@ fun MapScreen(
     onOpenCamera: (lat: Double, lon: Double) -> Unit,
     onOpenCameraToFolder: (lat: Double, lon: Double, folderUuid: String) -> Unit,
     onOpenFolder: (String) -> Unit,
+    onOpenArchivePhoto: (PastVuPhoto) -> Unit,
     viewModel: MapViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -312,7 +315,7 @@ fun MapScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+LaunchedEffect(Unit) {
         viewModel.refresh()
     }
 
@@ -568,7 +571,11 @@ onClick = {
         selectedArchivePhoto?.let { photo ->
             ArchivePhotoSheet(
                 photo = photo,
-                onDismiss = { selectedArchivePhoto = null }
+                onDismiss = { selectedArchivePhoto = null },
+                onOpen = {
+                    selectedArchivePhoto = null
+                    onOpenArchivePhoto(photo)
+                }
             )
         }
     }
@@ -578,7 +585,8 @@ onClick = {
 @Composable
 private fun ArchivePhotoSheet(
     photo: PastVuPhoto,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onOpen: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
@@ -635,13 +643,18 @@ private fun ArchivePhotoSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp)
             )
-            TextButton(
-                onClick = onDismiss,
+            Row(
                 modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(top = 8.dp, end = 8.dp)
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, end = 8.dp, start = 8.dp),
+                horizontalArrangement = Arrangement.End
             ) {
-                Text(text = "Закрыть", fontFamily = GoshaSans, fontSize = 16.sp)
+                TextButton(onClick = onOpen) {
+                    Text(text = "Открыть", fontFamily = GoshaSans, fontSize = 16.sp)
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(text = "Закрыть", fontFamily = GoshaSans, fontSize = 16.sp)
+                }
             }
         }
     }
