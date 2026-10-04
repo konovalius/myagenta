@@ -76,6 +76,7 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.util.PastVuBounds
+import com.example.myagent.data.util.PastVuSnapshot
 import com.example.myagent.ui.common.ArchiveModeSwitch
 import com.example.myagent.ui.common.DeleteModeSwitch
 import com.example.myagent.ui.theme.GoshaSans
@@ -100,6 +101,7 @@ private const val DEFAULT_ZOOM = 15.0
 private const val LOCATION_ZOOM = 17.0
 private const val GEO_FOLDER_ZOOM = 14.0
 private const val PIN_SIZE_DP = 48
+private const val ARCHIVE_MARKER_SIZE_DP = 16
 private const val LONG_PRESS_MILLIS = 2000L
 
 private data class GeoPickState(
@@ -144,6 +146,8 @@ fun MapScreen(
     var geoPick by remember { mutableStateOf<GeoPickState?>(null) }
     var deleteMode by remember { mutableStateOf(false) }
     var isArchiveMode by remember { mutableStateOf(false) }
+    var archiveSnapshot by remember { mutableStateOf<PastVuSnapshot?>(null) }
+    val archiveMarkers = remember { mutableStateListOf<Marker>() }
 
     fun openGeoCameraToFolder(lat: Double, lon: Double, folderUuid: String?) {
         geoPickScope.launch {
@@ -306,6 +310,24 @@ fun MapScreen(
         }
         mapView.invalidate()
     }
+
+    LaunchedEffect(archiveSnapshot, mapView) {
+        archiveMarkers.forEach { mapView.overlays.remove(it) }
+        archiveMarkers.clear()
+        archiveSnapshot?.photos?.forEach { photo ->
+            val marker = Marker(mapView).apply {
+                position = GeoPoint(photo.lat, photo.lon)
+                icon = createArchiveMarkerIcon(context)
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                title = photo.title
+            }
+            mapView.overlays.add(marker)
+            archiveMarkers += marker
+        }
+        Log.wtf("PastVu", "markers=${archiveMarkers.size}")
+        mapView.invalidate()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -343,7 +365,14 @@ fun MapScreen(
                         west = box.lonWest
                     )
                     val zoom = mapView.zoomLevelDouble.toInt()
-                    scope.launch { viewModel.fetchArchiveSnapshot(bounds, zoom) }
+                    scope.launch {
+                        val snapshot = viewModel.fetchArchiveSnapshot(bounds, zoom)
+                        if (isArchiveMode) {
+                            archiveSnapshot = snapshot
+                        }
+                    }
+                } else {
+                    archiveSnapshot = null
                 }
             },
             modifier = Modifier
@@ -454,6 +483,28 @@ onClick = {
         }
         
     }
+}
+
+private fun createArchiveMarkerIcon(context: android.content.Context): Drawable {
+    val density = context.resources.displayMetrics.density
+    val size = (ARCHIVE_MARKER_SIZE_DP * density).toInt().coerceAtLeast(1)
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val center = size / 2f
+    val border = (1.5f * density).toInt().coerceAtLeast(1)
+    canvas.drawCircle(
+        center,
+        center,
+        center,
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
+    )
+    canvas.drawCircle(
+        center,
+        center,
+        (center - border).coerceAtLeast(1f),
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.rgb(255, 149, 0) }
+    )
+    return BitmapDrawable(context.resources, bitmap)
 }
 
 private suspend fun createPinIcon(
