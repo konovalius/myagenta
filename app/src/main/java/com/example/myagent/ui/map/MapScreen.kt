@@ -122,6 +122,9 @@ private const val PIN_SIZE_DP = 48
 private const val ARCHIVE_MARKER_SIZE_DP = 16
 private const val ARCHIVE_CLUSTER_SIZE_DP = 24
 private const val ARCHIVE_DEBOUNCE_MS = 500L
+private const val ARCHIVE_CLUSTER_ZOOM_STEP = 2.0
+private const val ARCHIVE_CLUSTER_MAX_ZOOM = 16.0
+private const val ARCHIVE_MAX_REQUEST_ZOOM = 16
 private const val ARCHIVE_THUMBNAIL_BASE_URL = "https://img.pastvu.com/h/"
 private const val LONG_PRESS_MILLIS = 2000L
 
@@ -383,7 +386,7 @@ LaunchedEffect(Unit) {
         if (!isArchiveMode) return@LaunchedEffect
         delay(ARCHIVE_DEBOUNCE_MS)
         if (!isArchiveMode) return@LaunchedEffect
-        val snapshot = viewModel.fetchArchiveSnapshot(query.toBounds(), query.zoom)
+        val snapshot = viewModel.fetchArchiveSnapshot(query.toBounds(), query.zoom.coerceAtMost(ARCHIVE_MAX_REQUEST_ZOOM))
         if (isArchiveMode) {
             archiveSnapshot = snapshot
         }
@@ -417,9 +420,16 @@ LaunchedEffect(Unit) {
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 title = "${cluster.count} фото"
                 setPanToView(false)
-                setOnMarkerClickListener { marker, _ ->
-                    marker.showInfoWindow()
-                    Log.wtf("PastVu", "cluster click: ${marker.title} shown=${marker.isInfoWindowShown()}")
+                setOnMarkerClickListener { _, _ ->
+                    val targetZoom = (mapView.zoomLevelDouble + ARCHIVE_CLUSTER_ZOOM_STEP)
+                        .coerceAtMost(ARCHIVE_CLUSTER_MAX_ZOOM)
+                    mapView.controller.setZoom(targetZoom)
+                    mapView.controller.setCenter(GeoPoint(cluster.lat, cluster.lon))
+                    Log.wtf(
+                        "PastVu",
+                        "cluster click: ${cluster.count} фото, center=" +
+                            "${cluster.lat},${cluster.lon}, zoom=$targetZoom"
+                    )
                     true
                 }
             }
