@@ -24,7 +24,9 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -38,11 +40,15 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +63,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -70,6 +77,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.ImageLoader
+import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.size.Scale
 import com.google.android.gms.location.LocationServices
@@ -77,7 +85,9 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.util.PastVuBounds
+import com.example.myagent.data.util.PastVuPhoto
 import com.example.myagent.data.util.PastVuSnapshot
+import com.example.myagent.data.util.yearLabel
 import com.example.myagent.ui.common.ArchiveModeSwitch
 import com.example.myagent.ui.common.DeleteModeSwitch
 import com.example.myagent.ui.theme.GoshaSans
@@ -108,6 +118,7 @@ private const val PIN_SIZE_DP = 48
 private const val ARCHIVE_MARKER_SIZE_DP = 16
 private const val ARCHIVE_CLUSTER_SIZE_DP = 24
 private const val ARCHIVE_DEBOUNCE_MS = 500L
+private const val ARCHIVE_THUMBNAIL_BASE_URL = "https://img.pastvu.com/h/"
 private const val LONG_PRESS_MILLIS = 2000L
 
 private data class GeoPickState(
@@ -176,7 +187,9 @@ fun MapScreen(
     var isArchiveMode by remember { mutableStateOf(false) }
     var archiveSnapshot by remember { mutableStateOf<PastVuSnapshot?>(null) }
     var archiveQuery by remember { mutableStateOf<ArchiveQuery?>(null) }
-    val archiveMarkers = remember { mutableStateListOf<Marker>() }
+    var selectedArchivePhoto by remember { mutableStateOf<PastVuPhoto?>(null) }
+    val archivePhotoMarkers = remember { mutableStateListOf<Marker>() }
+    val archiveClusterMarkers = remember { mutableStateListOf<Marker>() }
 
     fun openGeoCameraToFolder(lat: Double, lon: Double, folderUuid: String?) {
         geoPickScope.launch {
@@ -372,17 +385,24 @@ fun MapScreen(
     }
 
     LaunchedEffect(archiveSnapshot, mapView) {
-        archiveMarkers.forEach { mapView.overlays.remove(it) }
-        archiveMarkers.clear()
+        archivePhotoMarkers.forEach { mapView.overlays.remove(it) }
+        archivePhotoMarkers.clear()
+        archiveClusterMarkers.forEach { mapView.overlays.remove(it) }
+        archiveClusterMarkers.clear()
         archiveSnapshot?.photos?.forEach { photo ->
             val marker = Marker(mapView).apply {
                 position = GeoPoint(photo.lat, photo.lon)
                 icon = createArchiveMarkerIcon(context)
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 title = photo.title
+                setOnMarkerClickListener { _, _ ->
+                    selectedArchivePhoto = photo
+                    Log.wtf("PastVu", "photo click: ${photo.cid} ${photo.title}")
+                    true
+                }
             }
             mapView.overlays.add(marker)
-            archiveMarkers += marker
+            archivePhotoMarkers += marker
         }
         archiveSnapshot?.clusters?.forEach { cluster ->
             val marker = Marker(mapView).apply {
@@ -392,11 +412,12 @@ fun MapScreen(
                 title = "${cluster.count} фото"
             }
             mapView.overlays.add(marker)
-            archiveMarkers += marker
+            archiveClusterMarkers += marker
         }
         Log.wtf(
             "PastVu",
-            "markers=${archiveMarkers.size}, photos=${archiveSnapshot?.photos?.size ?: 0}, clusters=${archiveSnapshot?.clusters?.size ?: 0}"
+            "markers=${archivePhotoMarkers.size + archiveClusterMarkers.size}, " +
+                "photos=${archiveSnapshot?.photos?.size ?: 0}, clusters=${archiveSnapshot?.clusters?.size ?: 0}"
         )
         mapView.invalidate()
     }
@@ -434,6 +455,7 @@ fun MapScreen(
                 } else {
                     archiveQuery = null
                     archiveSnapshot = null
+                    selectedArchivePhoto = null
                 }
             },
             modifier = Modifier
@@ -542,7 +564,86 @@ onClick = {
                 )
             }
         }
-        
+
+        selectedArchivePhoto?.let { photo ->
+            ArchivePhotoSheet(
+                photo = photo,
+                onDismiss = { selectedArchivePhoto = null }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ArchivePhotoSheet(
+    photo: PastVuPhoto,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(4f / 3f)
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(ARCHIVE_THUMBNAIL_BASE_URL + photo.file)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = photo.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            Text(
+                text = photo.title.ifBlank { "Без названия" },
+                fontFamily = GoshaSans,
+                fontSize = 20.sp,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
+            )
+            photo.yearLabel()?.let { label ->
+                Text(
+                    text = label,
+                    fontFamily = GoshaSans,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp)
+                )
+            }
+            Text(
+                text = String.format(
+                    Locale.ROOT,
+                    "%.5f, %.5f",
+                    photo.lat,
+                    photo.lon
+                ),
+                fontFamily = GoshaSans,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp)
+            )
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(top = 8.dp, end = 8.dp)
+            ) {
+                Text(text = "Закрыть", fontFamily = GoshaSans, fontSize = 16.sp)
+            }
+        }
     }
 }
 

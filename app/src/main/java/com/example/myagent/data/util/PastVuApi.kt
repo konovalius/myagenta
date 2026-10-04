@@ -22,7 +22,8 @@ data class PastVuPhoto(
     val title: String,
     val lat: Double,
     val lon: Double,
-    val year: Int
+    val year: Int,
+    val year2: Int = 0
 )
 
 data class PastVuCluster(
@@ -37,6 +38,12 @@ data class PastVuSnapshot(
     val photos: List<PastVuPhoto>,
     val clusters: List<PastVuCluster>
 )
+
+fun PastVuPhoto.yearLabel(): String? = when {
+    year <= 0 -> null
+    year2 > year -> "$year—$year2"
+    else -> "$year"
+}
 
 object PastVuApi {
 
@@ -107,7 +114,8 @@ object PastVuApi {
                     title = item.optString("title"),
                     lat = geo?.optDouble(0) ?: 0.0,
                     lon = geo?.optDouble(1) ?: 0.0,
-                    year = item.optInt("year")
+                    year = item.optInt("year"),
+                    year2 = item.optInt("year2")
                 )
             }
         }
