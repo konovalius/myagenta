@@ -75,6 +75,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.example.myagent.data.db.entity.MasterFolder
+import com.example.myagent.ui.common.ArchiveModeSwitch
 import com.example.myagent.ui.common.DeleteModeSwitch
 import com.example.myagent.ui.theme.GoshaSans
 import java.util.Locale
@@ -141,6 +142,7 @@ fun MapScreen(
     val geoPickScope = rememberCoroutineScope()
     var geoPick by remember { mutableStateOf<GeoPickState?>(null) }
     var deleteMode by remember { mutableStateOf(false) }
+    var isArchiveMode by remember { mutableStateOf(false) }
 
     fun openGeoCameraToFolder(lat: Double, lon: Double, folderUuid: String?) {
         geoPickScope.launch {
@@ -326,6 +328,16 @@ fun MapScreen(
                 tint = Color.White
             )
         }
+        ArchiveModeSwitch(
+            checked = isArchiveMode,
+            onCheckedChange = {
+                isArchiveMode = it
+                Log.wtf("PastVu", "Archive mode: $it")
+            },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 64.dp, top = 48.dp)
+        )
         DeleteModeSwitch(
             checked = deleteMode,
             onCheckedChange = { deleteMode = it },
