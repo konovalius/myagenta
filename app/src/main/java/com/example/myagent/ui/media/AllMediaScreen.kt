@@ -72,6 +72,8 @@ fun AllMediaScreen(
     var showMergeDialog by remember { mutableStateOf(false) }
     var mergeFolderName by remember { mutableStateOf("") }
     var expandedSubfolderUuid by remember { mutableStateOf<String?>(null) }
+    var subfolderToDelete by remember { mutableStateOf<Subfolder?>(null) }
+    var subfolderDeleteCount by remember { mutableStateOf(0) }
 
     // Группируем медиа: одиночные (subfolderUuid == null) и по подпапкам
     val singleMedia = remember(mediaList) { mediaList.filter { it.subfolderUuid == null } }
@@ -281,22 +283,36 @@ fun AllMediaScreen(
                                                 }
                                             )
                                         }
-                                        is GridItem.SubfolderItem -> {
-                                            SubfolderGridItem(
-                                                subfolder = item.subfolder,
-                                                lastMedia = item.lastMedia,
-                                                onClick = {
-                                                    Log.wtf("Subfolder", "Clicked: ${item.subfolder.uuid}")
-                                                    expandedSubfolderUuid =
-                                                        if (expandedSubfolderUuid == item.subfolder.uuid) {
-                                                            null
-                                                        } else {
-                                                            item.subfolder.uuid
-                                                        }
-                                                },
-                                                modifier = Modifier.fillMaxSize()
-                                            )
-                                        }
+is GridItem.SubfolderItem -> {
+                                             val subfolderMedia = mediaBySubfolder[item.subfolder.uuid] ?: emptyList()
+                                             SubfolderGridItem(
+                                                 subfolder = item.subfolder,
+                                                 lastMedia = item.lastMedia,
+                                                 onClick = {
+                                                     Log.wtf("Subfolder", "Clicked: ${item.subfolder.uuid}")
+                                                     expandedSubfolderUuid =
+                                                         if (expandedSubfolderUuid == item.subfolder.uuid) {
+                                                             null
+                                                         } else {
+                                                             item.subfolder.uuid
+                                                         }
+                                                 },
+                                                 onClickOverride = if (deleteMode) {
+                                                     {
+                                                         if (subfolderMedia.isEmpty()) {
+                                                             viewModel.deleteSubfolder(item.subfolder)
+                                                             Toast.makeText(context, "Подпапка удалена", Toast.LENGTH_SHORT).show()
+                                                         } else {
+                                                             subfolderToDelete = item.subfolder
+                                                             subfolderDeleteCount = subfolderMedia.size
+                                                         }
+                                                     }
+                                                 } else {
+                                                     null
+                                                 },
+                                                 modifier = Modifier.fillMaxSize()
+                                             )
+                                         }
                                     }
                                 }
                             }
@@ -333,6 +349,61 @@ fun AllMediaScreen(
                 }
             }
         }
+    }
+
+    subfolderToDelete?.let { target ->
+        AlertDialog(
+            onDismissRequest = { subfolderToDelete = null },
+            title = { Text("Удалить подпапку?", color = Color.White) },
+            text = {
+                Text(
+                    text = "В подпапке $subfolderDeleteCount файлов. Что с ними делать?",
+                    color = Color.White.copy(alpha = 0.7f)
+                )
+            },
+            confirmButton = {
+                Row {
+                    Button(
+                        onClick = {
+                            viewModel.deleteSubfolderWithMedia(target)
+                            subfolderToDelete = null
+                            Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFE53935),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("Удалить всё")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            viewModel.deleteSubfolderKeepMedia(target)
+                            subfolderToDelete = null
+                            Toast.makeText(context, "Фото остались", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF1A2C4A),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("Оставить фото")
+                    }
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { subfolderToDelete = null },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1A2C4A),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Отмена")
+                }
+            }
+        )
     }
 
     if (showMergeDialog) {

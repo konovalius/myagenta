@@ -14,6 +14,9 @@ class MediaRepository @Inject constructor(
 
     fun getByFolder(folderUuid: String): Flow<List<Media>> = mediaDao.getByFolder(folderUuid)
 
+    suspend fun getBySubfolderOnce(subfolderUuid: String): List<Media> =
+        mediaDao.getBySubfolderOnce(subfolderUuid)
+
     suspend fun getLastMediaInFolder(folderUuid: String): Media? =
         mediaDao.getLastMediaInFolder(folderUuid)
 

@@ -13,6 +13,7 @@ import com.example.myagent.data.repository.MediaRepository
 import com.example.myagent.data.repository.SubfolderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -67,6 +68,35 @@ class MasterFolderContentViewModel @Inject constructor(
             val subfolderUuid = media.subfolderUuid
             mediaRepository.delete(media)
             subfolderUuid?.let { subfolderRepository.deleteIfEmpty(it) }
+        }
+    }
+
+    fun deleteSubfolder(subfolder: Subfolder) {
+        viewModelScope.launch(Dispatchers.IO) {
+            subfolderRepository.delete(subfolder)
+        }
+    }
+
+    // Удалить подпапку, а медиа вернуть в папку
+    fun deleteSubfolderKeepMedia(subfolder: Subfolder) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val mediaList = mediaRepository.getBySubfolderOnce(subfolder.uuid)
+            mediaList.forEach { media ->
+                mediaRepository.update(media.copy(subfolderUuid = null))
+            }
+            subfolderRepository.delete(subfolder)
+        }
+    }
+
+    // Удалить подпапку вместе с медиа (записи + файлы)
+    fun deleteSubfolderWithMedia(subfolder: Subfolder) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val mediaList = mediaRepository.getBySubfolderOnce(subfolder.uuid)
+            mediaList.forEach { media ->
+                fileRepository.delete(Uri.parse(media.uri))
+                mediaRepository.delete(media)
+            }
+            subfolderRepository.delete(subfolder)
         }
     }
 

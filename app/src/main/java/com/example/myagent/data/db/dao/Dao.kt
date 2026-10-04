@@ -37,6 +37,9 @@ interface MediaDao {
     @Query("SELECT * FROM media WHERE subfolder_uuid = :subfolderUuid ORDER BY created_at DESC")
     fun getBySubfolder(subfolderUuid: String): Flow<List<Media>>
 
+    @Query("SELECT * FROM media WHERE subfolder_uuid = :subfolderUuid ORDER BY created_at DESC")
+    suspend fun getBySubfolderOnce(subfolderUuid: String): List<Media>
+
     @Query("SELECT * FROM media WHERE folder_uuid = :folderUuid ORDER BY created_at DESC LIMIT 1")
     suspend fun getLastMediaInFolder(folderUuid: String): Media?
 

@@ -30,7 +30,8 @@ fun SubfolderGridItem(
     subfolder: Subfolder,
     lastMedia: Media?,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClickOverride: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
 
@@ -38,7 +39,7 @@ fun SubfolderGridItem(
         modifier = modifier
             .fillMaxSize()
             .aspectRatio(1f)
-            .clickable(onClick = onClick)
+            .clickable(onClick = { if (onClickOverride != null) onClickOverride() else onClick() })
     ) {
         // Тень - контур, сдвинутый влево-вниз на 6dp
         Box(

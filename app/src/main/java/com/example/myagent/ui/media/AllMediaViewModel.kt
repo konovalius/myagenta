@@ -1,10 +1,12 @@
 package com.example.myagent.ui.media
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myagent.data.db.entity.Subfolder
 import com.example.myagent.data.db.entity.Media
+import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.MediaRepository
 import com.example.myagent.data.repository.SubfolderRepository
@@ -22,7 +24,8 @@ import kotlinx.coroutines.launch
 class AllMediaViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
     private val masterFolderRepository: MasterFolderRepository,
-    private val subfolderRepository: SubfolderRepository
+    private val subfolderRepository: SubfolderRepository,
+    private val fileRepository: FileRepository
 ) : ViewModel() {
 
     private val _unassignedMedia = MutableStateFlow<List<Media>>(emptyList())
@@ -47,6 +50,35 @@ class AllMediaViewModel @Inject constructor(
             val subfolderUuid = media.subfolderUuid
             mediaRepository.delete(media)
             subfolderUuid?.let { subfolderRepository.deleteIfEmpty(it) }
+        }
+    }
+
+    fun deleteSubfolder(subfolder: Subfolder) {
+        viewModelScope.launch(Dispatchers.IO) {
+            subfolderRepository.delete(subfolder)
+        }
+    }
+
+    // Удалить подпапку, а медиа вернуть в «Не сортированное»
+    fun deleteSubfolderKeepMedia(subfolder: Subfolder) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val mediaList = mediaRepository.getBySubfolderOnce(subfolder.uuid)
+            mediaList.forEach { media ->
+                mediaRepository.update(media.copy(subfolderUuid = null))
+            }
+            subfolderRepository.delete(subfolder)
+        }
+    }
+
+    // Удалить подпапку вместе с медиа (записи + файлы)
+    fun deleteSubfolderWithMedia(subfolder: Subfolder) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val mediaList = mediaRepository.getBySubfolderOnce(subfolder.uuid)
+            mediaList.forEach { media ->
+                fileRepository.delete(Uri.parse(media.uri))
+                mediaRepository.delete(media)
+            }
+            subfolderRepository.delete(subfolder)
         }
     }
 

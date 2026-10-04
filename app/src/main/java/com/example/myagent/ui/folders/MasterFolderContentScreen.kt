@@ -84,6 +84,8 @@ fun MasterFolderContentScreen(
     var mediaToDelete by remember { mutableStateOf<Media?>(null) }
     var showMediaDeleteDialog by remember { mutableStateOf(false) }
     var expandedSubfolderUuid by remember { mutableStateOf<String?>(null) }
+    var subfolderToDelete by remember { mutableStateOf<Subfolder?>(null) }
+    var subfolderDeleteCount by remember { mutableStateOf(0) }
 
     // Группируем медиа: одиночные (subfolderUuid == null) и по подпапкам
     val singleMedia = remember(media) { media.filter { it.subfolderUuid == null } }
@@ -301,22 +303,36 @@ fun MasterFolderContentScreen(
                                                 }
                                             )
                                         }
-                                        is GridItem.SubfolderItem -> {
-                                            SubfolderGridItem(
-                                                subfolder = item.subfolder,
-                                                lastMedia = item.lastMedia,
-                                                onClick = {
-                                                    Log.wtf("Subfolder", "Clicked: ${item.subfolder.uuid}")
-                                                    expandedSubfolderUuid =
-                                                        if (expandedSubfolderUuid == item.subfolder.uuid) {
-                                                            null
-                                                        } else {
-                                                            item.subfolder.uuid
-                                                        }
-                                                },
-                                                modifier = Modifier.fillMaxSize()
-                                            )
-                                        }
+is GridItem.SubfolderItem -> {
+                                             val subfolderMedia = mediaBySubfolder[item.subfolder.uuid] ?: emptyList()
+                                             SubfolderGridItem(
+                                                 subfolder = item.subfolder,
+                                                 lastMedia = item.lastMedia,
+                                                 onClick = {
+                                                     Log.wtf("Subfolder", "Clicked: ${item.subfolder.uuid}")
+                                                     expandedSubfolderUuid =
+                                                         if (expandedSubfolderUuid == item.subfolder.uuid) {
+                                                             null
+                                                         } else {
+                                                             item.subfolder.uuid
+                                                         }
+                                                 },
+                                                 onClickOverride = if (deleteMode) {
+                                                     {
+                                                         if (subfolderMedia.isEmpty()) {
+                                                             viewModel.deleteSubfolder(item.subfolder)
+                                                             Toast.makeText(context, "Подпапка удалена", Toast.LENGTH_SHORT).show()
+                                                         } else {
+                                                             subfolderToDelete = item.subfolder
+                                                             subfolderDeleteCount = subfolderMedia.size
+                                                         }
+                                                     }
+                                                 } else {
+                                                     null
+                                                 },
+                                                 modifier = Modifier.fillMaxSize()
+                                             )
+                                         }
                                     }
                                 }
                             }
@@ -352,6 +368,42 @@ fun MasterFolderContentScreen(
                 }
             }
         }
+    }
+
+    subfolderToDelete?.let { target ->
+        AlertDialog(
+            onDismissRequest = { subfolderToDelete = null },
+            title = { Text("Удалить подпапку?", fontFamily = GoshaSans) },
+            text = {
+                Text(
+                    text = "В подпапке $subfolderDeleteCount файлов. Что с ними делать?",
+                    fontFamily = GoshaSans
+                )
+            },
+            confirmButton = {
+                Row {
+                    TextButton(onClick = {
+                        viewModel.deleteSubfolderWithMedia(target)
+                        subfolderToDelete = null
+                        Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Text("Удалить всё", fontFamily = GoshaSans)
+                    }
+                    TextButton(onClick = {
+                        viewModel.deleteSubfolderKeepMedia(target)
+                        subfolderToDelete = null
+                        Toast.makeText(context, "Фото остались", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Text("Оставить фото", fontFamily = GoshaSans)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { subfolderToDelete = null }) {
+                    Text("Отмена", fontFamily = GoshaSans)
+                }
+            }
+        )
     }
 
     if (showRenameDialog) {
