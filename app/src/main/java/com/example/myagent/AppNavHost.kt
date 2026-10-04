@@ -231,7 +231,17 @@ fun AppNavHost() {
                 title = Uri.decode(title),
                 year = year,
                 year2 = year2,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onUseArchivePhoto = { archiveUrl ->
+                    navController.navigate(
+                        AppRoutes.camera(
+                            lat = null,
+                            lon = null,
+                            uri = Uri.parse(Uri.encode(archiveUrl)),
+                            folderUuid = null
+                        )
+                    )
+                }
             )
         }
         composable(AppRoutes.MASTER_FOLDERS) {

@@ -2,12 +2,15 @@ package com.example.myagent.ui.map
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Download
@@ -24,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -35,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.myagent.data.util.formatYearLabel
+import com.example.myagent.ui.common.ShutterUi
 import com.example.myagent.ui.theme.GoshaSans
 
 private const val ARCHIVE_FULL_IMAGE_BASE_URL = "https://img.pastvu.com/d/"
@@ -48,6 +53,7 @@ fun ArchivePhotoViewerScreen(
     year: Int,
     year2: Int,
     onBack: () -> Unit,
+    onUseArchivePhoto: (String) -> Unit,
     viewModel: ArchivePhotoViewerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -127,27 +133,72 @@ fun ArchivePhotoViewerScreen(
                     modifier = Modifier.fillMaxSize()
                 )
             }
-            Text(
-                text = displayTitle,
-                fontFamily = GoshaSans,
-                fontSize = 18.sp,
-                color = Color.White,
-                textAlign = TextAlign.Center,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 12.dp)
-            )
-            formatYearLabel(year, year2)?.let { label ->
-                Text(
-                    text = label,
-                    fontFamily = GoshaSans,
-                    fontSize = 16.sp,
-                    color = Color(0xFFB0BEC5),
-                    textAlign = TextAlign.Center,
+                    .weight(1f),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp)
-                )
+                        .padding(bottom = ShutterUi.BottomPadding + ShutterUi.Size + 16.dp)
+                ) {
+                    Text(
+                        text = displayTitle,
+                        fontFamily = GoshaSans,
+                        fontSize = 18.sp,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+                    )
+                    formatYearLabel(year, year2)?.let { label ->
+                        Text(
+                            text = label,
+                            fontFamily = GoshaSans,
+                            fontSize = 16.sp,
+                            color = Color(0xFFB0BEC5),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 16.dp, top = 4.dp)
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = ShutterUi.BottomPadding)
+                        .size(ShutterUi.Size),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(ShutterUi.Size)
+                            .clip(CircleShape)
+                            .border(ShutterUi.BorderWidth, Color.White, CircleShape)
+                            .clickable { onUseArchivePhoto(ARCHIVE_FULL_IMAGE_BASE_URL + file) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(ShutterUi.InnerSize)
+                                .clip(CircleShape)
+                                .background(Color.White, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "use",
+                                color = Color.Black,
+                                fontSize = 12.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
             }
         }
     }
