@@ -9,6 +9,7 @@ import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.MediaRepository
+import com.example.myagent.data.repository.SubfolderRepository
 import com.example.myagent.data.util.PlaceNameResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
@@ -34,7 +35,8 @@ data class GeoPickFolder(
 class MapViewModel @Inject constructor(
     private val masterFolderRepository: MasterFolderRepository,
     private val mediaRepository: MediaRepository,
-    private val fileRepository: FileRepository
+    private val fileRepository: FileRepository,
+    private val subfolderRepository: SubfolderRepository
 ) : ViewModel() {
 
     private val _geoFolders = MutableStateFlow<List<GeoFolderPin>>(emptyList())
@@ -114,6 +116,7 @@ class MapViewModel @Inject constructor(
             fileRepository.delete(Uri.parse(media.uri))
             mediaRepository.delete(media)
         }
+        subfolderRepository.deleteByFolder(folder.uuid)
         masterFolderRepository.delete(folder)
         refresh()
     }

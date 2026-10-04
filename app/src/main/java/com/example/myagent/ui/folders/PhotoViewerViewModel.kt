@@ -78,7 +78,10 @@ class PhotoViewerViewModel @Inject constructor(
         if (mediaRepository.getByFolder(folderUuid).first().isEmpty()) {
             masterFolderRepository.getAll().first()
                 .firstOrNull { it.uuid == folderUuid }
-                ?.let { masterFolderRepository.delete(it) }
+                ?.let {
+                    subfolderRepository.deleteByFolder(folderUuid)
+                    masterFolderRepository.delete(it)
+                }
         }
     }
 }
