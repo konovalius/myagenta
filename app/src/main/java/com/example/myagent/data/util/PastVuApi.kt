@@ -54,6 +54,7 @@ object PastVuApi {
     private const val TIMEOUT_MS = 20_000
     private const val TAG = "PastVu"
     private const val LOG_LIMIT = 500
+    private const val NEAREST_DEFAULT_LIMIT = 30
 
     suspend fun fetchPhotos(z: Int, bounds: PastVuBounds): PastVuSnapshot? = withContext(Dispatchers.IO) {
         if (bounds.west > bounds.east) {
@@ -87,6 +88,49 @@ object PastVuApi {
         snapshot
     }
 
+    suspend fun fetchNearestPhotos(
+        lat: Double,
+        lon: Double,
+        limit: Int = NEAREST_DEFAULT_LIMIT
+    ): List<PastVuPhoto>? = withContext(Dispatchers.IO) {
+        val startedAt = System.currentTimeMillis()
+        val response = try {
+            post(
+                JSONObject()
+                    .put("method", "photo.giveNearestPhotos")
+                    .put(
+                        "params",
+                        JSONObject()
+                            // в giveNearestPhotos geo = [lat, lon]
+                            .put("geo", JSONArray().put(lat).put(lon))
+                            .put("limit", limit)
+                    )
+                    .toString()
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.wtf(TAG, "fetchNearestPhotos failed: ${e.javaClass.name}: ${e.message}")
+            return@withContext null
+        }
+        val photos = try {
+            parseNearestPhotos(response)
+        } catch (e: Exception) {
+            Log.wtf(TAG, "parse failed: ${e.javaClass.name}: ${e.message}")
+            Log.wtf(TAG, "raw: ${response.take(LOG_LIMIT)}")
+            return@withContext null
+        }
+        if (photos == null) {
+            Log.wtf(TAG, "api error: ${response.take(LOG_LIMIT)}")
+            return@withContext null
+        }
+        Log.wtf(
+            TAG,
+            "nearest lat=$lat, lon=$lon, photos=${photos.size}, ms=${System.currentTimeMillis() - startedAt}"
+        )
+        photos
+    }
+
     private fun PastVuBounds.toPolygon(): JSONObject {
         val ring = JSONArray()
             .put(JSONArray().put(west).put(south))
@@ -108,17 +152,7 @@ object PastVuApi {
         result.optJSONArray("photos")?.let { array ->
             for (i in 0 until array.length()) {
                 val item = array.optJSONObject(i) ?: continue
-                // geo = [lat, lon]
-                val geo = item.optJSONArray("geo")
-                photos += PastVuPhoto(
-                    cid = item.optLong("cid"),
-                    file = item.optString("file"),
-                    title = item.optString("title"),
-                    lat = geo?.optDouble(0) ?: 0.0,
-                    lon = geo?.optDouble(1) ?: 0.0,
-                    year = item.optInt("year"),
-                    year2 = item.optInt("year2")
-                )
+                photos += parsePhoto(item)
             }
         }
 
@@ -142,6 +176,33 @@ object PastVuApi {
             photos = photos,
             clusters = clusters
         )
+    }
+
+    private fun parsePhoto(item: JSONObject): PastVuPhoto {
+        // geo = [lat, lon]
+        val geo = item.optJSONArray("geo")
+        return PastVuPhoto(
+            cid = item.optLong("cid"),
+            file = item.optString("file"),
+            title = item.optString("title"),
+            lat = geo?.optDouble(0) ?: 0.0,
+            lon = geo?.optDouble(1) ?: 0.0,
+            year = item.optInt("year"),
+            year2 = item.optInt("year2")
+        )
+    }
+
+    private fun parseNearestPhotos(response: String): List<PastVuPhoto>? {
+        val root = JSONObject(response)
+        if (!root.has("result")) return null
+        val photos = mutableListOf<PastVuPhoto>()
+        root.getJSONObject("result").optJSONArray("photos")?.let { array ->
+            for (i in 0 until array.length()) {
+                val item = array.optJSONObject(i) ?: continue
+                photos += parsePhoto(item)
+            }
+        }
+        return photos
     }
 
     suspend fun getByBounds(z: Int, geometry: JSONObject): String = withContext(Dispatchers.IO) {

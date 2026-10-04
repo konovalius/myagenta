@@ -124,7 +124,6 @@ private const val ARCHIVE_CLUSTER_SIZE_DP = 24
 private const val ARCHIVE_DEBOUNCE_MS = 500L
 private const val ARCHIVE_CLUSTER_ZOOM_STEP = 2.0
 private const val ARCHIVE_CLUSTER_MAX_ZOOM = 16.0
-private const val ARCHIVE_MAX_REQUEST_ZOOM = 16
 private const val ARCHIVE_THUMBNAIL_BASE_URL = "https://img.pastvu.com/h/"
 private const val LONG_PRESS_MILLIS = 2000L
 
@@ -386,7 +385,7 @@ LaunchedEffect(Unit) {
         if (!isArchiveMode) return@LaunchedEffect
         delay(ARCHIVE_DEBOUNCE_MS)
         if (!isArchiveMode) return@LaunchedEffect
-        val snapshot = viewModel.fetchArchiveSnapshot(query.toBounds(), query.zoom.coerceAtMost(ARCHIVE_MAX_REQUEST_ZOOM))
+        val snapshot = viewModel.fetchArchiveSnapshot(query.toBounds(), query.zoom)
         if (isArchiveMode) {
             archiveSnapshot = snapshot
         }

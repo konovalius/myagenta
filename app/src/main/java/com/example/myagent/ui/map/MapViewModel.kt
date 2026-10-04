@@ -23,6 +23,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+private const val PASTVU_TAG = "PastVu"
+private const val ARCHIVE_BOUNDS_MAX_ZOOM = 16
+
 data class GeoFolderPin(
     val folder: MasterFolder,
     val photoUri: String?
@@ -49,8 +52,17 @@ class MapViewModel @Inject constructor(
         refresh()
     }
 
-    suspend fun fetchArchiveSnapshot(bounds: PastVuBounds, zoom: Int): PastVuSnapshot? =
-        PastVuApi.fetchPhotos(zoom, bounds)
+    suspend fun fetchArchiveSnapshot(bounds: PastVuBounds, zoom: Int): PastVuSnapshot? {
+        if (zoom <= ARCHIVE_BOUNDS_MAX_ZOOM) {
+            return PastVuApi.fetchPhotos(zoom.coerceAtMost(ARCHIVE_BOUNDS_MAX_ZOOM), bounds)
+        }
+        // выше z=16 photo.getByBounds всегда возвращает пустой результат — ищем ближайшие фото
+        val lat = (bounds.north + bounds.south) / 2.0
+        val lon = (bounds.east + bounds.west) / 2.0
+        val photos = PastVuApi.fetchNearestPhotos(lat, lon) ?: return null
+        Log.wtf(PASTVU_TAG, "z=$zoom, photos=${photos.size} (nearest), clusters=0")
+        return PastVuSnapshot(z = zoom, photos = photos, clusters = emptyList())
+    }
 
     fun refresh() {
         viewModelScope.launch {

@@ -36,7 +36,24 @@ Content-Type: application/json
 - `result.photos` — массив фото.
 - `result.clusters` — массив кластеров (групп фото).
 - До 16 зума — кластеры и фото. С 17 — только фото.
-- **Максимальный зум API — 16.** На `z=17` и выше ответ всегда пустой (`photos: []`, `clusters: []`, ~64 байта), даже если в области есть фото. Проверено прямым запросом к API на одном и том же bbox: `z=15` → 1 фото + 4 кластера, `z=16` → 10 фото + 7 кластеров, `z=17`/`z=18` → 0 и 0. Зум карты при этом может быть больше — ограничение только на параметр `z` в запросе.
+- **Максимальный зум API — 16.** На `z=17` и выше ответ всегда пустой (`photos: []`, `clusters: []`, ~64 байта), даже если в области есть фото. Проверено прямым запросом к API на одном и том же bbox: `z=15` → 1 фото + 4 кластера, `z=16` → 10 фото + 7 кластеров, `z=17`/`z=18` → 0 и 0. Зум карты при этом может быть больше — ограничение только на параметр `z` в запросе. Для зума 17+ используется другой метод — см. `photo.giveNearestPhotos`.
+
+## Метод `photo.giveNearestPhotos`
+
+Для зума выше 16 (и для поиска «фото рядом с точкой»):
+
+```json
+{
+  "method": "photo.giveNearestPhotos",
+  "params": { "geo": [59.94, 30.49], "limit": 30 }
+}
+```
+
+- `geo` — **здесь `[lat, lon]`** (как и в `photo.geo`, в отличие от GeoJSON-полигона в `getByBounds`, где `[lon, lat]`).
+- `limit` — сколько фото вернуть; уважается точно (проверено: 3 → 3, 10 → 10, 30 → 30).
+- Ответ: `{"result": {"photos": [...] }, "rid": "..."}` — **только фото, кластеров нет**.
+- Фото имеют те же поля (`cid`, `file`, `title`, `geo` = `[lat, lon]`, `year`), но `year2` не приходит (иногда есть `s` и `ccount`). `yearLabel()` вернёт только один год.
+- Радиус поиска не задаётся — сервер возвращает ближайшие `limit` фото, насколько далеко они ни оказались.
 
 ## Формат `photo`
 
@@ -90,12 +107,16 @@ Content-Type: application/json
 ## Реализация
 
 `data/util/PastVuApi.kt` — object, POST JSON через HttpURLConnection.
+Функции: `fetchPhotos(z, bounds)` (z ≤ 16, `photo.getByBounds`) и
+`fetchNearestPhotos(lat, lon, limit = 30)` (z > 16, `photo.giveNearestPhotos`).
 Образец стиля: `data/util/OverpassGeocoder.kt`.
 
 Экраны и файлы архива:
 
 - `ui/map/MapScreen.kt` — карта с маркерами фото и кластеров, toggle «Архив»,
   Bottom Sheet `ArchivePhotoSheet` с превью (`h/`).
+- `ui/map/MapViewModel.kt` — `fetchArchiveSnapshot(bounds, zoom)`: выбирает метод
+  по зуму (≤ 16 — по границам, > 16 — ближайшие к центру карты).
 - `ui/map/ArchivePhotoViewerScreen.kt` — полноэкранный просмотр (`d/`), кнопка «Сохранить».
 - `ui/map/ArchivePhotoViewerViewModel.kt` — скачивание `d/` через HttpURLConnection
   и запись в галерею через MediaStore: `RELATIVE_PATH = Pictures/PastVu`,
