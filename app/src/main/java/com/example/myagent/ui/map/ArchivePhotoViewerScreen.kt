@@ -1,13 +1,17 @@
 package com.example.myagent.ui.map
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -16,6 +20,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,6 +30,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.myagent.data.util.formatYearLabel
@@ -34,13 +42,27 @@ private const val ARCHIVE_FULL_IMAGE_BASE_URL = "https://img.pastvu.com/d/"
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArchivePhotoViewerScreen(
+    cid: Long,
     file: String,
     title: String,
     year: Int,
     year2: Int,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: ArchivePhotoViewerViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val displayTitle = title.ifBlank { "Архивное фото" }
+    val saveState by viewModel.saveState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(saveState) {
+        when (saveState) {
+            ArchiveSaveState.Saved -> Toast.makeText(context, "Сохранено в галерею", Toast.LENGTH_SHORT).show()
+            ArchiveSaveState.Error -> Toast.makeText(context, "Ошибка сохранения", Toast.LENGTH_SHORT).show()
+            else -> return@LaunchedEffect
+        }
+        viewModel.consumeSaveState()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -51,6 +73,27 @@ fun ArchivePhotoViewerScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Назад"
                         )
+                    }
+                },
+                actions = {
+                    if (saveState == ArchiveSaveState.Saving) {
+                        Box(
+                            modifier = Modifier.size(48.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = { viewModel.saveToGallery(cid, file) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Download,
+                                contentDescription = "Сохранить"
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

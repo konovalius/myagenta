@@ -41,14 +41,15 @@ object AppRoutes {
     const val ALL_MEDIA = "all-media"
     const val MEDIA_VIEWER = "media-viewer?uri={uri}&folderUuid={folderUuid}&showUseButton={showUseButton}&startIndex={startIndex}"
     const val VIDEO_PLAYER = "video-player?uri={uri}"
-    const val ARCHIVE_PHOTO = "archive-photo?file={file}&title={title}&year={year}&year2={year2}"
+    const val ARCHIVE_PHOTO = "archive-photo?cid={cid}&file={file}&title={title}&year={year}&year2={year2}"
 
-    fun archivePhoto(file: String, title: String, year: Int, year2: Int): String {
+    fun archivePhoto(photo: PastVuPhoto): String {
         val params = buildList {
-            add("file=" + Uri.encode(file))
-            add("title=" + Uri.encode(title))
-            add("year=$year")
-            add("year2=$year2")
+            add("cid=${photo.cid}")
+            add("file=" + Uri.encode(photo.file))
+            add("title=" + Uri.encode(photo.title))
+            add("year=${photo.year}")
+            add("year2=${photo.year2}")
         }
         return "archive-photo?" + params.joinToString("&")
     }
@@ -190,15 +191,17 @@ fun AppNavHost() {
                     navController.navigate("master-folder/$folderUuid")
                 },
                 onOpenArchivePhoto = { photo: PastVuPhoto ->
-                    navController.navigate(
-                        AppRoutes.archivePhoto(photo.file, photo.title, photo.year, photo.year2)
-                    )
+                    navController.navigate(AppRoutes.archivePhoto(photo))
                 }
             )
         }
         composable(
             route = AppRoutes.ARCHIVE_PHOTO,
             arguments = listOf(
+                navArgument("cid") {
+                    type = NavType.StringType
+                    defaultValue = "0"
+                },
                 navArgument("file") {
                     type = NavType.StringType
                     defaultValue = ""
@@ -217,11 +220,13 @@ fun AppNavHost() {
                 }
             )
         ) { backStackEntry ->
+            val cid = backStackEntry.arguments?.getString("cid")?.toLongOrNull() ?: 0L
             val file = backStackEntry.arguments?.getString("file").orEmpty()
             val title = backStackEntry.arguments?.getString("title").orEmpty()
             val year = backStackEntry.arguments?.getString("year")?.toIntOrNull() ?: 0
             val year2 = backStackEntry.arguments?.getString("year2")?.toIntOrNull() ?: 0
             ArchivePhotoViewerScreen(
+                cid = cid,
                 file = Uri.decode(file),
                 title = Uri.decode(title),
                 year = year,

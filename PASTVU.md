@@ -90,3 +90,13 @@ Content-Type: application/json
 
 `data/util/PastVuApi.kt` — object, POST JSON через HttpURLConnection.
 Образец стиля: `data/util/OverpassGeocoder.kt`.
+
+Экраны и файлы архива:
+
+- `ui/map/MapScreen.kt` — карта с маркерами фото и кластеров, toggle «Архив»,
+  Bottom Sheet `ArchivePhotoSheet` с превью (`h/`).
+- `ui/map/ArchivePhotoViewerScreen.kt` — полноэкранный просмотр (`d/`), кнопка «Сохранить».
+- `ui/map/ArchivePhotoViewerViewModel.kt` — скачивание `d/` через HttpURLConnection
+  и запись в галерею через MediaStore: `RELATIVE_PATH = Pictures/PastVu`,
+  `DISPLAY_NAME = PastVu_{cid}_{yyyy-MM-dd_HH-mm-ss}.jpg`, `IS_PENDING` 1 → 0.
+  Разрешения не нужны: minSdk 29, запись идёт через `ContentResolver`.
