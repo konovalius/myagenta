@@ -21,4 +21,6 @@ class SubfolderRepository @Inject constructor(
     suspend fun insert(subfolder: Subfolder) = subfolderDao.insert(subfolder)
 
     suspend fun delete(subfolder: Subfolder) = subfolderDao.delete(subfolder)
+
+    suspend fun deleteIfEmpty(uuid: String): Int = subfolderDao.deleteIfEmpty(uuid)
 }

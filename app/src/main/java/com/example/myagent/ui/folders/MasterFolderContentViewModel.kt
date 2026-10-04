@@ -64,7 +64,9 @@ class MasterFolderContentViewModel @Inject constructor(
     fun deleteMedia(media: Media) {
         viewModelScope.launch {
             fileRepository.delete(Uri.parse(media.uri))
+            val subfolderUuid = media.subfolderUuid
             mediaRepository.delete(media)
+            subfolderUuid?.let { subfolderRepository.deleteIfEmpty(it) }
         }
     }
 

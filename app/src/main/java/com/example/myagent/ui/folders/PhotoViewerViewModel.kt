@@ -8,6 +8,7 @@ import com.example.myagent.data.db.entity.Media
 import com.example.myagent.data.repository.FileRepository
 import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.MediaRepository
+import com.example.myagent.data.repository.SubfolderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +22,8 @@ class PhotoViewerViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val mediaRepository: MediaRepository,
     private val fileRepository: FileRepository,
-    private val masterFolderRepository: MasterFolderRepository
+    private val masterFolderRepository: MasterFolderRepository,
+    private val subfolderRepository: SubfolderRepository
 ) : ViewModel() {
 
     private val folderUuid: String? = savedStateHandle["folderUuid"]
@@ -50,8 +52,10 @@ class PhotoViewerViewModel @Inject constructor(
             .firstOrNull { it.uri == uri.toString() }
             ?.let { media ->
                 val folderUuid = media.folderUuid
+                val subfolderUuid = media.subfolderUuid
                 mediaRepository.delete(media)
                 rowDeleted = true
+                subfolderUuid?.let { subfolderRepository.deleteIfEmpty(it) }
                 if (folderUuid != null) {
                     deleteFolderIfEmpty(folderUuid)
                 }
