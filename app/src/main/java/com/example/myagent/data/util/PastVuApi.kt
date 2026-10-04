@@ -5,6 +5,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -53,6 +54,8 @@ object PastVuApi {
         val startedAt = System.currentTimeMillis()
         val response = try {
             getByBounds(z, bounds.toPolygon())
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.wtf(TAG, "fetchPhotos failed: ${e.javaClass.name}: ${e.message}")
             return@withContext null

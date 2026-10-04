@@ -85,6 +85,9 @@ import java.util.Locale
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.osmdroid.events.MapListener
+import org.osmdroid.events.ScrollEvent
+import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.util.MapTileIndex
@@ -104,6 +107,7 @@ private const val GEO_FOLDER_ZOOM = 14.0
 private const val PIN_SIZE_DP = 48
 private const val ARCHIVE_MARKER_SIZE_DP = 16
 private const val ARCHIVE_CLUSTER_SIZE_DP = 24
+private const val ARCHIVE_DEBOUNCE_MS = 500L
 private const val LONG_PRESS_MILLIS = 2000L
 
 private data class GeoPickState(
@@ -111,6 +115,28 @@ private data class GeoPickState(
     val lon: Double,
     val folders: List<GeoPickFolder>
 )
+
+private data class ArchiveQuery(
+    val north: Double,
+    val south: Double,
+    val east: Double,
+    val west: Double,
+    val zoom: Int
+) {
+    fun toBounds() = PastVuBounds(north = north, south = south, east = east, west = west)
+}
+
+private fun MapView.currentArchiveQuery(): ArchiveQuery {
+    val box = boundingBox
+    fun snap(value: Double) = Math.round(value * 10_000.0) / 10_000.0
+    return ArchiveQuery(
+        north = snap(box.latNorth),
+        south = snap(box.latSouth),
+        east = snap(box.lonEast),
+        west = snap(box.lonWest),
+        zoom = zoomLevelDouble.toInt()
+    )
+}
 
 @Composable
 fun MapScreen(
@@ -149,6 +175,7 @@ fun MapScreen(
     var deleteMode by remember { mutableStateOf(false) }
     var isArchiveMode by remember { mutableStateOf(false) }
     var archiveSnapshot by remember { mutableStateOf<PastVuSnapshot?>(null) }
+    var archiveQuery by remember { mutableStateOf<ArchiveQuery?>(null) }
     val archiveMarkers = remember { mutableStateListOf<Marker>() }
 
     fun openGeoCameraToFolder(lat: Double, lon: Double, folderUuid: String?) {
@@ -313,6 +340,37 @@ fun MapScreen(
         mapView.invalidate()
     }
 
+    DisposableEffect(mapView) {
+        val listener = object : MapListener {
+            override fun onScroll(event: ScrollEvent?): Boolean {
+                if (isArchiveMode) {
+                    archiveQuery = mapView.currentArchiveQuery()
+                }
+                return false
+            }
+
+            override fun onZoom(event: ZoomEvent?): Boolean {
+                if (isArchiveMode) {
+                    archiveQuery = mapView.currentArchiveQuery()
+                }
+                return false
+            }
+        }
+        mapView.addMapListener(listener)
+        onDispose { mapView.removeMapListener(listener) }
+    }
+
+    LaunchedEffect(archiveQuery) {
+        val query = archiveQuery ?: return@LaunchedEffect
+        if (!isArchiveMode) return@LaunchedEffect
+        delay(ARCHIVE_DEBOUNCE_MS)
+        if (!isArchiveMode) return@LaunchedEffect
+        val snapshot = viewModel.fetchArchiveSnapshot(query.toBounds(), query.zoom)
+        if (isArchiveMode) {
+            archiveSnapshot = snapshot
+        }
+    }
+
     LaunchedEffect(archiveSnapshot, mapView) {
         archiveMarkers.forEach { mapView.overlays.remove(it) }
         archiveMarkers.clear()
@@ -372,21 +430,9 @@ fun MapScreen(
                 isArchiveMode = checked
                 Log.wtf("PastVu", "Archive mode: $checked")
                 if (checked) {
-                    val box = mapView.boundingBox
-                    val bounds = PastVuBounds(
-                        north = box.latNorth,
-                        south = box.latSouth,
-                        east = box.lonEast,
-                        west = box.lonWest
-                    )
-                    val zoom = mapView.zoomLevelDouble.toInt()
-                    scope.launch {
-                        val snapshot = viewModel.fetchArchiveSnapshot(bounds, zoom)
-                        if (isArchiveMode) {
-                            archiveSnapshot = snapshot
-                        }
-                    }
+                    archiveQuery = mapView.currentArchiveQuery()
                 } else {
+                    archiveQuery = null
                     archiveSnapshot = null
                 }
             },
