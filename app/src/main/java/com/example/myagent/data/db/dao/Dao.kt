@@ -87,4 +87,7 @@ interface SubfolderDao {
 
     @Query("DELETE FROM subfolders WHERE uuid = :uuid AND NOT EXISTS (SELECT 1 FROM media WHERE subfolder_uuid = :uuid)")
     suspend fun deleteIfEmpty(uuid: String): Int
+
+    @Query("DELETE FROM subfolders WHERE folder_uuid = :folderUuid")
+    suspend fun deleteByFolder(folderUuid: String)
 }

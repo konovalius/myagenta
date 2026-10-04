@@ -76,6 +76,7 @@ class MasterFolderContentViewModel @Inject constructor(
                 fileRepository.delete(Uri.parse(media.uri))
                 mediaRepository.delete(media)
             }
+            subfolderRepository.deleteByFolder(folder.uuid)
             masterFolderRepository.delete(folder)
         }
     }
