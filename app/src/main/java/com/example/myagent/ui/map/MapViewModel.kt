@@ -47,7 +47,6 @@ class MapViewModel @Inject constructor(
 
     init {
         refresh()
-        viewModelScope.launch { PastVuApi.probe() }
     }
 
     suspend fun fetchArchiveSnapshot(bounds: PastVuBounds, zoom: Int): PastVuSnapshot? =

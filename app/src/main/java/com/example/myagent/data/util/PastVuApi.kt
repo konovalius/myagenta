@@ -141,25 +141,6 @@ object PastVuApi {
         post(body.toString())
     }
 
-    suspend fun probe() = withContext(Dispatchers.IO) {
-        val ring = JSONArray()
-            .put(JSONArray().put(30.30).put(59.93))
-            .put(JSONArray().put(30.50).put(59.93))
-            .put(JSONArray().put(30.50).put(59.98))
-            .put(JSONArray().put(30.30).put(59.98))
-            .put(JSONArray().put(30.30).put(59.93))
-        val geometry = JSONObject()
-            .put("type", "Polygon")
-            .put("coordinates", JSONArray().put(ring))
-        val response = try {
-            getByBounds(15, geometry)
-        } catch (e: Exception) {
-            Log.wtf(TAG, "request failed: ${e.javaClass.name}: ${e.message}")
-            return@withContext
-        }
-        Log.wtf(TAG, "response: ${response.take(LOG_LIMIT)}")
-    }
-
     private fun post(jsonBody: String): String {
         val connection = (URL(ENDPOINT).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
