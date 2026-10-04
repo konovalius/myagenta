@@ -9,6 +9,7 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.MotionEvent
@@ -64,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -398,6 +400,7 @@ LaunchedEffect(Unit) {
                 icon = createArchiveMarkerIcon(context)
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 title = photo.title
+                setPanToView(false)
                 setOnMarkerClickListener { _, _ ->
                     selectedArchivePhoto = photo
                     Log.wtf("PastVu", "photo click: ${photo.cid} ${photo.title}")
@@ -413,6 +416,12 @@ LaunchedEffect(Unit) {
                 icon = createArchiveClusterIcon(context, cluster.count)
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 title = "${cluster.count} фото"
+                setPanToView(false)
+                setOnMarkerClickListener { marker, _ ->
+                    marker.showInfoWindow()
+                    Log.wtf("PastVu", "cluster click: ${marker.title} shown=${marker.isInfoWindowShown()}")
+                    true
+                }
             }
             mapView.overlays.add(marker)
             archiveClusterMarkers += marker
@@ -589,6 +598,8 @@ private fun ArchivePhotoSheet(
     onOpen: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val fallbackColor = MaterialTheme.colorScheme.surfaceVariant
+    val fallbackImage = remember(fallbackColor) { ColorDrawable(fallbackColor.toArgb()) }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
@@ -609,6 +620,8 @@ private fun ArchivePhotoSheet(
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(ARCHIVE_THUMBNAIL_BASE_URL + photo.file)
+                        .placeholder(fallbackImage)
+                        .error(fallbackImage)
                         .crossfade(true)
                         .build(),
                     contentDescription = photo.title,
