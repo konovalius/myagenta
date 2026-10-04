@@ -107,12 +107,23 @@ fun MasterFolderContentScreen(
         indexByUuid,
         expandedSubfolderUuid
     ) {
-        val base = mutableListOf<GridItem>()
-        singleMedia.forEach { base.add(GridItem.Single(it, indexByUuid[it.uuid] ?: 0)) }
+        // Единый список: одиночные медиа и подпапки вперемешку, по дате (новые сверху).
+        // Дата подпапки — последний кадр в ней, у пустой — дата создания подпапки.
+        val dated = mutableListOf<Pair<Long, GridItem>>()
+        singleMedia.forEach { media ->
+            dated.add(media.createdAt to GridItem.Single(media, indexByUuid[media.uuid] ?: 0))
+        }
         subfolders.forEach { subfolder ->
             val subfolderMedia = mediaBySubfolder[subfolder.uuid] ?: emptyList()
-            base.add(GridItem.SubfolderItem(subfolder, subfolderMedia.maxByOrNull { it.createdAt }))
+            val sortDate = subfolderMedia.maxOfOrNull { it.createdAt } ?: subfolder.createdAt
+            dated.add(
+                sortDate to GridItem.SubfolderItem(
+                    subfolder,
+                    subfolderMedia.maxByOrNull { it.createdAt }
+                )
+            )
         }
+        val base = dated.sortedByDescending { it.first }.map { it.second }
 
         val result = mutableListOf<List<GridItem>>()
         var current = mutableListOf<GridItem>()
