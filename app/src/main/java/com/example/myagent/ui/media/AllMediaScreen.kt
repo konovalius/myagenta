@@ -57,7 +57,7 @@ import com.example.myagent.ui.theme.GoshaSans
 fun AllMediaScreen(
     onBackClick: () -> Unit,
     onOpenVideo: (Uri) -> Unit,
-    onOpenPhoto: (Uri) -> Unit
+    onOpenPhoto: (Uri, Int) -> Unit
 ) {
     val viewModel: AllMediaViewModel = hiltViewModel()
     val mediaList = viewModel.unassignedMedia.collectAsState().value
@@ -245,7 +245,7 @@ fun AllMediaScreen(
                                                 media = media,
                                                 folderUuid = "",
                                                 index = item.index,
-                                                onOpenPhoto = { uri, _, _ -> onOpenPhoto(uri) },
+                                                onOpenPhoto = { uri, _, index -> onOpenPhoto(uri, index) },
                                                 onOpenVideo = onOpenVideo,
                                                 modifier = Modifier.fillMaxSize(),
                                                 selectionMode = isMergeMode,

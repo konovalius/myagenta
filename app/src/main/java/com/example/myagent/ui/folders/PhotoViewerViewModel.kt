@@ -30,11 +30,16 @@ class PhotoViewerViewModel @Inject constructor(
     val media: StateFlow<List<Media>> = _media.asStateFlow()
 
     init {
-        folderUuid?.let { uuid ->
-            viewModelScope.launch {
-                mediaRepository.getByFolder(uuid).collect { list ->
-                    _media.value = list
-                }
+        val uuid = folderUuid
+        val flow = if (uuid != null) {
+            mediaRepository.getByFolder(uuid)
+        } else {
+            // Без мастер-папки — свайп по «Не сортированному»
+            mediaRepository.getUnassigned()
+        }
+        viewModelScope.launch {
+            flow.collect { list ->
+                _media.value = list
             }
         }
     }

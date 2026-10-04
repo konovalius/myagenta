@@ -193,8 +193,8 @@ fun AppNavHost() {
                 onOpenVideo = { uri ->
                     openSinglePreview(AppRoutes.videoPlayer(uri))
                 },
-                onOpenPhoto = { uri ->
-                    openSinglePreview(AppRoutes.mediaViewer(uri, null, showUseButton = true))
+                onOpenPhoto = { uri, index ->
+                    openSinglePreview(AppRoutes.mediaViewer(uri, null, showUseButton = true, startIndex = index))
                 }
             )
         }
