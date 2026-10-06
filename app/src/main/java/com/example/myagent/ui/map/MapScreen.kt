@@ -608,7 +608,6 @@ private fun ArchivePhotoSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val thumbnailUrl = ARCHIVE_THUMBNAIL_BASE_URL + photo.file
-    Log.wtf("PastVu", "thumbnail URL: $thumbnailUrl")
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
@@ -630,15 +629,6 @@ private fun ArchivePhotoSheet(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(thumbnailUrl)
                         .crossfade(true)
-                        .listener(
-                            onSuccess = { _, _ -> Log.wtf("PastVu", "thumb OK: ${photo.cid}") },
-                            onError = { _, result ->
-                                Log.wtf(
-                                    "PastVu",
-                                    "thumb ERROR: ${photo.cid}, ${result.throwable.message}"
-                                )
-                            }
-                        )
                         .build(),
                     contentDescription = photo.title,
                     contentScale = ContentScale.Crop,
