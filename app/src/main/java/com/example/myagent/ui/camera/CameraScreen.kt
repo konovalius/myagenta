@@ -661,7 +661,7 @@ onBindFailed = {
 val editInteraction = remember { MutableInteractionSource() }
                             Box(
                                 modifier = Modifier
-                                    .size(35.2.dp)
+                                    .size(28.dp)
                                     .clip(CircleShape)
                                     .background(
                                         if (isEditingOverlay) Color.White.copy(alpha = 0.56f)
@@ -687,13 +687,13 @@ val editInteraction = remember { MutableInteractionSource() }
                                     } else {
                                         Color.White.copy(alpha = 0.56f)
                                     },
-                                    modifier = Modifier.size(28.6.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                             val flipInteraction = remember { MutableInteractionSource() }
                             Box(
                                 modifier = Modifier
-                                    .size(35.2.dp)
+                                    .size(28.dp)
                                     .clip(CircleShape)
                                     .background(Color.Black.copy(alpha = 0.56f))
                                     .clickable(
@@ -713,13 +713,13 @@ val editInteraction = remember { MutableInteractionSource() }
                                     imageVector = Icons.Filled.Refresh,
                                     contentDescription = "Сбросить ориентир",
                                     tint = Color.White.copy(alpha = 0.56f),
-                                    modifier = Modifier.size(28.6.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(35.2.dp)
+                                    .height(27.dp)
                                     .clip(RoundedCornerShape(percent = 50))
                                     .background(Color.Black.copy(alpha = 0.28f))
                             ) {
@@ -762,7 +762,7 @@ val editInteraction = remember { MutableInteractionSource() }
                             val closeInteraction = remember { MutableInteractionSource() }
                             Box(
                                 modifier = Modifier
-                                    .size(35.2.dp)
+                                    .size(28.dp)
                                     .clip(CircleShape)
                                     .background(Color.Black.copy(alpha = 0.56f))
                                     .clickable(
@@ -777,7 +777,7 @@ val editInteraction = remember { MutableInteractionSource() }
                                     imageVector = Icons.Filled.Close,
                                     contentDescription = "Убрать ориентир",
                                     tint = Color.White.copy(alpha = 0.56f),
-                                    modifier = Modifier.size(28.6.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
                             }
                         }
