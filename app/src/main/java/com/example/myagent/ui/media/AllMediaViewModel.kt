@@ -46,7 +46,8 @@ class AllMediaViewModel @Inject constructor(
     }
 
     fun deleteMedia(media: Media) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
+            fileRepository.delete(Uri.parse(media.uri))
             val subfolderUuid = media.subfolderUuid
             mediaRepository.delete(media)
             subfolderUuid?.let { subfolderRepository.deleteIfEmpty(it) }

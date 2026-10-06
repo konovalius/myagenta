@@ -279,13 +279,8 @@ fun AllMediaScreen(
                                                     }
                                                     deleteMode -> {
                                                         {
-                                                            // Удаление сразу без диалога
+                                                            // Удаление файла из галереи и записи из БД — в ViewModel
                                                             viewModel.deleteMedia(media)
-                                                            try {
-                                                                context.contentResolver.delete(Uri.parse(media.uri), null, null)
-                                                            } catch (e: Exception) {
-                                                                Log.e("AllMedia", "Ошибка удаления файла из галереи", e)
-                                                            }
                                                             // Показываем Toast
                                                             Toast.makeText(context, "Удалено", Toast.LENGTH_SHORT).show()
                                                         }
@@ -494,12 +489,6 @@ is GridItem.SubfolderItem -> {
                     onClick = {
                         mediaToDelete?.let { media ->
                             viewModel.deleteMedia(media)
-                            try {
-                                val uri = Uri.parse(media.uri)
-                                context.contentResolver.delete(uri, null, null)
-                            } catch (e: Exception) {
-                                Log.e("AllMedia", "Ошибка удаления файла из галереи", e)
-                            }
                         }
                         setShowDeleteDialog(false)
                         setMediaToDelete(null)

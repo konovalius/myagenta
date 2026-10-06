@@ -47,6 +47,7 @@ class PhotoViewerViewModel @Inject constructor(
     }
 
     suspend fun deleteMedia(uri: Uri): Boolean {
+        val fileDeleted = fileRepository.delete(uri)
         var rowDeleted = false
         mediaRepository.getAll().first()
             .firstOrNull { it.uri == uri.toString() }
@@ -60,7 +61,6 @@ class PhotoViewerViewModel @Inject constructor(
                     deleteFolderIfEmpty(folderUuid)
                 }
             }
-        val fileDeleted = fileRepository.delete(uri)
         return rowDeleted || fileDeleted
     }
 

@@ -512,6 +512,9 @@ class CameraViewModel @Inject constructor(
         val deleted = fileRepository.delete(uri)
         if (deleted) {
             _lastPhotoUri.value = null
+            viewModelScope.launch(Dispatchers.IO) {
+                mediaRepository.getByUri(uri.toString())?.let { mediaRepository.delete(it) }
+            }
         }
         return deleted
     }

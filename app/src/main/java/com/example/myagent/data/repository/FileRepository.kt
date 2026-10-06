@@ -108,7 +108,8 @@ class FileRepository @Inject constructor(
     fun delete(uri: Uri): Boolean {
         return try {
             context.contentResolver.delete(uri, null, null) > 0
-        } catch (e: SecurityException) {
+        } catch (e: Exception) {
+            Log.e("FileRepository", "delete failed: ${e.message}")
             false
         }
     }
