@@ -1,9 +1,11 @@
 package com.example.myagent.ui.camera
 
+import android.content.ContentValues
 import android.content.Context
 import android.location.Location
 import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
@@ -26,7 +28,12 @@ import com.example.myagent.data.repository.MediaRepository
 import com.example.myagent.data.repository.SubfolderRepository
 import com.example.myagent.data.util.PlaceNameResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.net.HttpURLConnection
+import java.net.URL
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
+import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
@@ -36,9 +43,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class CameraViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
     private val fileRepository: FileRepository,
     private val mediaRepository: MediaRepository,
     private val masterFolderRepository: MasterFolderRepository,
@@ -73,25 +82,279 @@ class CameraViewModel @Inject constructor(
     private var deviceLon: Double? = null
     private var referenceUri: Uri? = null
     private var archiveTitle: String? = null
+    private var archiveUrl: String? = null
+    private var archiveLat: Double? = null
+    private var archiveLon: Double? = null
 
     private val _showArchiveDialog = MutableStateFlow(false)
     val showArchiveDialog: StateFlow<Boolean> = _showArchiveDialog.asStateFlow()
+
+    private val _archiveTarget = MutableStateFlow<ArchiveTargetState?>(null)
+    val archiveTarget: StateFlow<ArchiveTargetState?> = _archiveTarget.asStateFlow()
 
     var pendingArchiveUri: String? = null
     var pendingArchiveUriLat: Double? = null
     var pendingArchiveUriLon: Double? = null
     var pendingArchiveUriFolderUuid: String? = null
 
+    var pendingNewPhotoUri: String? = null
+    var pendingNewPhotoLat: Double? = null
+    var pendingNewPhotoLon: Double? = null
+
     init {
         Log.wtf("CameraVM", "ViewModel initialized")
     }
 
-    fun setArchiveTitle(title: String?) {
+    fun setArchiveInfo(title: String?, url: String?, lat: Double?, lon: Double?) {
         archiveTitle = title
+        archiveUrl = url
+        archiveLat = lat
+        archiveLon = lon
+        Log.wtf("CameraVM", "setArchiveInfo: title=$title, url=$url, lat=$lat, lon=$lon")
     }
 
     fun dismissArchiveDialog() {
         _showArchiveDialog.value = false
+    }
+
+    fun onArchiveFolderConfirm(name: String) {
+        _showArchiveDialog.value = false
+        viewModelScope.launch(Dispatchers.IO) {
+            val searchLat = pendingNewPhotoLat ?: deviceLat ?: archiveLat
+            val searchLon = pendingNewPhotoLon ?: deviceLon ?: archiveLon
+            val folders = if (searchLat != null && searchLon != null) {
+                findGeoFoldersNear(searchLat, searchLon)
+            } else {
+                emptyList()
+            }
+            _archiveTarget.value = ArchiveTargetState(
+                title = name,
+                lat = archiveLat ?: pendingNewPhotoLat ?: deviceLat,
+                lon = archiveLon ?: pendingNewPhotoLon ?: deviceLon,
+                folders = folders
+            )
+            Log.wtf("PastVu", "target: открыт диалог, папок рядом=${folders.size}")
+        }
+    }
+
+    fun onTargetExisting(folder: MasterFolder) {
+        Log.wtf("PastVu", "target: existing ${folder.name}")
+        closeArchiveTarget()
+    }
+
+    fun onTargetCreateFromArchive(title: String) {
+        Log.wtf("PastVu", "target: create from archive '$title'")
+        closeArchiveTarget()
+    }
+
+    fun onTargetCreateFromGeocoder(coords: String) {
+        Log.wtf("PastVu", "target: create from geocoder '$coords'")
+        closeArchiveTarget()
+    }
+
+    fun onTargetCreateCustom(name: String) {
+        Log.wtf("PastVu", "target: create custom '$name'")
+        closeArchiveTarget()
+    }
+
+    fun onTargetCancelled() {
+        Log.wtf("PastVu", "target: cancelled, saved to unsorted")
+        val newPhotoUri = pendingNewPhotoUri
+        closeArchiveTarget()
+        if (newPhotoUri == null) {
+            Log.wtf("PastVu", "target: нет URI нового фото — пропускаю")
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val media = Media(
+                uuid = UUID.randomUUID().toString(),
+                uri = newPhotoUri,
+                folderUuid = null,
+                subfolderUuid = null,
+                type = "photo",
+                createdAt = System.currentTimeMillis(),
+                lat = null,
+                lon = null
+            )
+            mediaRepository.insert(media)
+            Log.wtf("PastVu", "target: media=${media.uuid} в «Не сортированное»")
+        }
+    }
+
+    private fun closeArchiveTarget() {
+        _archiveTarget.value = null
+        archiveTitle = null
+        archiveUrl = null
+        archiveLat = null
+        archiveLon = null
+        pendingArchiveUri = null
+        pendingArchiveUriLat = null
+        pendingArchiveUriLon = null
+        pendingArchiveUriFolderUuid = null
+        pendingNewPhotoUri = null
+        pendingNewPhotoLat = null
+        pendingNewPhotoLon = null
+    }
+
+    fun onArchiveDialogConfirm(name: String) {
+        val newPhotoUri = pendingNewPhotoUri
+        val url = archiveUrl
+        val archiveLatC = archiveLat
+        val archiveLonC = archiveLon
+        val newPhotoLat = pendingNewPhotoLat ?: deviceLat
+        val newPhotoLon = pendingNewPhotoLon ?: deviceLon
+
+        _showArchiveDialog.value = false
+        archiveTitle = null
+        archiveUrl = null
+        archiveLat = null
+        archiveLon = null
+        pendingArchiveUri = null
+        pendingArchiveUriLat = null
+        pendingArchiveUriLon = null
+        pendingArchiveUriFolderUuid = null
+        pendingNewPhotoUri = null
+        pendingNewPhotoLat = null
+        pendingNewPhotoLon = null
+
+        Log.wtf("PastVu", "archive: create folder '$name'")
+        if (newPhotoUri == null) {
+            Log.wtf("PastVu", "archive: нет URI нового фото — выхожу")
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Координаты папки: сначала GPS, потом архивные.
+                val lat = deviceLat ?: archiveLatC
+                val lon = deviceLon ?: archiveLonC
+                val folderUuid = if (lat != null && lon != null) {
+                    findOrCreateGeoFolder(lat, lon, name)
+                } else {
+                    null
+                }
+                Log.wtf("PastVu", "archive: folder=$folderUuid lat=$lat lon=$lon")
+
+                var downloadFailed = false
+                var archiveMedia: Media? = null
+                var subfolderUuid: String? = null
+
+                if (url != null) {
+                    try {
+                        val bytes = downloadArchivePhoto(url)
+                        val savedUri = saveArchivePhotoToGallery(bytes)
+                        if (savedUri != null) {
+                            val archiveMediaUuid = UUID.randomUUID().toString()
+                            subfolderUuid = UUID.randomUUID().toString()
+                            subfolderRepository.insert(
+                                Subfolder(
+                                    uuid = subfolderUuid,
+                                    folderUuid = folderUuid,
+                                    anchorMediaUuid = archiveMediaUuid,
+                                    createdAt = System.currentTimeMillis()
+                                )
+                            )
+                            archiveMedia = Media(
+                                uuid = archiveMediaUuid,
+                                uri = savedUri.toString(),
+                                folderUuid = folderUuid,
+                                subfolderUuid = subfolderUuid,
+                                type = "photo",
+                                createdAt = System.currentTimeMillis(),
+                                lat = archiveLatC,
+                                lon = archiveLonC
+                            )
+                            mediaRepository.insert(archiveMedia)
+                            Log.wtf(
+                                "PastVu",
+                                "archive: скачано, media=${archiveMedia.uuid}, subfolder=$subfolderUuid, folder=$folderUuid"
+                            )
+                        } else {
+                            downloadFailed = true
+                        }
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        downloadFailed = true
+                        Log.wtf("PastVu", "archive: ошибка скачивания ${e.javaClass.simpleName}: ${e.message}")
+                    }
+                } else {
+                    Log.wtf("PastVu", "archive: url пуст — пропускаю скачивание")
+                }
+
+                if (downloadFailed) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(appContext, "Не удалось скачать архивное", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                val newMedia = Media(
+                    uuid = UUID.randomUUID().toString(),
+                    uri = newPhotoUri,
+                    folderUuid = folderUuid,
+                    subfolderUuid = subfolderUuid,
+                    type = "photo",
+                    createdAt = System.currentTimeMillis(),
+                    lat = newPhotoLat,
+                    lon = newPhotoLon
+                )
+                mediaRepository.insert(newMedia)
+                Log.wtf(
+                    "PastVu",
+                    "archive: новое media=${newMedia.uuid}, folder=$folderUuid, subfolder=$subfolderUuid, anchor=${archiveMedia?.uuid}"
+                )
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.wtf("PastVu", "archive: ошибка ${e.javaClass.simpleName}: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(appContext, "Не удалось создать папку", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun downloadArchivePhoto(url: String): ByteArray {
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = ARCHIVE_DOWNLOAD_TIMEOUT_MS
+            readTimeout = ARCHIVE_DOWNLOAD_TIMEOUT_MS
+            setRequestProperty("User-Agent", "MyAgentApp/1.0 (Android)")
+        }
+        try {
+            val code = connection.responseCode
+            if (code != HttpURLConnection.HTTP_OK) {
+                throw IllegalStateException("http=$code")
+            }
+            return connection.inputStream.use { stream -> stream.readBytes() }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun saveArchivePhotoToGallery(bytes: ByteArray): Uri? {
+        val stamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.ROOT).format(Date())
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "PastVu_$stamp.jpg")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/PastVu")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
+        }
+        val uri = appContext.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            ?: return null
+        return try {
+            appContext.contentResolver.openOutputStream(uri)?.use { stream ->
+                stream.write(bytes)
+            } ?: throw IllegalStateException("openOutputStream вернул null")
+            values.clear()
+            values.put(MediaStore.Images.Media.IS_PENDING, 0)
+            appContext.contentResolver.update(uri, values, null, null)
+            Log.wtf("PastVu", "archive: сохранено bytes=${bytes.size} uri=$uri")
+            uri
+        } catch (e: Exception) {
+            appContext.contentResolver.delete(uri, null, null)
+            throw e
+        }
     }
 
     fun setLocation(lat: Double?, lon: Double?) {
@@ -150,6 +413,9 @@ class CameraViewModel @Inject constructor(
                             pendingArchiveUriLat = captureLat
                             pendingArchiveUriLon = captureLon
                             pendingArchiveUriFolderUuid = captureFolderUuid
+                            pendingNewPhotoUri = savedUri.toString()
+                            pendingNewPhotoLat = captureLat
+                            pendingNewPhotoLon = captureLon
                             _showArchiveDialog.value = true
                             return
                         }
@@ -534,6 +800,21 @@ class CameraViewModel @Inject constructor(
         }
     }
 
+    private suspend fun findGeoFoldersNear(lat: Double, lon: Double): List<MasterFolder> {
+        val folders = masterFolderRepository.getAll().first()
+        return folders.filter { folder ->
+            if (folder.type != "geo" || folder.lat == null || folder.lon == null) {
+                false
+            } else {
+                val results = FloatArray(1)
+                Location.distanceBetween(lat, lon, folder.lat, folder.lon, results)
+                results[0] <= GEO_RADIUS_METERS
+            }
+        }.also {
+            Log.wtf("CameraVM", "findGeoFoldersNear($lat,$lon): найдено ${it.size} из ${folders.size}")
+        }
+    }
+
     private suspend fun findGeoFolderNear(lat: Double, lon: Double): MasterFolder? {
         val folders = masterFolderRepository.getAll().first()
         folders.forEach { folder ->
@@ -552,7 +833,7 @@ class CameraViewModel @Inject constructor(
         return null
     }
 
-    private suspend fun findOrCreateGeoFolder(lat: Double, lon: Double): String {
+    private suspend fun findOrCreateGeoFolder(lat: Double, lon: Double, newName: String? = null): String {
         Log.wtf("CameraVM", "findOrCreateGeoFolder(рез=$lat,$lon): начинаю поиск")
         val folders = masterFolderRepository.getAll().first()
         folders.forEach { folder ->
@@ -570,15 +851,19 @@ class CameraViewModel @Inject constructor(
         Log.wtf("CameraVM", "findOrCreateGeoFolder: подходящей нет (папок всего ${folders.size}), создаю новую")
         val folder = MasterFolder(
             uuid = UUID.randomUUID().toString(),
-            name = PlaceNameResolver.formatCoordinates(lat, lon),
+            name = newName ?: PlaceNameResolver.formatCoordinates(lat, lon),
             type = "geo",
             createdAt = System.currentTimeMillis(),
             lat = lat,
             lon = lon
         )
         masterFolderRepository.insert(folder)
-        Log.wtf("CameraVM", "findOrCreateGeoFolder: создана ${folder.uuid} с координатами, имя уточняется в фоне")
-        resolveNameInBackground(folder.uuid, lat, lon)
+        if (newName != null) {
+            Log.wtf("CameraVM", "findOrCreateGeoFolder: создана ${folder.uuid} с именем '$newName'")
+        } else {
+            Log.wtf("CameraVM", "findOrCreateGeoFolder: создана ${folder.uuid} с координатами, имя уточняется в фоне")
+            resolveNameInBackground(folder.uuid, lat, lon)
+        }
         return folder.uuid
     }
 
@@ -616,10 +901,18 @@ class CameraViewModel @Inject constructor(
 
     companion object {
         private const val GEO_RADIUS_METERS = 20f
+        private const val ARCHIVE_DOWNLOAD_TIMEOUT_MS = 20_000
     }
 }
 
 data class SavedPhotoEvent(val uri: Uri, val folderUuid: String)
+
+data class ArchiveTargetState(
+    val title: String,
+    val lat: Double?,
+    val lon: Double?,
+    val folders: List<MasterFolder>
+)
 
 sealed interface GeoPrompt {
     val uri: Uri

@@ -33,7 +33,8 @@ import kotlinx.coroutines.withContext
 
 object AppRoutes {
     const val SPLASH = "splash"
-    const val CAMERA = "camera?uri={uri}&lat={lat}&lon={lon}&folderUuid={folderUuid}&archiveTitle={archiveTitle}"
+    const val CAMERA =
+        "camera?uri={uri}&lat={lat}&lon={lon}&folderUuid={folderUuid}&archiveTitle={archiveTitle}&archiveLat={archiveLat}&archiveLon={archiveLon}"
     const val ONBOARDING = "onboarding"
     const val MAP = "map"
     const val MASTER_FOLDERS = "master-folders"
@@ -41,7 +42,7 @@ object AppRoutes {
     const val ALL_MEDIA = "all-media"
     const val MEDIA_VIEWER = "media-viewer?uri={uri}&folderUuid={folderUuid}&showUseButton={showUseButton}&startIndex={startIndex}"
     const val VIDEO_PLAYER = "video-player?uri={uri}"
-    const val ARCHIVE_PHOTO = "archive-photo?cid={cid}&file={file}&title={title}&year={year}&year2={year2}"
+    const val ARCHIVE_PHOTO = "archive-photo?cid={cid}&file={file}&title={title}&year={year}&year2={year2}&lat={lat}&lon={lon}"
 
     fun archivePhoto(photo: PastVuPhoto): String {
         val params = buildList {
@@ -50,6 +51,8 @@ object AppRoutes {
             add("title=" + Uri.encode(photo.title))
             add("year=${photo.year}")
             add("year2=${photo.year2}")
+            add("lat=${photo.lat}")
+            add("lon=${photo.lon}")
         }
         return "archive-photo?" + params.joinToString("&")
     }
@@ -74,7 +77,9 @@ object AppRoutes {
         lat: Double? = null,
         lon: Double? = null,
         folderUuid: String? = null,
-        archiveTitle: String? = null
+        archiveTitle: String? = null,
+        archiveLat: Double? = null,
+        archiveLon: Double? = null
     ): String {
         val params = buildList {
             uri?.let { add("uri=${it.toString()}") }
@@ -82,6 +87,8 @@ object AppRoutes {
             lon?.let { add("lon=$it") }
             folderUuid?.let { add("folderUuid=$it") }
             archiveTitle?.let { add("archiveTitle=" + Uri.encode(it)) }
+            archiveLat?.let { add("archiveLat=$it") }
+            archiveLon?.let { add("archiveLon=$it") }
         }
         return if (params.isNotEmpty()) "camera?${params.joinToString("&")}" else "camera"
     }
@@ -148,6 +155,16 @@ fun AppNavHost() {
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                navArgument("archiveLat") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("archiveLon") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
@@ -159,12 +176,16 @@ fun AppNavHost() {
             val folderUuid = backStackEntry.arguments?.getString("folderUuid")
             val archiveTitle = backStackEntry.arguments?.getString("archiveTitle")
                 ?.let { Uri.decode(it) }
+            val archiveLat = backStackEntry.arguments?.getString("archiveLat")?.toDoubleOrNull()
+            val archiveLon = backStackEntry.arguments?.getString("archiveLon")?.toDoubleOrNull()
             CameraScreen(
                 initialReferenceUri = uri,
                 initialLat = lat,
                 initialLon = lon,
                 initialFolderUuid = folderUuid,
                 initialArchiveTitle = archiveTitle,
+                initialArchiveLat = archiveLat,
+                initialArchiveLon = archiveLon,
                 onNavigateToMasterFolders = { navController.navigate(AppRoutes.MASTER_FOLDERS) },
                 onNavigateToMap = { navController.navigate(AppRoutes.MAP) },
                 onNavigateToOnboarding = { navController.navigate(AppRoutes.ONBOARDING) },
@@ -227,6 +248,14 @@ fun AppNavHost() {
                 navArgument("year2") {
                     type = NavType.StringType
                     defaultValue = "0"
+                },
+                navArgument("lat") {
+                    type = NavType.StringType
+                    defaultValue = "0"
+                },
+                navArgument("lon") {
+                    type = NavType.StringType
+                    defaultValue = "0"
                 }
             )
         ) { backStackEntry ->
@@ -235,6 +264,8 @@ fun AppNavHost() {
             val title = backStackEntry.arguments?.getString("title").orEmpty()
             val year = backStackEntry.arguments?.getString("year")?.toIntOrNull() ?: 0
             val year2 = backStackEntry.arguments?.getString("year2")?.toIntOrNull() ?: 0
+            val photoLat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull()
+            val photoLon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull()
             ArchivePhotoViewerScreen(
                 cid = cid,
                 file = Uri.decode(file),
@@ -249,7 +280,9 @@ fun AppNavHost() {
                             lon = null,
                             uri = Uri.parse(Uri.encode(archiveUrl)),
                             folderUuid = null,
-                            archiveTitle = Uri.decode(title)
+                            archiveTitle = Uri.decode(title),
+                            archiveLat = photoLat?.takeIf { it != 0.0 },
+                            archiveLon = photoLon?.takeIf { it != 0.0 }
                         )
                     )
                 }

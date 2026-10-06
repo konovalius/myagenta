@@ -71,7 +71,11 @@ import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -119,8 +123,10 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import coil.compose.AsyncImage
+import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.ui.common.ShutterUi
 import com.example.myagent.ui.common.pressScale
+import java.util.Locale
 
 @Composable
 fun CameraScreen(
@@ -129,6 +135,8 @@ fun CameraScreen(
     initialLon: Double? = null,
     initialFolderUuid: String? = null,
     initialArchiveTitle: String? = null,
+    initialArchiveLat: Double? = null,
+    initialArchiveLon: Double? = null,
     onNavigateToMasterFolders: () -> Unit = {},
     onNavigateToMap: () -> Unit = {},
     onNavigateToOnboarding: () -> Unit = {},
@@ -269,8 +277,13 @@ fun CameraScreen(
         viewModel.setFolderUuid(initialFolderUuid)
     }
 
-    LaunchedEffect(initialArchiveTitle) {
-        viewModel.setArchiveTitle(initialArchiveTitle)
+    LaunchedEffect(initialArchiveTitle, initialArchiveLat, initialArchiveLon, initialReferenceUri) {
+        viewModel.setArchiveInfo(
+            initialArchiveTitle,
+            initialReferenceUri?.toString(),
+            initialArchiveLat,
+            initialArchiveLon
+        )
     }
 
     LaunchedEffect(referencePhotoUri) {
@@ -292,8 +305,7 @@ fun CameraScreen(
         ArchiveFolderDialog(
             defaultName = initialArchiveTitle,
             onConfirm = { name ->
-                Log.wtf("PastVu", "archive: create folder '$name'")
-                viewModel.dismissArchiveDialog()
+                viewModel.onArchiveFolderConfirm(name)
             },
             onSkip = {
                 Log.wtf("PastVu", "archive: skip folder")
@@ -303,6 +315,21 @@ fun CameraScreen(
                 Log.wtf("PastVu", "archive: skip folder")
                 viewModel.dismissArchiveDialog()
             }
+        )
+    }
+
+    val archiveTarget by viewModel.archiveTarget.collectAsState()
+    archiveTarget?.let { target ->
+        ArchiveTargetDialog(
+            archiveTitle = target.title,
+            archiveLat = target.lat,
+            archiveLon = target.lon,
+            existingFolders = target.folders,
+            onSelectExisting = { viewModel.onTargetExisting(it) },
+            onCreateFromArchive = { viewModel.onTargetCreateFromArchive(it) },
+            onCreateFromGeocoder = { viewModel.onTargetCreateFromGeocoder(it) },
+            onCreateCustom = { viewModel.onTargetCreateCustom(it) },
+            onDismiss = { viewModel.onTargetCancelled() }
         )
     }
 
@@ -1318,6 +1345,102 @@ fun ArchiveFolderDialog(
         },
         dismissButton = {
             TextButton(onClick = onSkip) { Text("Нет") }
+        }
+    )
+}
+
+@Composable
+fun ArchiveTargetDialog(
+    archiveTitle: String,
+    archiveLat: Double?,
+    archiveLon: Double?,
+    existingFolders: List<MasterFolder>,
+    onSelectExisting: (MasterFolder) -> Unit,
+    onCreateFromArchive: (String) -> Unit,
+    onCreateFromGeocoder: (String) -> Unit,
+    onCreateCustom: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var showCustomName by remember { mutableStateOf(false) }
+    var customName by remember { mutableStateOf("") }
+    val coordsText = remember(archiveLat, archiveLon) {
+        if (archiveLat != null && archiveLon != null) {
+            String.format(Locale.US, "%.4f, %.4f", archiveLat, archiveLon)
+        } else {
+            null
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Куда сохранить?") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                if (existingFolders.isNotEmpty()) {
+                    existingFolders.forEach { folder ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelectExisting(folder) }
+                                .padding(vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = folder.name,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = "существующая",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
+                TextButton(
+                    onClick = { onCreateFromArchive(archiveTitle) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Создать: $archiveTitle")
+                }
+                if (coordsText != null) {
+                    TextButton(
+                        onClick = { onCreateFromGeocoder(coordsText) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Создать: $coordsText")
+                    }
+                }
+                TextButton(
+                    onClick = { showCustomName = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Своё название")
+                }
+                if (showCustomName) {
+                    OutlinedTextField(
+                        value = customName,
+                        onValueChange = { customName = it },
+                        singleLine = true,
+                        placeholder = { Text("Название папки") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                    )
+                    if (customName.isNotBlank()) {
+                        TextButton(onClick = { onCreateCustom(customName.trim()) }) {
+                            Text("Создать")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Отмена") }
         }
     )
 }
