@@ -72,9 +72,26 @@ class CameraViewModel @Inject constructor(
     private var deviceLat: Double? = null
     private var deviceLon: Double? = null
     private var referenceUri: Uri? = null
+    private var archiveTitle: String? = null
+
+    private val _showArchiveDialog = MutableStateFlow(false)
+    val showArchiveDialog: StateFlow<Boolean> = _showArchiveDialog.asStateFlow()
+
+    var pendingArchiveUri: String? = null
+    var pendingArchiveUriLat: Double? = null
+    var pendingArchiveUriLon: Double? = null
+    var pendingArchiveUriFolderUuid: String? = null
 
     init {
         Log.wtf("CameraVM", "ViewModel initialized")
+    }
+
+    fun setArchiveTitle(title: String?) {
+        archiveTitle = title
+    }
+
+    fun dismissArchiveDialog() {
+        _showArchiveDialog.value = false
     }
 
     fun setLocation(lat: Double?, lon: Double?) {
@@ -127,6 +144,15 @@ class CameraViewModel @Inject constructor(
                         fileRepository.writeDateExif(savedUri, captureTime)
                         fileRepository.setPending(savedUri, false)
                         _lastPhotoUri.value = savedUri
+
+                        if (archiveTitle != null) {
+                            pendingArchiveUri = savedUri.toString()
+                            pendingArchiveUriLat = captureLat
+                            pendingArchiveUriLon = captureLon
+                            pendingArchiveUriFolderUuid = captureFolderUuid
+                            _showArchiveDialog.value = true
+                            return
+                        }
 
                         val reference = referenceUri
 

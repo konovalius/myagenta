@@ -72,6 +72,7 @@ import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -127,6 +128,7 @@ fun CameraScreen(
     initialLat: Double? = null,
     initialLon: Double? = null,
     initialFolderUuid: String? = null,
+    initialArchiveTitle: String? = null,
     onNavigateToMasterFolders: () -> Unit = {},
     onNavigateToMap: () -> Unit = {},
     onNavigateToOnboarding: () -> Unit = {},
@@ -267,6 +269,10 @@ fun CameraScreen(
         viewModel.setFolderUuid(initialFolderUuid)
     }
 
+    LaunchedEffect(initialArchiveTitle) {
+        viewModel.setArchiveTitle(initialArchiveTitle)
+    }
+
     LaunchedEffect(referencePhotoUri) {
         viewModel.setReferenceUri(referencePhotoUri)
     }
@@ -280,6 +286,25 @@ fun CameraScreen(
     }
 
     val geoPrompt by viewModel.geoPrompt.collectAsState()
+
+    val showArchiveDialog by viewModel.showArchiveDialog.collectAsState()
+    if (showArchiveDialog && initialArchiveTitle != null) {
+        ArchiveFolderDialog(
+            defaultName = initialArchiveTitle,
+            onConfirm = { name ->
+                Log.wtf("PastVu", "archive: create folder '$name'")
+                viewModel.dismissArchiveDialog()
+            },
+            onSkip = {
+                Log.wtf("PastVu", "archive: skip folder")
+                viewModel.dismissArchiveDialog()
+            },
+            onDismiss = {
+                Log.wtf("PastVu", "archive: skip folder")
+                viewModel.dismissArchiveDialog()
+            }
+        )
+    }
 
     geoPrompt?.let { prompt ->
         AlertDialog(
@@ -1265,4 +1290,34 @@ fun PauseIcon(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.width(2.dp))
         }
     }
+}
+
+@Composable
+fun ArchiveFolderDialog(
+    defaultName: String,
+    onConfirm: (String) -> Unit,
+    onSkip: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var name by remember { mutableStateOf(defaultName) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Создать новую папку?") },
+        text = {
+            Column {
+                Text("Название папки:")
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(name) }) { Text("Да") }
+        },
+        dismissButton = {
+            TextButton(onClick = onSkip) { Text("Нет") }
+        }
+    )
 }

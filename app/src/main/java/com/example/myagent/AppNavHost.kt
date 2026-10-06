@@ -33,7 +33,7 @@ import kotlinx.coroutines.withContext
 
 object AppRoutes {
     const val SPLASH = "splash"
-    const val CAMERA = "camera?uri={uri}&lat={lat}&lon={lon}&folderUuid={folderUuid}"
+    const val CAMERA = "camera?uri={uri}&lat={lat}&lon={lon}&folderUuid={folderUuid}&archiveTitle={archiveTitle}"
     const val ONBOARDING = "onboarding"
     const val MAP = "map"
     const val MASTER_FOLDERS = "master-folders"
@@ -73,13 +73,15 @@ object AppRoutes {
         uri: Uri? = null,
         lat: Double? = null,
         lon: Double? = null,
-        folderUuid: String? = null
+        folderUuid: String? = null,
+        archiveTitle: String? = null
     ): String {
         val params = buildList {
             uri?.let { add("uri=${it.toString()}") }
             lat?.let { add("lat=$it") }
             lon?.let { add("lon=$it") }
             folderUuid?.let { add("folderUuid=$it") }
+            archiveTitle?.let { add("archiveTitle=" + Uri.encode(it)) }
         }
         return if (params.isNotEmpty()) "camera?${params.joinToString("&")}" else "camera"
     }
@@ -141,6 +143,11 @@ fun AppNavHost() {
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                navArgument("archiveTitle") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
@@ -150,11 +157,14 @@ fun AppNavHost() {
             val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull()
             val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull()
             val folderUuid = backStackEntry.arguments?.getString("folderUuid")
+            val archiveTitle = backStackEntry.arguments?.getString("archiveTitle")
+                ?.let { Uri.decode(it) }
             CameraScreen(
                 initialReferenceUri = uri,
                 initialLat = lat,
                 initialLon = lon,
                 initialFolderUuid = folderUuid,
+                initialArchiveTitle = archiveTitle,
                 onNavigateToMasterFolders = { navController.navigate(AppRoutes.MASTER_FOLDERS) },
                 onNavigateToMap = { navController.navigate(AppRoutes.MAP) },
                 onNavigateToOnboarding = { navController.navigate(AppRoutes.ONBOARDING) },
@@ -238,7 +248,8 @@ fun AppNavHost() {
                             lat = null,
                             lon = null,
                             uri = Uri.parse(Uri.encode(archiveUrl)),
-                            folderUuid = null
+                            folderUuid = null,
+                            archiveTitle = Uri.decode(title)
                         )
                     )
                 }
