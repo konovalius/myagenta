@@ -124,3 +124,29 @@ Firebase Crashlytics (или Sentry).
 - Release APK с minifyEnabled=true
 - Crashlytics получает тестовый краш
 - Нет Log.wtf в кодбейсе
+
+## 8. Известные ограничения (не баги)
+
+### 8.1 Файлы MyAgent не удаляются штатным проводником TECNO
+
+Статус: НЕ БАГ. Штатное поведение Android 11+ (Scoped Storage).
+Дата проверки: 2026-10-06 (TECNO CK7n, Android 14).
+
+Причина:
+- Приложение сохраняет файлы через MediaStore с owner_package_name=com.example.myagent.
+- Сторонние приложения без MANAGE_EXTERNAL_STORAGE не могут удалять файлы,
+  принадлежащие другому пакету.
+- До 2026-09-30 файлы сохранялись с owner_package_name=NULL — поэтому проводник
+  их удалял. После изменения кода (с 2026-09-30 16:06) — не удаляет.
+
+Как проверили (adb):
+  adb shell content query --uri content://media/external/images/media
+    --projection _id:_display_name:relative_path:is_pending:owner_package_name
+  → у файлов с 2026-09-30 owner_package_name=com.example.myagent, is_pending=0.
+
+Обходные пути для пользователя:
+- Files by Google, Solid Explorer, ZArchiver — удаляют.
+- Проводник TECNO — не имеет нужных прав (ограничение прошивки).
+- Удаление через ПК (MTP) или adb — работает.
+
+Решение: ничего в коде не менять. Текущее поведение корректно.
