@@ -903,7 +903,7 @@ class CameraViewModel @Inject constructor(
     }
 
     companion object {
-        private const val GEO_RADIUS_METERS = 20f
+        private const val GEO_RADIUS_METERS = 5f
         private const val ARCHIVE_DOWNLOAD_TIMEOUT_MS = 20_000
     }
 }
