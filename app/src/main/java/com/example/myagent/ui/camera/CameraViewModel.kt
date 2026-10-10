@@ -111,8 +111,32 @@ class CameraViewModel @Inject constructor(
     }
 
     fun onTargetExisting(folder: MasterFolder) {
-        Log.wtf("PastVu", "target: existing ${folder.name}")
+        val folderUuid = folder.uuid
+        val newPhotoUri = pendingNewPhotoUri
+        val url = archiveUrl
+        val archiveLatC = archiveLat
+        val archiveLonC = archiveLon
+        val newPhotoLat = pendingNewPhotoLat ?: deviceLat
+        val newPhotoLon = pendingNewPhotoLon ?: deviceLon
+
         closeArchiveTarget()
+
+        if (newPhotoUri == null) {
+            Log.wtf("PastVu", "target existing: нет URI нового фото — выхожу")
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            saveArchivePair(
+                folderUuid = folderUuid,
+                archiveUrl = url,
+                archiveLat = archiveLatC,
+                archiveLon = archiveLonC,
+                newPhotoUri = newPhotoUri,
+                newPhotoLat = newPhotoLat,
+                newPhotoLon = newPhotoLon
+            )
+        }
     }
 
     fun onTargetCreateFromArchive(title: String) {
@@ -169,119 +193,90 @@ class CameraViewModel @Inject constructor(
         pendingNewPhotoLon = null
     }
 
-    fun onArchiveDialogConfirm(name: String) {
-        val newPhotoUri = pendingNewPhotoUri
-        val url = archiveUrl
-        val archiveLatC = archiveLat
-        val archiveLonC = archiveLon
-        val newPhotoLat = pendingNewPhotoLat ?: deviceLat
-        val newPhotoLon = pendingNewPhotoLon ?: deviceLon
+    private suspend fun saveArchivePair(
+        folderUuid: String?,
+        archiveUrl: String?,
+        archiveLat: Double?,
+        archiveLon: Double?,
+        newPhotoUri: String,
+        newPhotoLat: Double?,
+        newPhotoLon: Double?
+    ) {
+        try {
+            var downloadFailed = false
+            var archiveMedia: Media? = null
+            var subfolderUuid: String? = null
 
-        archiveTitle = null
-        archiveUrl = null
-        archiveLat = null
-        archiveLon = null
-        pendingArchiveUri = null
-        pendingArchiveUriLat = null
-        pendingArchiveUriLon = null
-        pendingArchiveUriFolderUuid = null
-        pendingNewPhotoUri = null
-        pendingNewPhotoLat = null
-        pendingNewPhotoLon = null
-
-        Log.wtf("PastVu", "archive: create folder '$name'")
-        if (newPhotoUri == null) {
-            Log.wtf("PastVu", "archive: нет URI нового фото — выхожу")
-            return
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                // Координаты папки: сначала GPS, потом архивные.
-                val lat = deviceLat ?: archiveLatC
-                val lon = deviceLon ?: archiveLonC
-                val folderUuid = if (lat != null && lon != null) {
-                    findOrCreateGeoFolder(lat, lon, name)
-                } else {
-                    null
-                }
-                Log.wtf("PastVu", "archive: folder=$folderUuid lat=$lat lon=$lon")
-
-                var downloadFailed = false
-                var archiveMedia: Media? = null
-                var subfolderUuid: String? = null
-
-                if (url != null) {
-                    try {
-                        val bytes = downloadArchivePhoto(url)
-                        val savedUri = saveArchivePhotoToGallery(bytes)
-                        if (savedUri != null) {
-                            val archiveMediaUuid = UUID.randomUUID().toString()
-                            subfolderUuid = UUID.randomUUID().toString()
-                            subfolderRepository.insert(
-                                Subfolder(
-                                    uuid = subfolderUuid,
-                                    folderUuid = folderUuid,
-                                    anchorMediaUuid = archiveMediaUuid,
-                                    createdAt = System.currentTimeMillis()
-                                )
-                            )
-                            archiveMedia = Media(
-                                uuid = archiveMediaUuid,
-                                uri = savedUri.toString(),
+            if (archiveUrl != null) {
+                try {
+                    val bytes = downloadArchivePhoto(archiveUrl)
+                    val savedUri = saveArchivePhotoToGallery(bytes)
+                    if (savedUri != null) {
+                        val archiveMediaUuid = UUID.randomUUID().toString()
+                        subfolderUuid = UUID.randomUUID().toString()
+                        subfolderRepository.insert(
+                            Subfolder(
+                                uuid = subfolderUuid,
                                 folderUuid = folderUuid,
-                                subfolderUuid = subfolderUuid,
-                                type = "photo",
-                                createdAt = System.currentTimeMillis(),
-                                lat = archiveLatC,
-                                lon = archiveLonC
+                                anchorMediaUuid = archiveMediaUuid,
+                                createdAt = System.currentTimeMillis()
                             )
-                            mediaRepository.insert(archiveMedia)
-                            Log.wtf(
-                                "PastVu",
-                                "archive: скачано, media=${archiveMedia.uuid}, subfolder=$subfolderUuid, folder=$folderUuid"
-                            )
-                        } else {
-                            downloadFailed = true
-                        }
-                    } catch (e: kotlinx.coroutines.CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
+                        )
+                        archiveMedia = Media(
+                            uuid = archiveMediaUuid,
+                            uri = savedUri.toString(),
+                            folderUuid = folderUuid,
+                            subfolderUuid = subfolderUuid,
+                            type = "photo",
+                            createdAt = System.currentTimeMillis(),
+                            lat = archiveLat,
+                            lon = archiveLon
+                        )
+                        mediaRepository.insert(archiveMedia)
+                        Log.wtf(
+                            "PastVu",
+                            "archive: скачано, media=${archiveMedia.uuid}, subfolder=$subfolderUuid, folder=$folderUuid"
+                        )
+                    } else {
                         downloadFailed = true
-                        Log.wtf("PastVu", "archive: ошибка скачивания ${e.javaClass.simpleName}: ${e.message}")
                     }
-                } else {
-                    Log.wtf("PastVu", "archive: url пуст — пропускаю скачивание")
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    downloadFailed = true
+                    Log.wtf("PastVu", "archive: ошибка скачивания ${e.javaClass.simpleName}: ${e.message}")
                 }
+            } else {
+                Log.wtf("PastVu", "archive: url пуст — пропускаю скачивание")
+            }
 
-                if (downloadFailed) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(appContext, "Не удалось скачать архивное", Toast.LENGTH_SHORT).show()
-                    }
-                }
-
-                val newMedia = Media(
-                    uuid = UUID.randomUUID().toString(),
-                    uri = newPhotoUri,
-                    folderUuid = folderUuid,
-                    subfolderUuid = subfolderUuid,
-                    type = "photo",
-                    createdAt = System.currentTimeMillis(),
-                    lat = newPhotoLat,
-                    lon = newPhotoLon
-                )
-                mediaRepository.insert(newMedia)
-                Log.wtf(
-                    "PastVu",
-                    "archive: новое media=${newMedia.uuid}, folder=$folderUuid, subfolder=$subfolderUuid, anchor=${archiveMedia?.uuid}"
-                )
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.wtf("PastVu", "archive: ошибка ${e.javaClass.simpleName}: ${e.message}")
+            if (downloadFailed) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(appContext, "Не удалось создать папку", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(appContext, "Не удалось скачать архивное", Toast.LENGTH_SHORT).show()
                 }
+            }
+
+            val newMedia = Media(
+                uuid = UUID.randomUUID().toString(),
+                uri = newPhotoUri,
+                folderUuid = folderUuid,
+                subfolderUuid = subfolderUuid,
+                type = "photo",
+                createdAt = System.currentTimeMillis(),
+                lat = newPhotoLat,
+                lon = newPhotoLon
+            )
+            mediaRepository.insert(newMedia)
+            Log.wtf(
+                "PastVu",
+                "archive: новое media=${newMedia.uuid}, folder=$folderUuid, subfolder=$subfolderUuid, anchor=${archiveMedia?.uuid}"
+            )
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.wtf("PastVu", "archive: ошибка ${e.javaClass.simpleName}: ${e.message}")
+            withContext(Dispatchers.Main) {
+                Toast.makeText(appContext, "Не удалось создать папку", Toast.LENGTH_SHORT).show()
             }
         }
     }
