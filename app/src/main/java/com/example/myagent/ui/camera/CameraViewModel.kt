@@ -409,6 +409,9 @@ class CameraViewModel @Inject constructor(
                         _lastPhotoUri.value = savedUri
 
                         if (archiveTitle != null) {
+                            val titleToUse = archiveTitle!!
+                            val latToUse = archiveLat
+                            val lonToUse = archiveLon
                             pendingArchiveUri = savedUri.toString()
                             pendingArchiveUriLat = captureLat
                             pendingArchiveUriLon = captureLon
@@ -416,7 +419,19 @@ class CameraViewModel @Inject constructor(
                             pendingNewPhotoUri = savedUri.toString()
                             pendingNewPhotoLat = captureLat
                             pendingNewPhotoLon = captureLon
-                            _showArchiveDialog.value = true
+                            viewModelScope.launch(Dispatchers.IO) {
+                                val folders = if (latToUse != null && lonToUse != null) {
+                                    findGeoFoldersNear(latToUse, lonToUse)
+                                } else {
+                                    emptyList()
+                                }
+                                _archiveTarget.value = ArchiveTargetState(
+                                    title = titleToUse,
+                                    lat = latToUse,
+                                    lon = lonToUse,
+                                    folders = folders
+                                )
+                            }
                             return
                         }
 
