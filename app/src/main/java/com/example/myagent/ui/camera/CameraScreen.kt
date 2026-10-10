@@ -300,24 +300,6 @@ fun CameraScreen(
 
     val geoPrompt by viewModel.geoPrompt.collectAsState()
 
-    val showArchiveDialog by viewModel.showArchiveDialog.collectAsState()
-    if (showArchiveDialog && initialArchiveTitle != null) {
-        ArchiveFolderDialog(
-            defaultName = initialArchiveTitle,
-            onConfirm = { name ->
-                viewModel.onArchiveFolderConfirm(name)
-            },
-            onSkip = {
-                Log.wtf("PastVu", "archive: skip folder")
-                viewModel.dismissArchiveDialog()
-            },
-            onDismiss = {
-                Log.wtf("PastVu", "archive: skip folder")
-                viewModel.dismissArchiveDialog()
-            }
-        )
-    }
-
     val archiveTarget by viewModel.archiveTarget.collectAsState()
     archiveTarget?.let { target ->
         ArchiveTargetDialog(
@@ -1317,36 +1299,6 @@ fun PauseIcon(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.width(2.dp))
         }
     }
-}
-
-@Composable
-fun ArchiveFolderDialog(
-    defaultName: String,
-    onConfirm: (String) -> Unit,
-    onSkip: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    var name by remember { mutableStateOf(defaultName) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Создать новую папку?") },
-        text = {
-            Column {
-                Text("Название папки:")
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    singleLine = true
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(name) }) { Text("Да") }
-        },
-        dismissButton = {
-            TextButton(onClick = onSkip) { Text("Нет") }
-        }
-    )
 }
 
 @Composable

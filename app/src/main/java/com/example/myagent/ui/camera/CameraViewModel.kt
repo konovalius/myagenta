@@ -86,9 +86,6 @@ class CameraViewModel @Inject constructor(
     private var archiveLat: Double? = null
     private var archiveLon: Double? = null
 
-    private val _showArchiveDialog = MutableStateFlow(false)
-    val showArchiveDialog: StateFlow<Boolean> = _showArchiveDialog.asStateFlow()
-
     private val _archiveTarget = MutableStateFlow<ArchiveTargetState?>(null)
     val archiveTarget: StateFlow<ArchiveTargetState?> = _archiveTarget.asStateFlow()
 
@@ -111,30 +108,6 @@ class CameraViewModel @Inject constructor(
         archiveLat = lat
         archiveLon = lon
         Log.wtf("CameraVM", "setArchiveInfo: title=$title, url=$url, lat=$lat, lon=$lon")
-    }
-
-    fun dismissArchiveDialog() {
-        _showArchiveDialog.value = false
-    }
-
-    fun onArchiveFolderConfirm(name: String) {
-        _showArchiveDialog.value = false
-        viewModelScope.launch(Dispatchers.IO) {
-            val searchLat = pendingNewPhotoLat ?: deviceLat ?: archiveLat
-            val searchLon = pendingNewPhotoLon ?: deviceLon ?: archiveLon
-            val folders = if (searchLat != null && searchLon != null) {
-                findGeoFoldersNear(searchLat, searchLon)
-            } else {
-                emptyList()
-            }
-            _archiveTarget.value = ArchiveTargetState(
-                title = name,
-                lat = archiveLat ?: pendingNewPhotoLat ?: deviceLat,
-                lon = archiveLon ?: pendingNewPhotoLon ?: deviceLon,
-                folders = folders
-            )
-            Log.wtf("PastVu", "target: открыт диалог, папок рядом=${folders.size}")
-        }
     }
 
     fun onTargetExisting(folder: MasterFolder) {
@@ -204,7 +177,6 @@ class CameraViewModel @Inject constructor(
         val newPhotoLat = pendingNewPhotoLat ?: deviceLat
         val newPhotoLon = pendingNewPhotoLon ?: deviceLon
 
-        _showArchiveDialog.value = false
         archiveTitle = null
         archiveUrl = null
         archiveLat = null
