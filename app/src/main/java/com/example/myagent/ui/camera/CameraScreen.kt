@@ -74,7 +74,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
@@ -1351,41 +1350,41 @@ fun ArchiveTargetDialog(
                             )
                         }
                     }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                }
-                TextButton(
-                    onClick = { onCreateFromArchive(archiveTitle) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Создать: $archiveTitle")
-                }
-                if (coordsText != null) {
+                } else {
                     TextButton(
-                        onClick = { onCreateFromGeocoder(coordsText) },
+                        onClick = { onCreateFromArchive(archiveTitle) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Создать: $coordsText")
+                        Text("Создать: $archiveTitle")
                     }
-                }
-                TextButton(
-                    onClick = { showCustomName = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Своё название")
-                }
-                if (showCustomName) {
-                    OutlinedTextField(
-                        value = customName,
-                        onValueChange = { customName = it },
-                        singleLine = true,
-                        placeholder = { Text("Название папки") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp)
-                    )
-                    if (customName.isNotBlank()) {
-                        TextButton(onClick = { onCreateCustom(customName.trim()) }) {
-                            Text("Создать")
+                    if (coordsText != null) {
+                        TextButton(
+                            onClick = { onCreateFromGeocoder(coordsText) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Создать: $coordsText")
+                        }
+                    }
+                    TextButton(
+                        onClick = { showCustomName = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Своё название")
+                    }
+                    if (showCustomName) {
+                        OutlinedTextField(
+                            value = customName,
+                            onValueChange = { customName = it },
+                            singleLine = true,
+                            placeholder = { Text("Название папки") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp)
+                        )
+                        if (customName.isNotBlank()) {
+                            TextButton(onClick = { onCreateCustom(customName.trim()) }) {
+                                Text("Создать")
+                            }
                         }
                     }
                 }
