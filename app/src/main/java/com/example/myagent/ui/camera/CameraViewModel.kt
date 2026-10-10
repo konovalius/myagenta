@@ -179,8 +179,37 @@ class CameraViewModel @Inject constructor(
     }
 
     fun onTargetCreateCustom(name: String) {
-        Log.wtf("PastVu", "target: create custom '$name'")
+        val newPhotoUri = pendingNewPhotoUri
+        val url = archiveUrl
+        val archiveLatC = archiveLat
+        val archiveLonC = archiveLon
+        val newPhotoLat = pendingNewPhotoLat ?: deviceLat
+        val newPhotoLon = pendingNewPhotoLon ?: deviceLon
+
         closeArchiveTarget()
+
+        if (newPhotoUri == null) {
+            Log.wtf("PastVu", "target createCustom: нет URI нового фото — выхожу")
+            return
+        }
+        if (archiveLatC == null || archiveLonC == null) {
+            Log.wtf("PastVu", "target createCustom: нет координат архивного — выхожу")
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val folderUuid = findOrCreateGeoFolder(archiveLatC, archiveLonC, name)
+            Log.wtf("PastVu", "target createCustom: folder=$folderUuid name='$name'")
+            saveArchivePair(
+                folderUuid = folderUuid,
+                archiveUrl = url,
+                archiveLat = archiveLatC,
+                archiveLon = archiveLonC,
+                newPhotoUri = newPhotoUri,
+                newPhotoLat = newPhotoLat,
+                newPhotoLon = newPhotoLon
+            )
+        }
     }
 
     fun onTargetCancelled() {
