@@ -15,3 +15,10 @@
 local.properties
 
 .kotlin
+
+# OpenCode / Pi Ч локальные конфиги и npm-состо€ние
+.opencode/
+.pi/
+node_modules/
+package.json
+package-lock.json
