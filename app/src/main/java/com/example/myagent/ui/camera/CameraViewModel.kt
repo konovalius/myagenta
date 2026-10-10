@@ -140,8 +140,37 @@ class CameraViewModel @Inject constructor(
     }
 
     fun onTargetCreateFromArchive(title: String) {
-        Log.wtf("PastVu", "target: create from archive '$title'")
+        val newPhotoUri = pendingNewPhotoUri
+        val url = archiveUrl
+        val archiveLatC = archiveLat
+        val archiveLonC = archiveLon
+        val newPhotoLat = pendingNewPhotoLat ?: deviceLat
+        val newPhotoLon = pendingNewPhotoLon ?: deviceLon
+
         closeArchiveTarget()
+
+        if (newPhotoUri == null) {
+            Log.wtf("PastVu", "target createFromArchive: нет URI нового фото — выхожу")
+            return
+        }
+        if (archiveLatC == null || archiveLonC == null) {
+            Log.wtf("PastVu", "target createFromArchive: нет координат архивного — выхожу")
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val folderUuid = findOrCreateGeoFolder(archiveLatC, archiveLonC, title)
+            Log.wtf("PastVu", "target createFromArchive: folder=$folderUuid title='$title'")
+            saveArchivePair(
+                folderUuid = folderUuid,
+                archiveUrl = url,
+                archiveLat = archiveLatC,
+                archiveLon = archiveLonC,
+                newPhotoUri = newPhotoUri,
+                newPhotoLat = newPhotoLat,
+                newPhotoLon = newPhotoLon
+            )
+        }
     }
 
     fun onTargetCreateFromGeocoder(coords: String) {
