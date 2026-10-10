@@ -49,11 +49,11 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-        // РќР°СЃС‚СЂРѕР№РєРё
+        // Настройки
         val settingsInteraction = remember { MutableInteractionSource() }
         Icon(
             imageVector = Icons.Outlined.Settings,
-            contentDescription = "РќР°СЃС‚СЂРѕР№РєРё",
+            contentDescription = "Настройки",
             tint = if (isSettingsActive.value) Color(0xFFFF3B30) else Color.White,
             modifier = Modifier
                 .size(20.dp)
@@ -70,11 +70,11 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
                 ) { isSettingsActive.value = !isSettingsActive.value }
         )
 
-        // Р’СЃРїС‹С€РєР°
+        // Вспышка
         val flashInteraction = remember { MutableInteractionSource() }
         Icon(
             imageVector = Icons.Outlined.FlashOn,
-            contentDescription = "Р’СЃРїС‹С€РєР°",
+            contentDescription = "Вспышка",
             tint = if (isFlashActive.value) Color(0xFFFF3B30) else Color.White,
             modifier = Modifier
                 .size(24.dp)
@@ -91,7 +91,7 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
                 ) { isFlashActive.value = !isFlashActive.value }
         )
 
-        // Р Р°Р·СЂРµС€РµРЅРёРµ
+        // Разрешение
         val resolutionInteraction = remember { MutableInteractionSource() }
         Text(
             text = "1080",
@@ -107,7 +107,7 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
                 ) { isResolutionActive.value = !isResolutionActive.value }
         )
 
-        // Р СѓС‡РЅРѕР№ СЂРµР¶РёРј
+        // Точный режим
         val proInteraction = remember { MutableInteractionSource() }
         Text(
             text = "PRO",
@@ -123,7 +123,7 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
                 ) { isProModeActive.value = !isProModeActive.value }
         )
 
-        // Р¤РѕСЂРјР°С‚
+        // Формат
         val formatInteraction = remember { MutableInteractionSource() }
         Text(
             text = "4:3",
@@ -139,11 +139,11 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
                 ) { isFormatMenuOpen = true }
         )
 
-        // РџРѕРјРѕС‰СЊ РР
+        // Помощь ИИ
         val aiHelpInteraction = remember { MutableInteractionSource() }
         Icon(
             imageVector = Icons.Outlined.Star,
-            contentDescription = "РџРѕРјРѕС‰СЊ РР",
+            contentDescription = "Помощь ИИ",
             tint = if (isAiHelpActive.value) Color(0xFFFF3B30) else Color.White,
             modifier = Modifier
                 .size(24.dp)
