@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
+import java.io.File
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -30,7 +31,19 @@ class MyAgentApp : Application(), ImageLoaderFactory {
         Configuration.getInstance().apply {
             load(this@MyAgentApp, getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
             userAgentValue = "MyAgent/1.0 (Android; ${BuildConfig.APPLICATION_ID})"
-            Log.d("OSM", "UserAgent = $userAgentValue")
+
+            // Постоянный кэш тайлов OSM: снижает нагрузку на прокси VPS.
+            // Пути кладём в app-specific external storage — доступ без разрешений, живёт до удаления приложения.
+            val baseDir = File(getExternalFilesDir(null) ?: filesDir, "osmdroid").apply { mkdirs() }
+            val tileDir = File(baseDir, "tiles").apply { mkdirs() }
+            osmdroidBasePath = baseDir
+            osmdroidTileCache = tileDir
+
+            // Размеры задаём ПОСЛЕ load(), иначе load() может урезать их по свободному месту.
+            tileFileSystemCacheMaxBytes = 200L * 1024 * 1024   // 200 МБ
+            tileFileSystemCacheTrimBytes = 180L * 1024 * 1024  // чистим до 180 МБ
+
+            Log.d("OSM", "UserAgent = $userAgentValue; tileCache=$tileDir; max=200MB")
         }
         
         // Запускаем сканирование медиа через Coroutine
