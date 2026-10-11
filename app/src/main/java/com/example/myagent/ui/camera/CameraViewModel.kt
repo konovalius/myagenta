@@ -89,6 +89,14 @@ class CameraViewModel @Inject constructor(
     private val _archiveTarget = MutableStateFlow<ArchiveTargetState?>(null)
     val archiveTarget: StateFlow<ArchiveTargetState?> = _archiveTarget.asStateFlow()
 
+    private val _selectedFormat = MutableStateFlow(CameraFormat.RATIO_4_3)
+    val selectedFormat: StateFlow<CameraFormat> = _selectedFormat.asStateFlow()
+
+    fun setFormat(format: CameraFormat) {
+        _selectedFormat.value = format
+        Log.wtf("CameraVM", "setFormat: ${format.label} ratio=${format.ratio}")
+    }
+
     var pendingArchiveUri: String? = null
     var pendingArchiveUriLat: Double? = null
     var pendingArchiveUriLon: Double? = null
