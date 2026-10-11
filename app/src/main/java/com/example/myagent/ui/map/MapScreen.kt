@@ -173,7 +173,7 @@ fun MapScreen(
             256,
             ".png",
             arrayOf(
-                "https://hefty-mule-2745.konovalius.deno.net/"
+                "http://188.130.251.144/"
             ),
             "© OpenStreetMap"
         )

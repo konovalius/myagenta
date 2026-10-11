@@ -26,6 +26,6 @@
 - EXIF: дата съёмки. GPS — отложен.
 
 ## Карта
-- Прокси тайлов OSM: `https://hefty-mule-2745.konovalius.deno.net/` (Deno Deploy).
+- Прокси тайлов OSM: `http://188.130.251.144/` (собственный VPS).
 - **Не возвращать** `TileSourceFactory.MAPNIK` и не обращаться к `tile.openstreetmap.org` напрямую.
 - В `XYTileSource` не использовать плейсхолдеры `{z}/{x}/{y}` в базовом URL.
