@@ -173,7 +173,7 @@ fun MapScreen(
             256,
             ".png",
             arrayOf(
-                "http://188.130.251.144/"
+                "http://188.130.251.144:8080/"
             ),
             "© OpenStreetMap"
         )
