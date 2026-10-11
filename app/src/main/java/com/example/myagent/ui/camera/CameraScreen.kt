@@ -601,7 +601,7 @@ onBindFailed = {
                         AsyncImage(
                             model = uri,
                             contentDescription = "Ориентир",
-                            contentScale = ContentScale.Crop,
+                            contentScale = ContentScale.Fit,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .alpha(overlayAlpha)
