@@ -555,7 +555,7 @@ fun CameraScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(3f / 4f)
+                        .aspectRatio(selectedFormat.ratio)
                         .background(Color.Black)
                         // Пинч зумит превью. Жест отключён, пока правится
                         // ориентир-фото: там щипок масштабирует саму картинку,
@@ -938,7 +938,7 @@ fun CameraPreview(
     val previewView = remember {
         PreviewView(context).apply {
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-            scaleType = PreviewView.ScaleType.FIT_CENTER
+            scaleType = PreviewView.ScaleType.FILL_CENTER
         }
     }
     val imageCapture = remember { ImageCapture.Builder().build() }
