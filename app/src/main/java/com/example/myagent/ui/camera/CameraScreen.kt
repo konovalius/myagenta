@@ -20,6 +20,7 @@ import android.util.Rational
 import androidx.camera.core.impl.utils.AspectRatioUtil
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.camera.video.FileOutputOptions
@@ -581,6 +582,7 @@ fun CameraScreen(
                         cameraSelector = cameraSelector,
                         isVideoMode = isVideoMode,
                         lensCameraId = lensCameraId,
+                        selectedFormat = selectedFormat,
                         onCameraReady = { imgCapture, vidCapture, camera ->
                             imageCapture = imgCapture
                             videoCapture = vidCapture
@@ -930,18 +932,43 @@ fun CameraPreview(
     cameraSelector: CameraSelector,
     isVideoMode: Boolean,
     lensCameraId: String?,
+    selectedFormat: CameraFormat,
     onCameraReady: (ImageCapture, VideoCapture<Recorder>?, Camera?) -> Unit = { _, _, _ -> },
     onBindFailed: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val previewView = remember {
+
+    val aspectStrategy = when (selectedFormat) {
+        CameraFormat.RATIO_4_3 -> AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+        CameraFormat.RATIO_16_9 -> AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+        CameraFormat.RATIO_1_1 -> AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+        // 1:1 — стандартной стратегии нет, используем 4:3 как базовую.
+    }
+
+    val resolutionSelector = remember(selectedFormat) {
+        ResolutionSelector.Builder()
+            .setAspectRatioStrategy(aspectStrategy)
+            .build()
+    }
+
+    val previewView = remember(selectedFormat) {
         PreviewView(context).apply {
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
             scaleType = PreviewView.ScaleType.FILL_CENTER
         }
     }
-    val imageCapture = remember { ImageCapture.Builder().build() }
+    val imageCapture = remember(selectedFormat) {
+        ImageCapture.Builder()
+            .setResolutionSelector(resolutionSelector)
+            .build()
+    }
+    val preview = remember(selectedFormat) {
+        Preview.Builder()
+            .setResolutionSelector(resolutionSelector)
+            .build()
+            .also { it.setSurfaceProvider(previewView.surfaceProvider) }
+    }
     var videoCapture by remember { mutableStateOf<VideoCapture<Recorder>?>(null) }
     var recorder by remember { mutableStateOf<Recorder?>(null) }
 
@@ -956,17 +983,13 @@ fun CameraPreview(
         Log.wtf("CameraPreview", "VideoCapture created and ready: ${videoCapture != null}")
     }
 
-    LaunchedEffect(cameraSelector, isVideoMode, lensCameraId) {
+    LaunchedEffect(cameraSelector, isVideoMode, lensCameraId, selectedFormat) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener(
             {
                 try {
                     val cameraProvider = cameraProviderFuture.get()
 
-                    val preview = Preview.Builder().build().also {
-                        it.setSurfaceProvider(previewView.surfaceProvider)
-                    }
-                    
                     // Создаём ViewPort для согласования Preview и ImageCapture
                     val viewPort = previewView.viewPort ?: ViewPort.Builder(
                         Rational(previewView.width, previewView.height),
