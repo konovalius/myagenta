@@ -31,7 +31,11 @@ import com.example.myagent.ui.theme.GoshaSans
 import com.example.myagent.ui.theme.SmoochSans
 
 @Composable
-fun CameraTopBar(modifier: Modifier = Modifier) {
+fun CameraTopBar(
+    selectedFormat: CameraFormat,
+    onFormatSelected: (CameraFormat) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val isSettingsActive = remember { mutableStateOf(false) }
     val isFlashActive = remember { mutableStateOf(false) }
     val isResolutionActive = remember { mutableStateOf(false) }
@@ -40,7 +44,13 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
     var isFormatMenuOpen by remember { mutableStateOf(false) }
 
     if (isFormatMenuOpen) {
-        FormatMenuRow(modifier = modifier, onSelect = { isFormatMenuOpen = false })
+        FormatMenuRow(
+            onSelect = { format ->
+                isFormatMenuOpen = false
+                onFormatSelected(format)
+            },
+            modifier = modifier
+        )
     } else {
         Row(
             modifier = modifier
@@ -126,7 +136,7 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
         // Формат
         val formatInteraction = remember { MutableInteractionSource() }
         Text(
-            text = "4:3",
+            text = selectedFormat.label,
             fontSize = 12.sp,
             fontFamily = GoshaSans,
             color = Color.White,
@@ -164,8 +174,10 @@ fun CameraTopBar(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun FormatMenuRow(modifier: Modifier = Modifier, onSelect: () -> Unit) {
-    val formats = listOf("16:9", "4:3", "1:1", "Full")
+private fun FormatMenuRow(
+    onSelect: (CameraFormat) -> Unit,
+    modifier: Modifier = Modifier
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -173,10 +185,10 @@ private fun FormatMenuRow(modifier: Modifier = Modifier, onSelect: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        formats.forEach { format ->
+        CameraFormat.values().forEach { format ->
             val interactionSource = remember { MutableInteractionSource() }
             Text(
-                text = format,
+                text = format.label,
                 fontSize = 12.sp,
                 fontFamily = SmoochSans,
                 color = Color.White,
@@ -185,9 +197,8 @@ private fun FormatMenuRow(modifier: Modifier = Modifier, onSelect: () -> Unit) {
                     .pressScale(interactionSource)
                     .clickable(
                         interactionSource = interactionSource,
-                        indication = null,
-                        onClick = onSelect
-                    )
+                        indication = null
+                    ) { onSelect(format) }
             )
         }
     }

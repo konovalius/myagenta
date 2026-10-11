@@ -260,6 +260,7 @@ fun CameraScreen(
     }
     val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
     val savedPhotoEvent by viewModel.savedPhotoEvent.collectAsState()
+    val selectedFormat by viewModel.selectedFormat.collectAsState()
     var viewerUri by remember { mutableStateOf<Uri?>(null) }
     var referencePhotoUri by remember(initialReferenceUri) { mutableStateOf(initialReferenceUri) }
     var overlayAlpha by remember { mutableStateOf(0.5f) }
@@ -543,7 +544,11 @@ fun CameraScreen(
                         .background(Color.Black),
                     contentAlignment = Alignment.BottomCenter
                 ) {
-                    CameraTopBar(Modifier.padding(bottom = 8.dp))
+                    CameraTopBar(
+                        selectedFormat = selectedFormat,
+                        onFormatSelected = { viewModel.setFormat(it) },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
                 }
 
                 // Зона 2: фото — ровно 3:4, без weight
