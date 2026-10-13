@@ -40,6 +40,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.myagent.data.util.formatYearLabel
 import com.example.myagent.ui.common.ShutterUi
+import com.example.myagent.ui.common.pinchToZoom
 import com.example.myagent.ui.theme.GoshaSans
 
 private const val ARCHIVE_FULL_IMAGE_BASE_URL = "https://img.pastvu.com/d/"
@@ -130,7 +131,9 @@ fun ArchivePhotoViewerScreen(
                         .build(),
                     contentDescription = displayTitle,
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pinchToZoom()
                 )
             }
             Box(
