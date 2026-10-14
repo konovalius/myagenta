@@ -54,7 +54,7 @@ enum class CameraMode(val label: String) {
     VIDEO("Video"),
     SLOW_MO("Slow-mo"),
     TIMELAPSE("Timelapse"),
-    STROBOSCOPE("Stroboscope")
+    STROBOSCOPE("Stop Motion")
 }
 
 private val CarouselItemWidth = 84.dp
