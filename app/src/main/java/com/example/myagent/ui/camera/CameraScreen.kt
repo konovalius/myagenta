@@ -540,7 +540,10 @@ fun CameraScreen(
                 // уходить за нижний край — оверлеи рисуются поверх.
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     val screenWidthDp = maxWidth
-                    val previewHeightDp = screenWidthDp / selectedFormat.ratio
+                    val previewHeightDp = when (selectedFormat) {
+                        CameraFormat.RATIO_16_9 -> maxHeight * 0.75f
+                        else -> screenWidthDp / selectedFormat.ratio
+                    }
 
                 // Зона 2: превью начинается под топбаром и принимает форму
                 // выбранного формата; нижний край может уходить за экран.
@@ -810,7 +813,6 @@ if (isRecording) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight()
-                        .background(Color.Black)
                         .align(Alignment.BottomCenter)
                 ) {
                     Column(
