@@ -107,6 +107,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -239,6 +240,8 @@ fun CameraScreen(
     var activeMode by remember { mutableStateOf(CameraMode.PHOTO) }
     var isRecording by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
+    var stopMotionInterval by remember { mutableFloatStateOf(1f) }
+    var stopMotionFrameCount by remember { mutableIntStateOf(0) }
 
     // Ряд пресетов зума, посчитанный из реально доступных объективов.
     var zoomPresets by remember { mutableStateOf<List<ZoomPreset>>(emptyList()) }
@@ -257,6 +260,9 @@ fun CameraScreen(
     val isVideoMode = remember(centeredModeIndex) {
         val mode = CameraMode.entries.getOrNull(centeredModeIndex)
         mode == CameraMode.VIDEO || mode == CameraMode.SLOW_MO || mode == CameraMode.TIMELAPSE
+    }
+    val isStopMotionMode = remember(centeredModeIndex) {
+        CameraMode.entries.getOrNull(centeredModeIndex) == CameraMode.STROBOSCOPE
     }
     val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
     val savedPhotoEvent by viewModel.savedPhotoEvent.collectAsState()
@@ -808,6 +814,18 @@ if (isRecording) {
                     )
                 }
 
+                if (isStopMotionMode) {
+                    Text(
+                        text = "$stopMotionFrameCount / 50",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontFamily = GoshaSans,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 90.dp, end = 16.dp)
+                    )
+                }
+
                 // Зона 3: нижняя панель — оверлей, прижата к низу экрана.
                 Box(
                     modifier = Modifier
@@ -931,6 +949,32 @@ if (isRecording) {
                         .padding(bottom = 250.dp)
                         .padding(horizontal = 24.dp)
                 )
+
+                if (isStopMotionMode) {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 12.dp)
+                            .padding(bottom = 250.dp),
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        val intervals = listOf(0.5f, 1f, 2f, 5f)
+                        intervals.forEach { sec ->
+                            val isSelected = stopMotionInterval == sec
+                            Text(
+                                text = if (sec < 1f) "0.5s" else "${sec.toInt()}s",
+                                color = if (isSelected) Color(0xFFFF3B30) else Color.White.copy(alpha = 0.7f),
+                                fontSize = 20.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                fontFamily = GoshaSans,
+                                modifier = Modifier
+                                    .clickable { stopMotionInterval = sec; Log.wtf("CameraVM", "stop motion interval=$sec") }
+                                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
             }
         } else {
             Text(
