@@ -541,7 +541,7 @@ fun CameraScreen(
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     val screenWidthDp = maxWidth
                     val previewHeightDp = when (selectedFormat) {
-                        CameraFormat.RATIO_16_9 -> maxHeight * 0.75f
+                        CameraFormat.RATIO_16_9 -> maxHeight - 80.dp - 108.dp
                         else -> screenWidthDp / selectedFormat.ratio
                     }
 
