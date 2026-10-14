@@ -890,10 +890,16 @@ if (isRecording) {
                                         isTimelapseActive =
                                             activeMode == CameraMode.TIMELAPSE
                                         
-                                        if (isVideoMode) {
-                                            toggleVideoRecording()
-                                        } else {
-                                            capturePhoto()
+                                        when {
+                                            isStopMotionMode -> {
+                                                if (stopMotionFrameCount < 50) {
+                                                    capturePhoto()
+                                                    stopMotionFrameCount += 1
+                                                    Log.wtf("CameraVM", "stop motion frame=$stopMotionFrameCount")
+                                                }
+                                            }
+                                            isVideoMode -> toggleVideoRecording()
+                                            else -> capturePhoto()
                                         }
                                     },
                                     onLongPress = {}
