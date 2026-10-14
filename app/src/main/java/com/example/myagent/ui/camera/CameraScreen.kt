@@ -928,6 +928,27 @@ if (isRecording) {
                                         )
                                     }
                                 }
+
+                                if (isStopMotionMode && stopMotionFrameCount > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .offset(x = 90.dp)
+                                            .size(56.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.White.copy(alpha = 0.2f))
+                                            .clickable {
+                                                Log.wtf("CameraVM", "stop motion STOP, frames=$stopMotionFrameCount")
+                                                stopMotionFrameCount = 0
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .background(Color.White)
+                                        )
+                                    }
+                                }
                             }
                             lastPhotoUri?.let { uri ->
                                 LastPhotoThumbnail(
