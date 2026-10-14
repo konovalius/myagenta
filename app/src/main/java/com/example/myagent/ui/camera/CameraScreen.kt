@@ -14,9 +14,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
-import androidx.camera.core.ViewPort
 import androidx.camera.core.ZoomState
-import android.util.Rational
 import androidx.camera.core.impl.utils.AspectRatioUtil
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
@@ -50,16 +48,17 @@ import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -536,27 +535,22 @@ fun CameraScreen(
             } else {
                 CameraSelector.DEFAULT_BACK_CAMERA
             }
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Зона 1: верхняя полоса — фиксированная высота, топбар прижат к низу
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .background(Color.Black),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    CameraTopBar(
-                        selectedFormat = selectedFormat,
-                        onFormatSelected = { viewModel.setFormat(it) },
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Превью начинается под топбаром (Spacer 80dp) и может
+                // уходить за нижний край — оверлеи рисуются поверх.
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    val screenWidthDp = maxWidth
+                    val previewHeightDp = screenWidthDp / selectedFormat.ratio
 
-                // Зона 2: фото — ровно 3:4, без weight
+                // Зона 2: превью начинается под топбаром и принимает форму
+                // выбранного формата; нижний край может уходить за экран.
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Spacer(modifier = Modifier.height(80.dp))
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(selectedFormat.ratio)
+                        .requiredHeight(previewHeightDp)
                         .background(Color.Black)
                         // Пинч зумит превью. Жест отключён, пока правится
                         // ориентир-фото: там щипок масштабирует саму картинку,
@@ -790,30 +784,37 @@ if (isRecording) {
         isPaused = isPaused
     )
 }
-                    // Капсула зума по нижнему краю превью. В покое показывает «1x» и текущее
-                    // значение; удержание раскрывает весь ряд пресетов, и пока
-                    // палец не отпущен, протяжка водит зум непрерывно.
-                    ZoomPill(
-                        presets = zoomPresets,
-                        magnification = zoomMagnification,
-                        range = magnificationRange,
-                        onMagnificationChange = { zoomMagnification = it },
-                        onScrubbingChange = { isZoomScrubbing = it },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 24.dp)
-                            .padding(horizontal = 24.dp)
-                    )
                 }
-                // Зона 3: нижняя полоса
+                }
+
+                } // конец BoxWithConstraints
+
+                // Топбар — оверлей поверх превью, всегда на месте.
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
+                        .height(80.dp)
                         .background(Color.Black)
+                        .align(Alignment.TopCenter),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    CameraTopBar(
+                        selectedFormat = selectedFormat,
+                        onFormatSelected = { viewModel.setFormat(it) },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
+                // Зона 3: нижняя панель — оверлей, прижата к низу экрана.
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .background(Color.Black)
+                        .align(Alignment.BottomCenter)
                 ) {
                     Column(
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         CameraToolbar(
                             centeredModeIndex = centeredModeIndex,
@@ -821,12 +822,11 @@ if (isRecording) {
                             onModeTapped = {},
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 8.dp)
+                                .padding(bottom = 40.dp)
                         )
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
+                                .fillMaxWidth(),
                             contentAlignment = Alignment.Center
                         ) {
                             CameraNavIcons(
@@ -913,6 +913,22 @@ if (isRecording) {
                         }
                     }
                 }
+
+                // Капсула зума — фиксированный оверлей поверх всего экрана.
+                // В покое показывает «1x» и текущее значение; удержание
+                // раскрывает весь ряд пресетов, и пока палец не отпущен,
+                // протяжка водит зум непрерывно.
+                ZoomPill(
+                    presets = zoomPresets,
+                    magnification = zoomMagnification,
+                    range = magnificationRange,
+                    onMagnificationChange = { zoomMagnification = it },
+                    onScrubbingChange = { isZoomScrubbing = it },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 250.dp)
+                        .padding(horizontal = 24.dp)
+                )
             }
         } else {
             Text(
@@ -952,7 +968,7 @@ fun CameraPreview(
             .build()
     }
 
-    val previewView = remember(selectedFormat) {
+    val previewView = remember {
         PreviewView(context).apply {
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
             scaleType = PreviewView.ScaleType.FILL_CENTER
@@ -990,22 +1006,14 @@ fun CameraPreview(
                 try {
                     val cameraProvider = cameraProviderFuture.get()
 
-                    // Создаём ViewPort для согласования Preview и ImageCapture
-                    val viewPort = previewView.viewPort ?: ViewPort.Builder(
-                        Rational(previewView.width, previewView.height),
-                        previewView.display.rotation
-                    ).build()
-                    
                     val useCaseGroup = if (isVideoMode && videoCapture != null) {
                         UseCaseGroup.Builder()
-                            .setViewPort(viewPort)
                             .addUseCase(preview)
                             .addUseCase(imageCapture)
                             .addUseCase(videoCapture!!)
                             .build()
                     } else {
                         UseCaseGroup.Builder()
-                            .setViewPort(viewPort)
                             .addUseCase(preview)
                             .addUseCase(imageCapture)
                             .build()
