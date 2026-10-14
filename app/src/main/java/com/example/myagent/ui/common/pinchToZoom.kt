@@ -3,6 +3,7 @@ package com.example.myagent.ui.common
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -25,9 +26,13 @@ fun Modifier.pinchToZoom(
     minScale: Float = 1f,
     maxScale: Float = 5f,
     doubleTapScale: Float = 2.5f,
+    onScaleChange: ((Float) -> Unit)? = null,
 ): Modifier {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+
+    // Сообщать наружу при каждом изменении scale
+    LaunchedEffect(scale) { onScaleChange?.invoke(scale) }
 
     return this
         .pointerInput(minScale, maxScale) {

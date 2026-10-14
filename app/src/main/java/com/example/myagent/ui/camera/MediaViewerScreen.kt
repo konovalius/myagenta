@@ -24,7 +24,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +41,7 @@ import androidx.compose.foundation.background
 import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.Media
 import com.example.myagent.ui.common.ShutterUi
+import com.example.myagent.ui.common.pinchToZoom
 
 @Composable
 fun MediaViewerScreen(
@@ -83,6 +87,8 @@ fun MediaViewerScreen(
     val currentIndex = if (looping) pagerState.currentPage % total else 0
     val currentUri = uris[currentIndex]
 
+    var isZoomed by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -112,13 +118,16 @@ fun MediaViewerScreen(
                 if (looping) {
                     HorizontalPager(
                         state = pagerState,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        userScrollEnabled = !isZoomed
                     ) { page ->
                         AsyncImage(
                             model = uris[page % total],
                             contentDescription = "Снимок",
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .pinchToZoom(onScaleChange = { scale -> isZoomed = scale > 1.01f })
                         )
                     }
                 } else {
@@ -126,7 +135,9 @@ fun MediaViewerScreen(
                         model = currentUri,
                         contentDescription = "Снимок",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pinchToZoom(onScaleChange = { scale -> isZoomed = scale > 1.01f })
                     )
                 }
             }
