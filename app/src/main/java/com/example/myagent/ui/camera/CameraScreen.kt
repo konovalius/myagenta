@@ -862,12 +862,13 @@ if (isRecording) {
                                 onSelfieTapped = {}
                             )
                         }
-                        Box(
+                        BoxWithConstraints(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(ShutterUi.BottomPadding),
                             contentAlignment = Alignment.Center
                         ) {
+                            val maxW = maxWidth
                             CircularIconButton(
                                 icon = Icons.Filled.FlipCameraAndroid,
                                 contentDescription = "Переключить камеру",
@@ -952,14 +953,17 @@ if (isRecording) {
                             }
                             val isActivelyRecording = (isVideoMode && isRecording) ||
                                                       (isStopMotionMode && stopMotionFrameCount > 0)
-                            if (!isActivelyRecording) {
-                                lastPhotoUri?.let { uri ->
-                                    LastPhotoThumbnail(
-                                        uri = uri,
-                                        onClick = { viewerUri = uri },
-                                        modifier = Modifier.offset(x = 90.dp)
-                                    )
-                                }
+                            val thumbnailOffset = if (isActivelyRecording) {
+                                (90.dp + maxW / 2) / 2 + 20.dp
+                            } else {
+                                90.dp
+                            }
+                            lastPhotoUri?.let { uri ->
+                                LastPhotoThumbnail(
+                                    uri = uri,
+                                    onClick = { viewerUri = uri },
+                                    modifier = Modifier.offset(x = thumbnailOffset)
+                                )
                             }
                         }
                     }
