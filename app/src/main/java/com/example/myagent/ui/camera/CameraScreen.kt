@@ -242,6 +242,7 @@ fun CameraScreen(
     var isPaused by remember { mutableStateOf(false) }
     var stopMotionInterval by remember { mutableFloatStateOf(1f) }
     var stopMotionFrameCount by remember { mutableIntStateOf(0) }
+    var isStopMotionRunning by remember { mutableStateOf(false) }
 
     // Ряд пресетов зума, посчитанный из реально доступных объективов.
     var zoomPresets by remember { mutableStateOf<List<ZoomPreset>>(emptyList()) }
@@ -459,6 +460,19 @@ fun CameraScreen(
             Toast.makeText(context, "Камера ещё не готова", Toast.LENGTH_SHORT).show()
         } else {
             viewModel.capturePhoto(capture, context)
+        }
+    }
+
+    LaunchedEffect(isStopMotionRunning, stopMotionInterval, isStopMotionMode) {
+        if (!isStopMotionRunning || !isStopMotionMode) return@LaunchedEffect
+        while (stopMotionFrameCount < 50 && isStopMotionRunning && isStopMotionMode) {
+            capturePhoto()
+            stopMotionFrameCount += 1
+            Log.wtf("CameraVM", "stop motion frame=$stopMotionFrameCount")
+            kotlinx.coroutines.delay((stopMotionInterval * 1000).toLong())
+        }
+        if (stopMotionFrameCount >= 50) {
+            isStopMotionRunning = false
         }
     }
 
@@ -893,11 +907,8 @@ if (isRecording) {
                                         
                                         when {
                                             isStopMotionMode -> {
-                                                if (stopMotionFrameCount < 50) {
-                                                    capturePhoto()
-                                                    stopMotionFrameCount += 1
-                                                    Log.wtf("CameraVM", "stop motion frame=$stopMotionFrameCount")
-                                                }
+                                                isStopMotionRunning = !isStopMotionRunning
+                                                Log.wtf("CameraVM", "stop motion toggle running=$isStopMotionRunning")
                                             }
                                             isVideoMode -> toggleVideoRecording()
                                             else -> capturePhoto()
@@ -941,6 +952,7 @@ if (isRecording) {
                                                 indication = null
                                             ) {
                                                 Log.wtf("CameraVM", "stop motion STOP, frames=$stopMotionFrameCount")
+                                                isStopMotionRunning = false
                                                 stopMotionFrameCount = 0
                                             },
                                         contentAlignment = Alignment.Center
