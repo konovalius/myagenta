@@ -933,11 +933,13 @@ if (isRecording) {
                                 if (isStopMotionMode && stopMotionFrameCount > 0) {
                                     Box(
                                         modifier = Modifier
-                                            .offset(x = 90.dp)
-                                            .size(56.dp)
+                                            .offset(x = 80.dp)
+                                            .size(ShutterUi.Size)
                                             .clip(CircleShape)
-                                            .background(Color.White.copy(alpha = 0.2f))
-                                            .clickable {
+                                            .clickable(
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = null
+                                            ) {
                                                 Log.wtf("CameraVM", "stop motion STOP, frames=$stopMotionFrameCount")
                                                 stopMotionFrameCount = 0
                                             },
