@@ -466,7 +466,10 @@ fun CameraScreen(
     LaunchedEffect(isStopMotionRunning, stopMotionInterval, isStopMotionMode) {
         if (!isStopMotionRunning || !isStopMotionMode) return@LaunchedEffect
         while (stopMotionFrameCount < 50 && isStopMotionRunning && isStopMotionMode) {
-            capturePhoto()
+            val capture = imageCapture
+            if (capture != null) {
+                viewModel.captureStopMotionFrame(capture, context)
+            }
             stopMotionFrameCount += 1
             Log.wtf("CameraVM", "stop motion frame=$stopMotionFrameCount")
             kotlinx.coroutines.delay((stopMotionInterval * 1000).toLong())
@@ -907,7 +910,15 @@ if (isRecording) {
                                         
                                         when {
                                             isStopMotionMode -> {
-                                                isStopMotionRunning = !isStopMotionRunning
+                                                if (!isStopMotionRunning) {
+                                                    // старт новой серии
+                                                    viewModel.resetStopMotionFrames()
+                                                    stopMotionFrameCount = 0
+                                                    isStopMotionRunning = true
+                                                } else {
+                                                    // пауза
+                                                    isStopMotionRunning = false
+                                                }
                                                 Log.wtf("CameraVM", "stop motion toggle running=$isStopMotionRunning")
                                             }
                                             isVideoMode -> toggleVideoRecording()
@@ -954,6 +965,7 @@ if (isRecording) {
                                                 Log.wtf("CameraVM", "stop motion STOP, frames=$stopMotionFrameCount")
                                                 isStopMotionRunning = false
                                                 stopMotionFrameCount = 0
+                                                viewModel.resetStopMotionFrames()
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {

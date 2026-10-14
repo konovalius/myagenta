@@ -60,6 +60,17 @@ class CameraViewModel @Inject constructor(
     private val _savedPhotoEvent = MutableStateFlow<SavedPhotoEvent?>(null)
     val savedPhotoEvent: StateFlow<SavedPhotoEvent?> = _savedPhotoEvent.asStateFlow()
 
+    private val _stopMotionFrames = MutableStateFlow<List<Uri>>(emptyList())
+    val stopMotionFrames: StateFlow<List<Uri>> = _stopMotionFrames.asStateFlow()
+
+    fun appendStopMotionFrame(uri: Uri) {
+        _stopMotionFrames.value = _stopMotionFrames.value + uri
+    }
+
+    fun resetStopMotionFrames() {
+        _stopMotionFrames.value = emptyList()
+    }
+
     private var activeRecording: Recording? = null
     private var isPaused: Boolean = false
 
@@ -527,6 +538,27 @@ class CameraViewModel @Inject constructor(
 
     fun consumeSavedPhotoEvent() {
         _savedPhotoEvent.value = null
+    }
+
+    fun captureStopMotionFrame(imageCapture: ImageCapture, context: Context) {
+        val outputFile = fileRepository.newStopMotionFrameFile()
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(outputFile).build()
+
+        imageCapture.takePicture(
+            outputOptions,
+            ContextCompat.getMainExecutor(context),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    val uri = Uri.fromFile(outputFile)
+                    appendStopMotionFrame(uri)
+                    Log.wtf("CameraVM", "stop motion frame saved: $uri (total=${_stopMotionFrames.value.size})")
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    Log.wtf("CameraVM", "stop motion frame error: ${exception.message}")
+                }
+            }
+        )
     }
 
     fun answerGeoPrompt(saveToFolder: Boolean) {

@@ -30,6 +30,12 @@ class FileRepository @Inject constructor(
         return File(storageDir(), "${UUID.randomUUID()}.$extension")
     }
 
+    fun newStopMotionFrameFile(): File {
+        val dir = File(context.cacheDir, "stop_motion").apply { mkdirs() }
+        val name = "frame_${System.currentTimeMillis()}_${(0..999).random()}.jpg"
+        return File(dir, name)
+    }
+
     fun listMedia(): List<File> {
         return storageDir()
             .listFiles { file -> file.isFile }
