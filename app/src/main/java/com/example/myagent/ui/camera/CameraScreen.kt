@@ -950,12 +950,16 @@ if (isRecording) {
                                     }
                                 }
                             }
-                            lastPhotoUri?.let { uri ->
-                                LastPhotoThumbnail(
-                                    uri = uri,
-                                    onClick = { viewerUri = uri },
-                                    modifier = Modifier.offset(x = 90.dp)
-                                )
+                            val isActivelyRecording = (isVideoMode && isRecording) ||
+                                                      (isStopMotionMode && stopMotionFrameCount > 0)
+                            if (!isActivelyRecording) {
+                                lastPhotoUri?.let { uri ->
+                                    LastPhotoThumbnail(
+                                        uri = uri,
+                                        onClick = { viewerUri = uri },
+                                        modifier = Modifier.offset(x = 90.dp)
+                                    )
+                                }
                             }
                         }
                     }
