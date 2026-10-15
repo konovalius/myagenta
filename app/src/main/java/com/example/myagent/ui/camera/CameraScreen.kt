@@ -268,7 +268,7 @@ fun CameraScreen(
     val isStopMotionMode = remember(centeredModeIndex) {
         CameraMode.entries.getOrNull(centeredModeIndex) == CameraMode.STROBOSCOPE
     }
-    val isUiLocked = isRecording || (isStopMotionMode && isStopMotionRunning)
+    val isUiLocked = isRecording || (isStopMotionMode && (isStopMotionRunning || stopMotionFrameCount > 0))
     val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
     val savedPhotoEvent by viewModel.savedPhotoEvent.collectAsState()
     val selectedFormat by viewModel.selectedFormat.collectAsState()
