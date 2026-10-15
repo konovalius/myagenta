@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.net.Uri
 import android.util.Log
+import android.util.Size
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -19,6 +20,7 @@ import androidx.camera.core.impl.utils.AspectRatioUtil
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.camera.video.FileOutputOptions
@@ -612,6 +614,7 @@ fun CameraScreen(
                         isVideoMode = isVideoMode,
                         lensCameraId = lensCameraId,
                         selectedFormat = selectedFormat,
+                        lowRes = isStopMotionMode && stopMotionInterval == 0.05f,
                         onCameraReady = { imgCapture, vidCapture, camera ->
                             imageCapture = imgCapture
                             videoCapture = vidCapture
@@ -1082,6 +1085,7 @@ fun CameraPreview(
     isVideoMode: Boolean,
     lensCameraId: String?,
     selectedFormat: CameraFormat,
+    lowRes: Boolean = false,
     onCameraReady: (ImageCapture, VideoCapture<Recorder>?, Camera?) -> Unit = { _, _, _ -> },
     onBindFailed: () -> Unit = {}
 ) {
@@ -1095,10 +1099,18 @@ fun CameraPreview(
         // 1:1 — стандартной стратегии нет, используем 4:3 как базовую.
     }
 
-    val resolutionSelector = remember(selectedFormat) {
-        ResolutionSelector.Builder()
+    val resolutionSelector = remember(selectedFormat, lowRes) {
+        val builder = ResolutionSelector.Builder()
             .setAspectRatioStrategy(aspectStrategy)
-            .build()
+        if (lowRes) {
+            builder.setResolutionStrategy(
+                ResolutionStrategy(
+                    Size(720, 1280),
+                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER
+                )
+            )
+        }
+        builder.build()
     }
 
     val previewView = remember {
@@ -1107,7 +1119,7 @@ fun CameraPreview(
             scaleType = PreviewView.ScaleType.FILL_CENTER
         }
     }
-    val imageCapture = remember(selectedFormat) {
+    val imageCapture = remember(selectedFormat, lowRes) {
         ImageCapture.Builder()
             .setResolutionSelector(resolutionSelector)
             .build()
@@ -1132,7 +1144,7 @@ fun CameraPreview(
         Log.wtf("CameraPreview", "VideoCapture created and ready: ${videoCapture != null}")
     }
 
-    LaunchedEffect(cameraSelector, isVideoMode, lensCameraId, selectedFormat) {
+    LaunchedEffect(cameraSelector, isVideoMode, lensCameraId, selectedFormat, lowRes) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener(
             {
