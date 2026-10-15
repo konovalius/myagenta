@@ -469,7 +469,7 @@ fun CameraScreen(
 
     LaunchedEffect(isStopMotionRunning, stopMotionInterval, isStopMotionMode) {
         if (!isStopMotionRunning || !isStopMotionMode) return@LaunchedEffect
-        while (stopMotionFrameCount < 50 && isStopMotionRunning && isStopMotionMode) {
+        while (stopMotionFrameCount < 100 && isStopMotionRunning && isStopMotionMode) {
             val capture = imageCapture
             if (capture != null) {
                 viewModel.captureStopMotionFrame(capture, context)
@@ -478,7 +478,7 @@ fun CameraScreen(
             Log.wtf("CameraVM", "stop motion frame=$stopMotionFrameCount")
             kotlinx.coroutines.delay((stopMotionInterval * 1000).toLong())
         }
-        if (stopMotionFrameCount >= 50) {
+        if (stopMotionFrameCount >= 100) {
             isStopMotionRunning = false
             viewModel.finishStopMotion()
         }
@@ -845,7 +845,7 @@ if (isRecording) {
 
                 if (isStopMotionMode) {
                     Text(
-                        text = "$stopMotionFrameCount / 50",
+                        text = "$stopMotionFrameCount / 100",
                         color = Color.White,
                         fontSize = 14.sp,
                         fontFamily = GoshaSans,
@@ -923,15 +923,17 @@ if (isRecording) {
                                         when {
                                             isStopMotionMode -> {
                                                 if (!isStopMotionRunning) {
-                                                    // старт новой серии
-                                                    viewModel.resetStopMotionFrames()
-                                                    stopMotionFrameCount = 0
+                                                    // если кадров ещё нет — это ПЕРВЫЙ старт серии, сбрасываем
+                                                    if (stopMotionFrameCount == 0) {
+                                                        viewModel.resetStopMotionFrames()
+                                                    }
+                                                    // иначе — продолжение после паузы, кадры НЕ трогаем
                                                     isStopMotionRunning = true
                                                 } else {
                                                     // пауза
                                                     isStopMotionRunning = false
                                                 }
-                                                Log.wtf("CameraVM", "stop motion toggle running=$isStopMotionRunning")
+                                                Log.wtf("CameraVM", "stop motion toggle running=$isStopMotionRunning frames=$stopMotionFrameCount")
                                             }
                                             isVideoMode -> toggleVideoRecording()
                                             else -> capturePhoto()
