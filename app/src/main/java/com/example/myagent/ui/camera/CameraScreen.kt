@@ -1050,7 +1050,13 @@ if (isRecording) {
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 fontFamily = GoshaSans,
                                 modifier = Modifier
-                                    .clickable { stopMotionInterval = seconds; Log.wtf("CameraVM", "stop motion interval=$seconds") }
+                                    .clickable {
+                                        stopMotionInterval = seconds
+                                        Log.wtf("CameraVM", "stop motion interval=$seconds")
+                                        if (seconds == 0.05f) {
+                                            Toast.makeText(context, "Качество снижено (20 fps)", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
                                     .padding(horizontal = 8.dp, vertical = 6.dp)
                             )
                         }
