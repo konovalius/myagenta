@@ -37,7 +37,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,7 +56,14 @@ enum class CameraMode(val label: String) {
     STROBOSCOPE("Stop Motion")
 }
 
-private val CarouselItemWidth = 84.dp
+private fun modeWidth(mode: CameraMode) = when (mode) {
+    CameraMode.PHOTO        -> 64.dp
+    CameraMode.VIDEO        -> 64.dp
+    CameraMode.SLOW_MO      -> 80.dp
+    CameraMode.TIMELAPSE    -> 96.dp
+    CameraMode.STROBOSCOPE  -> 114.dp  // Stop Motion
+}
+
 private val CarouselItemSpacing = 0.dp
 private val NavIconSize = 35.2.dp
 private val NavIconGlyph = 28.6.dp
@@ -100,14 +106,8 @@ fun CameraToolbar(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        val density = LocalDensity.current
-        val sidePadding = (maxWidth - CarouselItemWidth) / 2
-        val sidePaddingPx = with(density) { sidePadding.toPx() }
-        val itemWidthPx = with(density) { CarouselItemWidth.toPx() }
-        val spacingPx = with(density) { CarouselItemSpacing.toPx() }
-        val stepPx = itemWidthPx + spacingPx
-        val centerX = with(density) { maxWidth.toPx() } / 2f
-        val maxDistance = centerX
+        val maxItemWidth = 114.dp  // самая широкая (Stop Motion)
+        val sidePadding = (maxWidth - maxItemWidth) / 2
 
         LazyRow(
             state = listState,
@@ -132,18 +132,21 @@ fun CameraToolbar(
                     overflow = TextOverflow.Visible,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
-                        .width(CarouselItemWidth)
+                        .width(modeWidth(mode))
                         .graphicsLayer {
                             val visible = listState.layoutInfo.visibleItemsInfo
                                 .firstOrNull { it.index == index }
                             if (visible != null) {
-                                val scrollPx = visible.index * stepPx + visible.offset
-                                val itemCenterX =
-                                    sidePaddingPx + index * stepPx + itemWidthPx / 2f - scrollPx
-                                val fraction =
-                                    (abs(itemCenterX - centerX) / maxDistance)
-                                        .coerceIn(0f, 1f)
-                                val depthScale = 1f - fraction * 0.4f
+                                val viewportCenter =
+                                    (listState.layoutInfo.viewportStartOffset +
+                                        listState.layoutInfo.viewportEndOffset) / 2f
+                                val itemCenterX = visible.offset + visible.size / 2f
+                                val distance = abs(itemCenterX - viewportCenter)
+                                val maxDistance =
+                                    (listState.layoutInfo.viewportEndOffset -
+                                        listState.layoutInfo.viewportStartOffset) / 2f
+                                val fraction = (distance / maxDistance).coerceIn(0f, 1f)
+                                val depthScale = 1.2f - fraction * 0.6f
                                 scaleX = depthScale
                                 scaleY = depthScale
                                 alpha = 1f - fraction * 0.5f
