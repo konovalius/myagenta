@@ -268,6 +268,7 @@ fun CameraScreen(
     val isStopMotionMode = remember(centeredModeIndex) {
         CameraMode.entries.getOrNull(centeredModeIndex) == CameraMode.STROBOSCOPE
     }
+    val isUiLocked = isRecording || (isStopMotionMode && isStopMotionRunning)
     val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
     val savedPhotoEvent by viewModel.savedPhotoEvent.collectAsState()
     val selectedFormat by viewModel.selectedFormat.collectAsState()
@@ -869,6 +870,7 @@ if (isRecording) {
                             centeredModeIndex = centeredModeIndex,
                             onCenteredModeChange = { centeredModeIndex = it },
                             onModeTapped = {},
+                            enabled = !isUiLocked,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 40.dp)
@@ -888,7 +890,8 @@ if (isRecording) {
                                         )
                                     )
                                 },
-                                onSelfieTapped = {}
+                                onSelfieTapped = {},
+                                enabled = !isUiLocked
                             )
                         }
                         BoxWithConstraints(
@@ -901,7 +904,7 @@ if (isRecording) {
                             CircularIconButton(
                                 icon = Icons.Filled.FlipCameraAndroid,
                                 contentDescription = "Переключить камеру",
-                                enabled = hasFrontCamera,
+                                enabled = hasFrontCamera && !isUiLocked,
                                 onClick = { isFrontCamera = !isFrontCamera },
                                 modifier = Modifier.offset(x = (-68).dp)
                             )

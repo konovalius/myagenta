@@ -68,6 +68,7 @@ fun CameraToolbar(
     centeredModeIndex: Int,
     onCenteredModeChange: (Int) -> Unit,
     onModeTapped: (CameraMode) -> Unit,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val modes = CameraMode.entries
@@ -112,6 +113,7 @@ fun CameraToolbar(
             state = listState,
             modifier = Modifier.fillMaxWidth(),
             flingBehavior = snapFlingBehavior,
+            userScrollEnabled = enabled,
             contentPadding = PaddingValues(horizontal = sidePadding),
             horizontalArrangement = Arrangement.spacedBy(CarouselItemSpacing)
         ) {
@@ -151,6 +153,7 @@ fun CameraToolbar(
                         .clickable(
                             interactionSource = interactionSource,
                             indication = null,
+                            enabled = enabled,
                             onClick = {
                                 scope.launch { listState.animateScrollToItem(index) }
                                 onModeTapped(mode)
@@ -168,6 +171,7 @@ fun CameraNavIcons(
     onNavigateToMasterFolders: () -> Unit,
     onOpenGallery: () -> Unit,
     onSelfieTapped: () -> Unit,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -175,10 +179,10 @@ fun CameraNavIcons(
         horizontalArrangement = Arrangement.spacedBy(NavIconSpacing, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        CameraNavButton(Icons.Outlined.Face, "Selfie", onSelfieTapped)
-        CameraNavButton(Icons.Filled.Map, "Карта", onNavigateToMap)
-        CameraNavButton(Icons.Filled.Folder, "Мастер-папки", onNavigateToMasterFolders)
-        CameraNavButton(Icons.Filled.PhotoLibrary, "Галерея", onOpenGallery)
+        CameraNavButton(Icons.Outlined.Face, "Selfie", onSelfieTapped, enabled)
+        CameraNavButton(Icons.Filled.Map, "Карта", onNavigateToMap, enabled)
+        CameraNavButton(Icons.Filled.Folder, "Мастер-папки", onNavigateToMasterFolders, enabled)
+        CameraNavButton(Icons.Filled.PhotoLibrary, "Галерея", onOpenGallery, enabled)
     }
 }
 
@@ -186,7 +190,9 @@ fun CameraNavIcons(
 private fun CameraNavButton(
     icon: ImageVector,
     contentDescription: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Box(
@@ -198,6 +204,7 @@ private fun CameraNavButton(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
+                enabled = enabled,
                 onClick = onClick
             ),
         contentAlignment = Alignment.Center
@@ -205,7 +212,7 @@ private fun CameraNavButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = Color.White,
+            tint = if (enabled) Color.White else Color.Gray,
             modifier = Modifier.size(NavIconGlyph)
         )
     }
