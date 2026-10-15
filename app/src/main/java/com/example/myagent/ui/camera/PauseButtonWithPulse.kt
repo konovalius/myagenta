@@ -66,7 +66,9 @@ fun PauseButtonWithPulse(
                         CircleShape
                     )
             )
+            PlayIcon()
+        } else {
+            PauseIcon()
         }
-        PauseIcon()
     }
 }

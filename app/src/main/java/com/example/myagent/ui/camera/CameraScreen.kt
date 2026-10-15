@@ -73,6 +73,7 @@ import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -1365,13 +1366,14 @@ private fun ShutterButton(
                                 cap = StrokeCap.Round
                             )
                         }
-                    }
+                    },
+                contentAlignment = Alignment.Center
             ) {
                 // Красный квадратик по центру (6.dp)
                 Box(
                     modifier = Modifier
-                        .size(6.dp)
-                        .clip(RoundedCornerShape(1.dp))
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(4.dp))
                         .background(redSquareColor)
                 )
             }
@@ -1485,6 +1487,16 @@ fun PauseIcon(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.width(2.dp))
         }
     }
+}
+
+@Composable
+fun PlayIcon(modifier: Modifier = Modifier) {
+    Icon(
+        imageVector = Icons.Rounded.PlayArrow,
+        contentDescription = "Play",
+        tint = Color.White,
+        modifier = modifier.size(28.dp)
+    )
 }
 
 @Composable
