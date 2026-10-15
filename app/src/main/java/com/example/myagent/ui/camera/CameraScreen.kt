@@ -126,6 +126,7 @@ import coil.compose.AsyncImage
 import com.example.myagent.data.db.entity.MasterFolder
 import com.example.myagent.ui.common.ShutterUi
 import com.example.myagent.ui.common.pressScale
+import com.example.myagent.ui.media.VideoPlayerScreen
 import java.util.Locale
 
 @Composable
@@ -269,6 +270,7 @@ fun CameraScreen(
     val savedPhotoEvent by viewModel.savedPhotoEvent.collectAsState()
     val selectedFormat by viewModel.selectedFormat.collectAsState()
     var viewerUri by remember { mutableStateOf<Uri?>(null) }
+    var viewerVideoUri by remember { mutableStateOf<Uri?>(null) }
     var referencePhotoUri by remember(initialReferenceUri) { mutableStateOf(initialReferenceUri) }
     var overlayAlpha by remember { mutableStateOf(0.5f) }
     var overlayOffset by remember { mutableStateOf(Offset.Zero) }
@@ -476,6 +478,7 @@ fun CameraScreen(
         }
         if (stopMotionFrameCount >= 50) {
             isStopMotionRunning = false
+            viewModel.finishStopMotion()
         }
     }
 
@@ -536,7 +539,13 @@ fun CameraScreen(
             .background(Color.Black)
     ) {
         val viewerPhotoUri = viewerUri
-        if (viewerPhotoUri != null) {
+        val viewerVideo = viewerVideoUri
+        if (viewerVideo != null) {
+            VideoPlayerScreen(
+                videoUri = viewerVideo,
+                onBack = { viewerVideoUri = null }
+            )
+        } else if (viewerPhotoUri != null) {
             MediaViewerScreen(
                 uri = viewerPhotoUri,
                 media = emptyList(),
@@ -965,7 +974,7 @@ if (isRecording) {
                                                 Log.wtf("CameraVM", "stop motion STOP, frames=$stopMotionFrameCount")
                                                 isStopMotionRunning = false
                                                 stopMotionFrameCount = 0
-                                                viewModel.resetStopMotionFrames()
+                                                viewModel.finishStopMotion()
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -987,7 +996,13 @@ if (isRecording) {
                             lastPhotoUri?.let { uri ->
                                 LastPhotoThumbnail(
                                     uri = uri,
-                                    onClick = { viewerUri = uri },
+                                    onClick = {
+                                        if (uri.toString().contains("/video/media/")) {
+                                            viewerVideoUri = uri
+                                        } else {
+                                            viewerUri = uri
+                                        }
+                                    },
                                     modifier = Modifier.offset(x = thumbnailOffset)
                                 )
                             }
