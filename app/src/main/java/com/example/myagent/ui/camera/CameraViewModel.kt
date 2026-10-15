@@ -27,8 +27,10 @@ import com.example.myagent.data.repository.MasterFolderRepository
 import com.example.myagent.data.repository.MediaRepository
 import com.example.myagent.data.repository.SubfolderRepository
 import com.example.myagent.data.util.PlaceNameResolver
+import com.example.myagent.data.util.StopMotionEncoder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
@@ -67,8 +69,19 @@ class CameraViewModel @Inject constructor(
         _stopMotionFrames.value = _stopMotionFrames.value + uri
     }
 
+    private var stopMotionFolderUuid: String? = null
+    private var stopMotionLat: Double? = null
+    private var stopMotionLon: Double? = null
+    private var stopMotionDeviceLat: Double? = null
+    private var stopMotionDeviceLon: Double? = null
+
     fun resetStopMotionFrames() {
         _stopMotionFrames.value = emptyList()
+        stopMotionFolderUuid = folderUuid
+        stopMotionLat = lat
+        stopMotionLon = lon
+        stopMotionDeviceLat = deviceLat
+        stopMotionDeviceLon = deviceLon
     }
 
     private var activeRecording: Recording? = null
@@ -559,6 +572,100 @@ class CameraViewModel @Inject constructor(
                 }
             }
         )
+    }
+
+    fun finishStopMotion() {
+        val frames = _stopMotionFrames.value
+        if (frames.size < 2) {
+            Log.wtf("CameraVM", "stop motion: кадров мало (${frames.size}), склейка пропущена")
+            _stopMotionFrames.value = emptyList()
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val frameFiles = frames.mapNotNull { uri ->
+                    val path = uri.path
+                    if (path != null) File(path) else null
+                }.filter { it.exists() }
+
+                if (frameFiles.size < 2) {
+                    Log.wtf("CameraVM", "stop motion: файлов мало после проверки")
+                    _stopMotionFrames.value = emptyList()
+                    return@launch
+                }
+
+                val outputFile = fileRepository.newMediaFile("mp4")
+                val opts = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                android.graphics.BitmapFactory.decodeFile(frameFiles.first().absolutePath, opts)
+                val width = if (opts.outWidth > 0) opts.outWidth else 1080
+                val height = if (opts.outHeight > 0) opts.outHeight else 1920
+
+                val ok = StopMotionEncoder.encode(
+                    frameFiles = frameFiles,
+                    outputFile = outputFile,
+                    fps = 10,
+                    width = width,
+                    height = height
+                )
+
+                if (ok) {
+                    val savedUri = fileRepository.saveVideoToMediaStore(outputFile, LocalDateTime.now())
+                    Log.wtf("CameraVM", "stop motion: mp4 сохранён uri=$savedUri")
+                    if (savedUri != null) {
+                        val filePath = getFilePathFromUri(savedUri, appContext)
+                        filePath?.let {
+                            MediaScannerConnection.scanFile(appContext, arrayOf(it), arrayOf("video/mp4"), null)
+                            Log.wtf("CameraVM", "stop motion: scanFile $it")
+                        }
+
+                        val finalLat = stopMotionLat ?: stopMotionDeviceLat
+                        val finalLon = stopMotionLon ?: stopMotionDeviceLon
+                        val targetFolderUuid = if (stopMotionFolderUuid != null) {
+                            stopMotionFolderUuid
+                        } else if (finalLat != null && finalLon != null) {
+                            findOrCreateGeoFolder(finalLat, finalLon)
+                        } else {
+                            null
+                        }
+                        val media = Media(
+                            uuid = UUID.randomUUID().toString(),
+                            uri = savedUri.toString(),
+                            folderUuid = targetFolderUuid,
+                            type = "video",
+                            createdAt = System.currentTimeMillis(),
+                            lat = finalLat,
+                            lon = finalLon
+                        )
+                        mediaRepository.insert(media)
+                        Log.wtf("CameraVM", "stop motion: media=${media.uuid}, folder=$targetFolderUuid")
+
+                        if (stopMotionFolderUuid != null) {
+                            _savedPhotoEvent.value = SavedPhotoEvent(savedUri, stopMotionFolderUuid!!)
+                        }
+                        withContext(Dispatchers.Main) {
+                            _lastPhotoUri.value = savedUri
+                        }
+                    }
+                } else {
+                    Log.wtf("CameraVM", "stop motion: ошибка склейки")
+                    outputFile.delete()
+                }
+
+                frameFiles.forEach { it.delete() }
+                _stopMotionFrames.value = emptyList()
+
+            } catch (e: Exception) {
+                Log.wtf("CameraVM", "stop motion finish error: ${e.message}")
+                _stopMotionFrames.value.forEach { uri ->
+                    uri.path?.let { File(it).delete() }
+                }
+                _stopMotionFrames.value = emptyList()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(appContext, "Не удалось собрать Stop Motion", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     fun answerGeoPrompt(saveToFolder: Boolean) {
