@@ -51,12 +51,26 @@ object StopMotionEncoder {
         try {
             outputFile.parentFile?.mkdirs()
 
-            val format = MediaFormat.createVideoFormat(MIME_TYPE, width, height).apply {
+            // MTK H.264-энкодеры обычно ограничены 1920×1088, поэтому кадры 2448×3264
+            // нужно ужать по длинной стороне, сохранив пропорции и чётность размеров.
+            val MAX_DIM = 1920
+            val finalWidth: Int
+            val finalHeight: Int
+            if (width > MAX_DIM || height > MAX_DIM) {
+                val scale = MAX_DIM.toFloat() / maxOf(width, height)
+                finalWidth = (width * scale).toInt() and 0xFFFFFFFE.toInt()
+                finalHeight = (height * scale).toInt() and 0xFFFFFFFE.toInt()
+            } else {
+                finalWidth = width
+                finalHeight = height
+            }
+
+            val format = MediaFormat.createVideoFormat(MIME_TYPE, finalWidth, finalHeight).apply {
                 setInteger(
                     MediaFormat.KEY_COLOR_FORMAT,
                     MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible
                 )
-                setInteger(MediaFormat.KEY_BIT_RATE, (width * height * fps * 0.1).toInt())
+                setInteger(MediaFormat.KEY_BIT_RATE, (finalWidth * finalHeight * fps * 0.1).toInt())
                 setInteger(MediaFormat.KEY_FRAME_RATE, fps)
                 setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
             }
@@ -113,7 +127,7 @@ object StopMotionEncoder {
             }
 
             for ((index, frameFile) in frameFiles.withIndex()) {
-                val bitmap = decodeAndScale(frameFile, width, height)
+                val bitmap = decodeAndScale(frameFile, finalWidth, finalHeight)
                 if (bitmap == null) {
                     Log.wtf(TAG, "frame $index/$total: не удалось декодировать ${frameFile.name}")
                     continue
@@ -137,7 +151,7 @@ object StopMotionEncoder {
 
                     fillYuvImage(image, bitmap)
                     val ptsUs = index * frameDurationUs
-                    val yuvSize = width * height * 3 / 2
+                    val yuvSize = finalWidth * finalHeight * 3 / 2
                     encoder.queueInputBuffer(inIndex, 0, yuvSize, ptsUs, 0)
                     Log.wtf(TAG, "frame ${index + 1}/$total encoded")
                 } finally {
