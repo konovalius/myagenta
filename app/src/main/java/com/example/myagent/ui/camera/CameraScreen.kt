@@ -916,6 +916,7 @@ if (isRecording) {
                                     isVideoMode = isVideoMode,
                                     isRecording = isRecording,
                                     isPaused = isPaused,
+                                    isStopMotionActive = isStopMotionMode && (isStopMotionRunning || stopMotionFrameCount > 0),
                                     enabled = !isVideoMode || videoCapture != null,
                                     onClick = {
                                         activeMode = CameraMode.entries[centeredModeIndex]
@@ -926,18 +927,17 @@ if (isRecording) {
                                         
                                         when {
                                             isStopMotionMode -> {
-                                                if (!isStopMotionRunning) {
-                                                    // если кадров ещё нет — это ПЕРВЫЙ старт серии, сбрасываем
-                                                    if (stopMotionFrameCount == 0) {
-                                                        viewModel.resetStopMotionFrames()
-                                                    }
-                                                    // иначе — продолжение после паузы, кадры НЕ трогаем
+                                                if (stopMotionFrameCount == 0) {
+                                                    // первый старт серии
+                                                    viewModel.resetStopMotionFrames()
                                                     isStopMotionRunning = true
                                                 } else {
-                                                    // пауза
+                                                    // серия идёт или на паузе → СТОП
                                                     isStopMotionRunning = false
+                                                    stopMotionFrameCount = 0
+                                                    viewModel.finishStopMotion()
                                                 }
-                                                Log.wtf("CameraVM", "stop motion toggle running=$isStopMotionRunning frames=$stopMotionFrameCount")
+                                                Log.wtf("CameraVM", "stop motion center: running=$isStopMotionRunning frames=$stopMotionFrameCount")
                                             }
                                             isVideoMode -> toggleVideoRecording()
                                             else -> capturePhoto()
@@ -970,7 +970,7 @@ if (isRecording) {
                                     }
                                 }
 
-                                if (isStopMotionMode && stopMotionFrameCount > 0) {
+                                if (isStopMotionMode && (isStopMotionRunning || stopMotionFrameCount > 0)) {
                                     Box(
                                         modifier = Modifier
                                             .offset(x = 80.dp)
@@ -980,18 +980,14 @@ if (isRecording) {
                                                 interactionSource = remember { MutableInteractionSource() },
                                                 indication = null
                                             ) {
-                                                Log.wtf("CameraVM", "stop motion STOP, frames=$stopMotionFrameCount")
-                                                isStopMotionRunning = false
-                                                stopMotionFrameCount = 0
-                                                viewModel.finishStopMotion()
+                                                isStopMotionRunning = !isStopMotionRunning
+                                                Log.wtf("CameraVM", "stop motion right: pause toggle running=$isStopMotionRunning")
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(24.dp)
-                                                .clip(RoundedCornerShape(4.dp))
-                                                .background(Color(0xFFFF3B30))
+                                        PauseButtonWithPulse(
+                                            modifier = Modifier.fillMaxSize(),
+                                            isPaused = !isStopMotionRunning
                                         )
                                     }
                                 }
@@ -1266,6 +1262,7 @@ private fun ShutterButton(
     isVideoMode: Boolean,
     isRecording: Boolean,
     isPaused: Boolean = false,
+    isStopMotionActive: Boolean = false,
     enabled: Boolean = true,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
@@ -1401,7 +1398,17 @@ private fun ShutterButton(
                     .size(ShutterUi.InnerSize)
                     .clip(CircleShape)
                     .background(Color.White, CircleShape)
-            )
+            ) {
+                if (isStopMotionActive) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(0xFFFF3B30))
+                            .align(Alignment.Center)
+                    )
+                }
+            }
         }
     }
 }
