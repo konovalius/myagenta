@@ -241,7 +241,7 @@ fun CameraScreen(
     var activeMode by remember { mutableStateOf(CameraMode.PHOTO) }
     var isRecording by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
-    var stopMotionInterval by remember { mutableFloatStateOf(1f) }
+    var stopMotionInterval by remember { mutableFloatStateOf(0.5f) }
     var stopMotionFrameCount by remember { mutableIntStateOf(0) }
     var isStopMotionRunning by remember { mutableStateOf(false) }
 
@@ -1035,17 +1035,22 @@ if (isRecording) {
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        val intervals = listOf(0.5f, 1f, 2f, 5f)
-                        intervals.forEach { sec ->
-                            val isSelected = stopMotionInterval == sec
+                        val intervals = listOf(
+                            0.05f to "20 fps",
+                            0.5f to "2 fps",
+                            2f to "0.5 fps",
+                            5f to "0.2 fps",
+                        )
+                        intervals.forEach { (seconds, label) ->
+                            val isSelected = stopMotionInterval == seconds
                             Text(
-                                text = if (sec < 1f) "0.5s" else "${sec.toInt()}s",
+                                text = label,
                                 color = if (isSelected) Color(0xFFFF3B30) else Color.White.copy(alpha = 0.7f),
                                 fontSize = 20.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 fontFamily = GoshaSans,
                                 modifier = Modifier
-                                    .clickable { stopMotionInterval = sec; Log.wtf("CameraVM", "stop motion interval=$sec") }
+                                    .clickable { stopMotionInterval = seconds; Log.wtf("CameraVM", "stop motion interval=$seconds") }
                                     .padding(horizontal = 8.dp, vertical = 6.dp)
                             )
                         }
