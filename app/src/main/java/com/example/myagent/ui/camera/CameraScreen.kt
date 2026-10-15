@@ -985,8 +985,9 @@ if (isRecording) {
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(20.dp)
-                                                .background(Color.White)
+                                                .size(24.dp)
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(Color(0xFFFF3B30))
                                         )
                                     }
                                 }
