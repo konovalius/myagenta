@@ -22,3 +22,6 @@ local.properties
 node_modules/
 package.json
 package-lock.json
+
+# Oh My Review Experts Ч артефакты
+.omre/
