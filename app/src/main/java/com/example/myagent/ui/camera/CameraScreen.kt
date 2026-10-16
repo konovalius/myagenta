@@ -281,6 +281,11 @@ fun CameraScreen(
     var overlayScale by remember { mutableStateOf(1f) }
     var overlayRotation by remember { mutableStateOf(0f) }
     var isEditingOverlay by remember { mutableStateOf(false) }
+    var isSelfieMode by remember { mutableStateOf(false) }
+    var silhouetteAlpha by remember { mutableStateOf(0.5f) }
+    var silhouetteOffset by remember { mutableStateOf(Offset.Zero) }
+    var silhouetteScale by remember { mutableStateOf(1f) }
+    var isEditingSilhouette by remember { mutableStateOf(false) }
 
     LaunchedEffect(initialLat, initialLon) {
         viewModel.setLocation(initialLat, initialLon)
@@ -595,7 +600,7 @@ fun CameraScreen(
                         // ориентир-фото: там щипок масштабирует саму картинку,
                         // и два жеста на одном экране конфликтовали бы.
                         .then(
-                            if (isEditingOverlay) {
+                            if (isEditingOverlay || isEditingSilhouette) {
                                 Modifier
                             } else {
                                 Modifier.pointerInput(boundCamera, magnificationRange) {
@@ -805,6 +810,155 @@ val editInteraction = remember { MutableInteractionSource() }
                         }
                     }
                 }
+
+                // Оверлей селфи: силуэт головы и плеч поверх превью.
+                if (isSelfieMode) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(
+                                id = com.example.myagent.R.drawable.ic_selfie_silhouette
+                            ),
+                            contentDescription = "Силуэт для селфи",
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 200.dp)
+                                .fillMaxWidth(0.4f)
+                                .alpha(silhouetteAlpha)
+                                .graphicsLayer {
+                                    translationX = silhouetteOffset.x
+                                    translationY = silhouetteOffset.y
+                                    scaleX = silhouetteScale
+                                    scaleY = silhouetteScale
+                                }
+                                .then(
+                                    if (isEditingSilhouette) {
+                                        Modifier.pointerInput(isEditingSilhouette) {
+                                            detectTransformGestures(panZoomLock = true) { _, pan, zoom, _ ->
+                                                silhouetteOffset += pan
+                                                silhouetteScale =
+                                                    (silhouetteScale * zoom).coerceIn(0.3f, 3f)
+                                            }
+                                        }
+                                    } else Modifier
+                                )
+                        )
+
+                        // Панель управления силуэтом — по образцу ориентира.
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .fillMaxWidth()
+                                .padding(start = 12.dp, top = 12.dp, end = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isEditingSilhouette) Color.White.copy(alpha = 0.56f)
+                                        else Color.Black.copy(alpha = 0.56f)
+                                    )
+                                    .clickable { isEditingSilhouette = !isEditingSilhouette },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = if (isEditingSilhouette) {
+                                        "Выключить редактирование силуэта"
+                                    } else {
+                                        "Редактировать силуэт"
+                                    },
+                                    tint = if (isEditingSilhouette) {
+                                        Color.Black.copy(alpha = 0.56f)
+                                    } else {
+                                        Color.White.copy(alpha = 0.56f)
+                                    },
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Black.copy(alpha = 0.56f))
+                                    .clickable {
+                                        silhouetteOffset = Offset.Zero
+                                        silhouetteScale = 1f
+                                        silhouetteAlpha = 0.5f
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Refresh,
+                                    contentDescription = "Сбросить силуэт",
+                                    tint = Color.White.copy(alpha = 0.56f),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(27.dp)
+                                    .clip(RoundedCornerShape(percent = 50))
+                                    .background(Color.Black.copy(alpha = 0.28f))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.45f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .fillMaxWidth(silhouetteAlpha)
+                                        .align(Alignment.CenterStart)
+                                        .background(Color.White.copy(alpha = 0.45f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .pointerInput(Unit) {
+                                            awaitEachGesture {
+                                                val down = awaitFirstDown(requireUnconsumed = false)
+                                                val pillWidth = size.width.toFloat()
+                                                var dragged = false
+                                                drag(down.id) { change ->
+                                                    dragged = true
+                                                    change.consume()
+                                                    silhouetteAlpha =
+                                                        (change.position.x / pillWidth)
+                                                            .coerceIn(0.1f, 1f)
+                                                }
+                                                if (!dragged) {
+                                                    silhouetteAlpha =
+                                                        (down.position.x / pillWidth)
+                                                            .coerceIn(0.1f, 1f)
+                                                }
+                                            }
+                                        }
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Black.copy(alpha = 0.56f))
+                                    .clickable { isSelfieMode = false },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Выключить Selfie",
+                                    tint = Color.White.copy(alpha = 0.56f),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
 // Пока тянут линейку, крупное значение стоит по центру кадра: цифры
                     // читаются сразу, не надо искать кончик указателя.
                     if (isZoomScrubbing) {
@@ -891,7 +1045,7 @@ if (isRecording) {
                                         )
                                     )
                                 },
-                                onSelfieTapped = {},
+                                onSelfieTapped = { isSelfieMode = !isSelfieMode },
                                 enabled = !isUiLocked
                             )
                         }
